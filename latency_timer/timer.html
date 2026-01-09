@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Latency Timer Pro</title>
+    <style>
+        :root {
+            --bg-color: #000000;
+            --text-color: #00ff00;
+            /* High contrast bright green */
+            --dim-text: #004400;
+            --accent-glow: rgba(0, 255, 0, 0.2);
+            --font-mono: "ui-monospace", "SFMono-Regular", "Menlo", "Monaco", "Consolas", "Liberation Mono", "Courier New", monospace;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-mono);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* Status Box */
+        .status-box {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--dim-text);
+            padding: 12px 20px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            font-size: 0.9rem;
+            backdrop-filter: blur(4px);
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        .status-label {
+            color: var(--dim-text);
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            letter-spacing: 1px;
+        }
+
+        .status-value {
+            font-weight: bold;
+        }
+
+        /* Live Indicator */
+        .live-indicator {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: var(--dim-text);
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--text-color);
+            border-radius: 50%;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+                box-shadow: 0 0 0 0 var(--accent-glow);
+            }
+
+            70% {
+                transform: scale(1.2);
+                opacity: 0.5;
+                box-shadow: 0 0 0 10px var(--accent-glow);
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+                box-shadow: 0 0 0 0 var(--accent-glow);
+            }
+        }
+
+        /* Main Timer */
+        .timer-wrapper {
+            text-align: center;
+            width: 100%;
+            position: relative;
+        }
+
+        #time-display {
+            font-size: 12vw;
+            /* Reduced to 12vw for guaranteed fit */
+            font-weight: 700;
+            line-height: 1;
+            margin: 0;
+            font-variant-numeric: tabular-nums;
+            text-shadow: 0 0 20px var(--accent-glow);
+            white-space: nowrap;
+            box-sizing: border-box;
+            max-width: 100vw;
+            overflow: hidden;
+            padding: 0 20px;
+        }
+
+        .back-nav {
+            position: absolute;
+            bottom: 40px;
+            opacity: 0.3;
+            transition: opacity 0.3s;
+        }
+
+        .back-nav:hover {
+            opacity: 1;
+        }
+
+        .back-link {
+            color: var(--text-color);
+            text-decoration: none;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border: 1px solid var(--text-color);
+            padding: 8px 20px;
+            border-radius: 4px;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            #time-display {
+                font-size: 14vw;
+            }
+
+            .status-box {
+                top: auto;
+                bottom: 100px;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 80%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="status-box">
+        <div class="status-item">
+            <span class="status-label">Refresh Rate</span>
+            <span class="status-value" id="fps-value">-- Hz</span>
+        </div>
+        <div class="status-item">
+            <span class="status-label">Resolution</span>
+            <span class="status-value" id="res-value">± --ms</span>
+        </div>
+    </div>
+
+    <div class="live-indicator">
+        <div class="pulse-dot"></div>
+        LIVE
+    </div>
+
+    <div class="timer-wrapper">
+        <div id="time-display">00:00:00.000</div>
+    </div>
+
+    <div class="back-nav">
+        <a href="../index.html" class="back-link">Return to Toolbox</a>
+    </div>
+
+    <script>
+        const display = document.getElementById('time-display');
+        const fpsVal = document.getElementById('fps-value');
+        const resVal = document.getElementById('res-value');
+
+        let lastFrameTime = performance.now();
+        let frameCount = 0;
+        let fps = 0;
+
+        function update() {
+            const now = performance.now();
+            const date = new Date();
+
+            // Update Timer
+            const h = String(date.getHours()).padStart(2, '0');
+            const m = String(date.getMinutes()).padStart(2, '0');
+            const s = String(date.getSeconds()).padStart(2, '0');
+            const ms = String(date.getMilliseconds()).padStart(3, '0');
+            display.textContent = `${h}:${m}:${s}.${ms}`;
+
+            // Calculate FPS
+            frameCount++;
+            if (now >= lastFrameTime + 1000) {
+                fps = Math.round((frameCount * 1000) / (now - lastFrameTime));
+                fpsVal.textContent = `${fps} Hz`;
+
+                // Calculate Resolution (1000ms / fps)
+                const resolution = (1000 / fps).toFixed(1);
+                resVal.textContent = `± ${resolution}ms`;
+
+                frameCount = 0;
+                lastFrameTime = now;
+            }
+
+            requestAnimationFrame(update);
+        }
+
+        requestAnimationFrame(update);
+    </script>
+</body>
+
+</html>
