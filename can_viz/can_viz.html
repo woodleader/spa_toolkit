@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CAN Visualizer Pro</title>
+    <style>
+        :root {
+            --bg-deep: #0f172a;
+            --bg-card: #1e293b;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --border: rgba(255, 255, 255, 0.1);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent: #38bdf8;
+            --bit-on: #38bdf8;
+            --bit-off: #334155;
+            --bit-hover: #475569;
+            --bit-selected: #fbbf24;
+            --font-mono: "ui-monospace", monospace;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-deep);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 95%;
+            padding: 40px 0;
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 30px;
+        }
+
+        header {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            margin: 0;
+            background: linear-gradient(to right, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .back-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            border: 1px solid var(--border);
+            padding: 6px 12px;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .back-link:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+        }
+
+        .section-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 24px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Color Markers for Byte Rows */
+        .pat-0 {
+            --row-color: #ef4444;
+        }
+
+        .pat-1 {
+            --row-color: #f97316;
+        }
+
+        .pat-2 {
+            --row-color: #facc15;
+        }
+
+        .pat-3 {
+            --row-color: #22c55e;
+        }
+
+        .pat-4 {
+            --row-color: #06b6d4;
+        }
+
+        .pat-5 {
+            --row-color: #8b5cf6;
+        }
+
+        .pat-6 {
+            --row-color: #d946ef;
+        }
+
+        .pat-7 {
+            --row-color: #64748b;
+        }
+
+        .hex-byte {
+            display: inline-block;
+            margin-right: 8px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: white;
+            background: var(--row-color);
+        }
+
+        .bit-grid-container {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        /* Bit Grid Layout */
+        .bit-row-container {
+            display: grid;
+            grid-template-columns: 80px 1fr;
+            gap: 12px;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 8px;
+            /* Gap between rows */
+        }
+
+        .byte-row-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: white;
+            font-family: var(--font-mono);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px 8px;
+            border-radius: 4px;
+            background: var(--row-color);
+        }
+
+        .bit-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 8px;
+            user-select: none;
+            padding-bottom: 8px;
+            /* Space above the underline */
+        }
+
+        .bit-cell {
+            background: var(--bit-off);
+            border: 2px solid rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 4px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+
+        .bit-cell::after {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 12px;
+            background: var(--signal-gradient, transparent);
+            z-index: -1;
+        }
+
+        .bit-cell:hover {
+            transform: translateY(-2px);
+            background-color: var(--bit-hover);
+        }
+
+        .bit-cell.on {
+            background: var(--bit-on);
+            color: var(--bg-deep);
+            font-weight: bold;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
+        }
+
+        .bit-cell.selected {
+            outline: 2px solid var(--bit-selected);
+            outline-offset: 2px;
+            z-index: 10;
+        }
+
+        .bit-index {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            font-size: 0.55rem;
+            font-weight: 600;
+            color: white;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 1px 3px;
+            border-radius: 3px;
+        }
+
+        .bit-val {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        /* Results & Controls */
+        .results {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .data-display {
+            font-family: var(--font-mono);
+            background: rgba(0, 0, 0, 0.4);
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            word-break: break-all;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .label {
+            display: block;
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        input {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border);
+            color: white;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-family: var(--font-mono);
+            outline: none;
+        }
+
+        input:focus {
+            border-color: var(--accent);
+        }
+
+        .color-picker {
+            display: flex;
+            gap: 8px;
+            margin-top: 4px;
+        }
+
+        .color-dot {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .color-dot.active {
+            border-color: white;
+            transform: scale(1.2);
+        }
+
+        .btn {
+            background: var(--accent);
+            color: var(--bg-deep);
+            border: none;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.85rem;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+        }
+
+        .btn-accent-outline {
+            background: transparent;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+        }
+
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 350px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 14px;
+            border-radius: 12px;
+            border-left: 5px solid var(--accent);
+            cursor: pointer;
+        }
+
+        .sig-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+
+        .sig-name {
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        .sig-val {
+            color: var(--accent);
+            font-family: var(--font-mono);
+            font-weight: 700;
+        }
+
+        .sig-meta {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+        }
+
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 2px;
+        }
+
+        @media (max-width: 900px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>CAN Signal Visualizer</h1>
+            <a href="../index.html" class="back-link">Return to Toolbox</a>
+        </header>
+
+        <main class="bit-grid-container">
+            <div class="card">
+                <div class="section-title">
+                    <span>Message Frame</span>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <label style="font-size: 0.75rem; color: var(--text-secondary);">Endian:</label>
+                        <select id="endian-select"
+                            style="background: var(--bg-deep); color: white; border: 1px solid var(--border); border-radius: 4px; padding: 4px 8px; font-size: 0.75rem;">
+                            <option value="big">Big (Motorola)</option>
+                            <option value="little">Little (Intel)</option>
+                        </select>
+                        <label style="font-size: 0.75rem; color: var(--text-secondary);">DLC:</label>
+                        <select id="dlc-select"
+                            style="background: var(--bg-deep); color: white; border: 1px solid var(--border); border-radius: 4px; padding: 4px 8px; font-family: var(--font-mono);">
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                            <option value="6">6</option>
+                            <option value="7">7</option>
+                            <option value="8" selected>8</option>
+                        </select>
+                        <div id="hex-summary-container"></div>
+                    </div>
+                </div>
+
+                <div id="grid-root">
+                    <!-- Rows generated by JS -->
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="section-title">Binary Representation</div>
+                <div class="data-display" id="bin-output">
+                    00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
+                </div>
+            </div>
+        </main>
+
+        <aside class="results">
+            <div class="card">
+                <div class="section-title">Selection Tools</div>
+
+                <div class="input-group">
+                    <span class="label">Signal Label</span>
+                    <input type="text" id="name-input" placeholder="e.g. EngineRPM">
+                </div>
+
+                <div class="input-group">
+                    <span class="label">Signal Color</span>
+                    <div class="color-picker" id="color-picker">
+                        <div class="color-dot active" style="background: #38bdf8;" data-color="#38bdf8"></div>
+                        <div class="color-dot" style="background: #f87171;" data-color="#f87171"></div>
+                        <div class="color-dot" style="background: #4ade80;" data-color="#4ade80"></div>
+                        <div class="color-dot" style="background: #fbbf24;" data-color="#fbbf24"></div>
+                        <div class="color-dot" style="background: #a78bfa;" data-color="#a78bfa"></div>
+                        <div class="color-dot" style="background: #f472b6;" data-color="#f472b6"></div>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <span class="label">Map Value (Decimal)</span>
+                    <input type="number" id="val-input" placeholder="Value..." min="0">
+                </div>
+
+                <div class="controls-grid">
+                    <button class="btn" id="apply-val-btn">Map Value</button>
+                    <button class="btn btn-accent-outline" id="save-sig-btn">Save Signal</button>
+                    <button class="btn btn-secondary" id="toggle-sel-btn">Flip Bits</button>
+                    <button class="btn btn-secondary" id="clear-sel-btn">Untick all</button>
+                </div>
+
+                <div style="margin-top: 15px; font-size: 0.75rem; color: var(--text-secondary); text-align: center;">
+                    <b>Click:</b> Select | <b>Dbl-Click:</b> Flip Value
+                </div>
+            </div>
+
+            <div class="card" style="flex: 1;">
+                <div class="section-title">Active Signals</div>
+                <div class="history-list" id="history">
+                    <div
+                        style="font-size: 0.85rem; color: var(--text-secondary); text-align: center; padding: 40px 20px;">
+                        No signals defined.
+                    </div>
+                </div>
+                <button class="btn btn-secondary" id="reset-btn" style="width: 100%; margin-top: 20px;">Reset
+                    All</button>
+            </div>
+        </aside>
+    </div>
+
+    <script>
+        const gridRoot = document.getElementById('grid-root');
+        const hexSumContainer = document.getElementById('hex-summary-container');
+        const binOut = document.getElementById('bin-output');
+        const nameInput = document.getElementById('name-input');
+        const valInput = document.getElementById('val-input');
+        const historyList = document.getElementById('history');
+        const colorPicker = document.getElementById('color-picker');
+
+        let bits = new Array(64).fill(0);
+        let selectedIndices = new Set();
+        let lastClicked = -1;
+        let signals = [];
+        let activeColor = "#38bdf8";
+        let dlcSize = 8;
+        let endianness = 'big'; // 'big' = Motorola, 'little' = Intel
+
+        const dlcSelect = document.getElementById('dlc-select');
+        const endianSelect = document.getElementById('endian-select');
+
+        // Init Colors
+        colorPicker.querySelectorAll('.color-dot').forEach(dot => {
+            dot.addEventListener('click', () => {
+                colorPicker.querySelector('.color-dot.active').classList.remove('active');
+                dot.classList.add('active');
+                activeColor = dot.dataset.color;
+            });
+        });
+
+        // DLC Change Handler
+        dlcSelect.addEventListener('change', () => {
+            dlcSize = parseInt(dlcSelect.value);
+            buildGrid();
+            updateDisplay();
+        });
+
+        // Endianness Change Handler
+        endianSelect.addEventListener('change', () => {
+            endianness = endianSelect.value;
+            updateDisplay();
+        });
+
+        function buildGrid() {
+            gridRoot.innerHTML = '';
+            for (let b = 0; b < dlcSize; b++) {
+                const row = document.createElement('div');
+                row.className = `bit-row-container pat-${b}`;
+
+                const label = document.createElement('div');
+                label.className = `byte-row-label`;
+                label.textContent = `Byte ${b}`;
+                row.appendChild(label);
+
+                const grid = document.createElement('div');
+                grid.className = `bit-grid`;
+                for (let i = 0; i < 8; i++) {
+                    const bitIdx = b * 8 + i;
+                    const cell = document.createElement('div');
+                    cell.className = 'bit-cell';
+                    cell.dataset.index = bitIdx;
+                    cell.innerHTML = `
+                        <span class="bit-index">${bitIdx}</span>
+                        <span class="bit-val">0</span>
+                    `;
+
+                    cell.addEventListener('click', (e) => {
+                        if (e.shiftKey && lastClicked !== -1) {
+                            const start = Math.min(lastClicked, bitIdx);
+                            const end = Math.max(lastClicked, bitIdx);
+                            if (!e.ctrlKey) selectedIndices.clear();
+                            for (let x = start; x <= end; x++) selectedIndices.add(x);
+                        } else {
+                            if (selectedIndices.has(bitIdx)) selectedIndices.delete(bitIdx);
+                            else selectedIndices.add(bitIdx);
+                        }
+                        lastClicked = bitIdx;
+                        updateDisplay();
+                    });
+
+                    cell.addEventListener('dblclick', () => {
+                        bits[bitIdx] = bits[bitIdx] === 0 ? 1 : 0;
+                        updateDisplay();
+                    });
+
+                    grid.appendChild(cell);
+                }
+                row.appendChild(grid);
+                gridRoot.appendChild(row);
+            }
+        }
+
+        // Initial grid build
+        buildGrid();
+
+        function getSegmentedGradient(colors) {
+            if (colors.length === 0) return 'transparent';
+            if (colors.length === 1) return colors[0];
+
+            let segments = [];
+            const step = 100 / colors.length;
+            colors.forEach((color, i) => {
+                segments.push(`${color} ${i * step}%`);
+                segments.push(`${color} ${(i + 1) * step}%`);
+            });
+            return `conic-gradient(${segments.join(', ')})`;
+        }
+
+        function updateDisplay() {
+            const cells = document.querySelectorAll('.bit-cell');
+            cells.forEach((cell, i) => {
+                const isOn = bits[i] === 1;
+                const isSelected = selectedIndices.has(i);
+
+                cell.classList.toggle('on', isOn);
+                cell.classList.toggle('selected', isSelected);
+                cell.querySelector('.bit-val').textContent = bits[i];
+
+                // Collect colors for overlap
+                const bitColors = [];
+                signals.forEach(sig => {
+                    if (sig.indices.has(i)) bitColors.push(sig.color);
+                });
+
+                // Apply segmented gradient to the pseudo-element via CSS variable
+                if (bitColors.length > 0) {
+                    cell.style.setProperty('--signal-gradient', getSegmentedGradient(bitColors));
+                } else {
+                    cell.style.setProperty('--signal-gradient', 'transparent');
+                }
+            });
+
+            // Update HEX strings with patterns
+            let hexHtml = "";
+            let binParts = [];
+            for (let b = 0; b < dlcSize; b++) {
+                let byteVal = 0;
+                let byteBin = "";
+                for (let i = 0; i < 8; i++) {
+                    const bitIdx = b * 8 + i;
+                    byteVal = (byteVal << 1) | bits[bitIdx];
+                    byteBin += bits[bitIdx];
+                }
+                const hexStr = byteVal.toString(16).toUpperCase().padStart(2, '0');
+                hexHtml += `<span class="hex-byte pat-${b}">${hexStr}</span>`;
+                binParts.push(byteBin);
+            }
+            hexSumContainer.innerHTML = hexHtml;
+            binOut.textContent = binParts.join(' ');
+
+            updateSignalList();
+        }
+
+        function calculateSignalValue(indices) {
+            let val = 0n;
+            let sorted = Array.from(indices).sort((a, b) => a - b);
+            // For little endian, reverse the bit order
+            if (endianness === 'little') {
+                sorted = sorted.reverse();
+            }
+            for (let i = 0; i < sorted.length; i++) {
+                val = (val << 1n) | BigInt(bits[sorted[i]]);
+            }
+            return val.toString();
+        }
+
+        function updateSignalList() {
+            if (signals.length === 0) {
+                historyList.innerHTML = `<div style="font-size: 0.85rem; color: var(--text-secondary); text-align: center; padding: 40px 20px;">No signals defined.</div>`;
+                return;
+            }
+
+            historyList.innerHTML = "";
+            signals.forEach((sig, idx) => {
+                const item = document.createElement('div');
+                item.className = 'history-item';
+                item.style.borderLeftColor = sig.color;
+
+                const bitArr = Array.from(sig.indices).sort((a, b) => a - b);
+                const rangeLabel = bitArr.length > 1 ? `${bitArr[0]}-${bitArr[bitArr.length - 1]}` : bitArr[0];
+
+                item.innerHTML = `
+                    <div class="sig-header">
+                        <span class="sig-name">${sig.name || "Signal " + (idx + 1)}</span>
+                        <span class="sig-val">${calculateSignalValue(sig.indices)}</span>
+                    </div>
+                    <div class="sig-meta">Range: ${rangeLabel} • ${sig.indices.size} bits</div>
+                `;
+
+                item.onclick = () => {
+                    selectedIndices = new Set(sig.indices);
+                    updateDisplay();
+                };
+                historyList.appendChild(item);
+            });
+        }
+
+        // Action Buttons
+        document.getElementById('apply-val-btn').onclick = () => {
+            if (selectedIndices.size === 0) return;
+            let val = BigInt(valInput.value || 0);
+            const sorted = Array.from(selectedIndices).sort((a, b) => a - b);
+            for (let i = sorted.length - 1; i >= 0; i--) {
+                bits[sorted[i]] = Number(val & 1n);
+                val >>= 1n;
+            }
+            updateDisplay();
+        };
+
+        document.getElementById('save-sig-btn').onclick = () => {
+            if (selectedIndices.size === 0) return;
+            signals.push({
+                name: nameInput.value.trim(),
+                color: activeColor,
+                indices: new Set(selectedIndices)
+            });
+            nameInput.value = "";
+            updateDisplay();
+        };
+
+        document.getElementById('toggle-sel-btn').onclick = () => {
+            selectedIndices.forEach(idx => bits[idx] = bits[idx] === 0 ? 1 : 0);
+            updateDisplay();
+        };
+
+        document.getElementById('clear-sel-btn').onclick = () => {
+            selectedIndices.clear();
+            updateDisplay();
+        };
+
+        document.getElementById('reset-btn').onclick = () => {
+            if (confirm("Clear all data?")) {
+                bits.fill(0);
+                selectedIndices.clear();
+                signals = [];
+                updateDisplay();
+            }
+        };
+
+        updateDisplay();
+    </script>
+</body>
+
+</html>

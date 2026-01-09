@@ -203,10 +203,124 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        /* View Toggle */
+        .view-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 6px;
+            z-index: 100;
+        }
+
+        .view-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-secondary);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: var(--transition);
+        }
+
+        .view-btn:hover {
+            background: var(--hover-bg);
+            color: var(--text-primary);
+        }
+
+        .view-btn.active {
+            background: var(--accent-primary);
+            border-color: var(--accent-primary);
+            color: #0f172a;
+        }
+
+        .view-btn svg {
+            width: 16px;
+            height: 16px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
+
+        /* List View Styles */
+        .launcher-grid.list-view {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .launcher-grid.list-view .app-card {
+            flex-direction: row;
+            padding: 16px 24px;
+            border-radius: 12px;
+            text-align: left;
+        }
+
+        .launcher-grid.list-view .icon-wrapper {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 0;
+            margin-right: 20px;
+            border-radius: 12px;
+            flex-shrink: 0;
+        }
+
+        .launcher-grid.list-view .icon-wrapper svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        .launcher-grid.list-view .app-title {
+            font-size: 1.1rem;
+            margin-bottom: 4px;
+            margin-right: 8px;
+        }
+
+        .launcher-grid.list-view .app-desc {
+            font-size: 0.85rem;
+            margin-left: 4px;
+        }
+
+        .launcher-grid.list-view .app-card:hover {
+            transform: translateX(8px);
+        }
+
+        .launcher-grid.list-view .app-card:hover .icon-wrapper {
+            transform: scale(1.05);
+        }
     </style>
 </head>
 
 <body>
+    <!-- View Toggle (fixed top-right) -->
+    <div class="view-toggle">
+        <button class="view-btn active" id="grid-view-btn" onclick="setView('grid')">
+            <svg viewBox="0 0 24 24">
+                <rect x="3" y="3" width="7" height="7"></rect>
+                <rect x="14" y="3" width="7" height="7"></rect>
+                <rect x="3" y="14" width="7" height="7"></rect>
+                <rect x="14" y="14" width="7" height="7"></rect>
+            </svg>
+            Cards
+        </button>
+        <button class="view-btn" id="list-view-btn" onclick="setView('list')">
+            <svg viewBox="0 0 24 24">
+                <line x1="8" y1="6" x2="21" y2="6"></line>
+                <line x1="8" y1="12" x2="21" y2="12"></line>
+                <line x1="8" y1="18" x2="21" y2="18"></line>
+                <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                <line x1="3" y1="18" x2="3.01" y2="18"></line>
+            </svg>
+            List
+        </button>
+    </div>
+
     <div class="container">
         <header>
             <h1>Toolbox</h1>
@@ -271,6 +385,25 @@
                 <div class="app-title">Latency Timer</div>
                 <div class="app-desc">High-precision timer for measuring camera and display latency.</div>
             </a>
+            <!-- CAN Visualizer -->
+            <a href="can_viz/can_viz.html" class="app-card">
+                <div class="icon-wrapper">
+                    <!-- Custom SVG: Network/Bits icon -->
+                    <svg viewBox="0 0 24 24">
+                        <rect x="2" y="2" width="6" height="6" rx="1"></rect>
+                        <rect x="16" y="2" width="6" height="6" rx="1"></rect>
+                        <rect x="2" y="16" width="6" height="6" rx="1"></rect>
+                        <rect x="16" y="16" width="6" height="6" rx="1"></rect>
+                        <line x1="8" y1="5" x2="16" y2="5"></line>
+                        <line x1="8" y1="19" x2="16" y2="19"></line>
+                        <line x1="5" y1="8" x2="5" y2="16"></line>
+                        <line x1="19" y1="8" x2="19" y2="16"></line>
+                        <circle cx="12" cy="12" r="2"></circle>
+                    </svg>
+                </div>
+                <div class="app-title">CAN Visualizer</div>
+                <div class="app-desc">Visualize and map signals within 64-bit CAN messages.</div>
+            </a>
         </main>
 
         <footer>
@@ -278,5 +411,28 @@
         </footer>
     </div>
 </body>
+
+<script>
+    function setView(view) {
+        const grid = document.querySelector('.launcher-grid');
+        const gridBtn = document.getElementById('grid-view-btn');
+        const listBtn = document.getElementById('list-view-btn');
+
+        if (view === 'list') {
+            grid.classList.add('list-view');
+            listBtn.classList.add('active');
+            gridBtn.classList.remove('active');
+        } else {
+            grid.classList.remove('list-view');
+            gridBtn.classList.add('active');
+            listBtn.classList.remove('active');
+        }
+        localStorage.setItem('toolboxView', view);
+    }
+
+    // Load saved preference (default to grid)
+    const savedView = localStorage.getItem('toolboxView') || 'grid';
+    if (savedView === 'list') setView('list');
+</script>
 
 </html>
