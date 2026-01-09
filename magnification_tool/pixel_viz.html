@@ -1,0 +1,1413 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel Visualization Tool</title>
+    <style>
+        :root {
+            --bg-color: #1a1a1a;
+            --surface-color: #2a2a2a;
+            --text-color: #e0e0e0;
+            --accent-color: #646cff;
+            --border-color: #444;
+            --success-color: #154515;
+            --fail-color: #451515;
+            --overlay-success: rgba(40, 255, 40, 0.2);
+            --overlay-fail: rgba(255, 40, 40, 0.4);
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 2rem;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            font-weight: 300;
+            margin-bottom: 2rem;
+            letter-spacing: 1px;
+        }
+
+        .container {
+            background-color: var(--surface-color);
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            border: 1px solid var(--border-color);
+            width: 100%;
+            /* Full width */
+            max-width: 1600px;
+            /* Reasonable cap for huge screens */
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .settings-bar {
+            background: #222;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 1rem;
+            border: 1px solid #333;
+            align-items: center;
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: auto auto;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            background: #222;
+            padding: 1rem;
+            border-radius: 8px;
+        }
+
+        .area-controls {
+            background: #333;
+            padding: 1rem;
+            border-radius: 6px;
+            border: 1px solid #444;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .area-title {
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: var(--accent-color);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+        }
+
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 0.5rem;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+        }
+
+        label {
+            font-size: 0.7rem;
+            color: #aaa;
+        }
+
+        input[type="number"],
+        input[type="range"] {
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 0.4rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        input[type="file"] {
+            font-size: 0.8rem;
+            color: #aaa;
+        }
+
+        button.btn-apply {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 4px;
+            margin-top: 1.2rem;
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            font-weight: bold;
+            height: 36px;
+        }
+
+        button.btn-apply:hover {
+            opacity: 0.9;
+        }
+
+        button.btn-reset {
+            background-color: #555;
+            color: white;
+            border: none;
+            cursor: pointer;
+            padding: 0.3rem 0.6rem;
+            border-radius: 4px;
+            text-transform: uppercase;
+            font-size: 0.6rem;
+            font-weight: bold;
+        }
+
+        button.btn-reset:hover {
+            background-color: #666;
+        }
+
+        button.btn-action {
+            background-color: #444;
+            color: #ddd;
+            border: 1px solid #555;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        button.btn-action:hover {
+            background-color: #555;
+        }
+
+        .row {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 2rem;
+            flex-direction: column;
+            align-items: stretch;
+            /* Stretch children */
+            width: 100%;
+        }
+
+        .canvas-container-outer {
+            width: 100%;
+            /* Fill parent */
+            height: 500px;
+            /* Increased height */
+            overflow: auto;
+            border: 2px solid var(--border-color);
+            border-radius: 4px;
+            background: #111;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        canvas#mainCanvas {
+            display: block;
+            cursor: crosshair;
+            background-color: #111;
+        }
+
+        .detail-container {
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            width: 100%;
+            /* Full width */
+            /* Removed max-width 95vw override as container handles it */
+        }
+
+        .detail-scroll {
+            width: 100%;
+            height: 500px;
+            /* Matched to main view */
+            overflow: auto;
+            background: #111;
+            position: relative;
+            /* Essential for sticky */
+        }
+
+        /* Virtualization Elements */
+        #detailSpacer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 1px;
+            height: 1px;
+            z-index: 0;
+            pointer-events: none;
+            /* Let clicks pass through if needed, though spacer is behind */
+        }
+
+        #detailCanvas {
+            position: sticky;
+            top: 0;
+            left: 0;
+            z-index: 1;
+            display: block;
+        }
+
+        .label {
+            padding: 0.5rem;
+            background: #333;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .legend {
+            margin-top: 1rem;
+            font-size: 0.8rem;
+            color: #888;
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+            display: inline-block;
+            margin-right: 5px;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .modal {
+            background: var(--surface-color);
+            padding: 2rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            width: 300px;
+        }
+
+        .modal input {
+            margin-bottom: 1rem;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Pixel Visualization Tool</h1>
+
+    <div class="container">
+        <!-- Global Settings -->
+        <div class="settings-bar">
+            <div class="control-group">
+                <label>Grid W</label>
+                <input type="number" id="gridW" value="500">
+            </div>
+            <div class="control-group">
+                <label>Grid H</label>
+                <input type="number" id="gridH" value="250">
+            </div>
+            <div class="control-group">
+                <label>Cutout W</label>
+                <input type="number" id="cutoutW" value="200">
+            </div>
+            <div class="control-group">
+                <label>Cutout H</label>
+                <input type="number" id="cutoutH" value="100">
+            </div>
+            <div class="control-group">
+                <label>Split X</label>
+                <input type="number" id="splitX" value="100">
+            </div>
+            <div class="control-group">
+                <label>Split Y</label>
+                <input type="number" id="splitY" value="50">
+            </div>
+            <div class="control-group">
+                <button class="btn-apply" onclick="applySettings()">Reconfigure</button>
+            </div>
+        </div>
+
+        <div class="settings-bar">
+            <div class="control-group" style="flex: 2;">
+                <label>Background Image (Optional)</label>
+                <input type="file" id="bgImageInput" accept="image/*">
+            </div>
+            <div class="control-group">
+                <button class="btn-apply" onclick="clearImage()" style="margin-top: 1.2rem; background: #555;">Clear
+                    Image</button>
+            </div>
+        </div>
+
+        <div class="settings-bar" style="justify-content: flex-start;">
+            <div class="control-group">
+                <label>Data Persistence</label>
+                <div style="display: flex; gap: 10px; margin-top: 5px;">
+                    <button class="btn-action" onclick="exportData()">Export JSON</button>
+                    <button class="btn-action" onclick="document.getElementById('importFile').click()">Import
+                        JSON</button>
+                    <input type="file" id="importFile" style="display: none;" accept=".json"
+                        onchange="importData(this)">
+                </div>
+            </div>
+        </div>
+
+        <div class="settings-bar" style="justify-content: flex-start; flex-wrap: wrap;">
+            <div class="control-group" style="width: 100%;">
+                <label style="color: var(--accent-color); font-weight: bold; margin-bottom: 5px;">Data Import from Image
+                    (Heightmaps)</label>
+            </div>
+
+            <!-- H Map -->
+            <div class="control-group">
+                <label>H-Map Image</label>
+                <input type="file" id="hMapInput" accept="image/*">
+            </div>
+            <div class="control-group" style="width: 60px;">
+                <label>H-Min</label>
+                <input type="number" id="hMapMin" value="0">
+            </div>
+            <div class="control-group" style="width: 60px;">
+                <label>H-Max</label>
+                <input type="number" id="hMapMax" value="255">
+            </div>
+
+            <!-- Spacer -->
+            <div style="width: 20px;"></div>
+
+            <!-- V Map -->
+            <div class="control-group">
+                <label>V-Map Image</label>
+                <input type="file" id="vMapInput" accept="image/*">
+            </div>
+            <div class="control-group" style="width: 60px;">
+                <label>V-Min</label>
+                <input type="number" id="vMapMin" value="0">
+            </div>
+            <div class="control-group" style="width: 60px;">
+                <label>V-Max</label>
+                <input type="number" id="vMapMax" value="255">
+            </div>
+
+            <!-- Action -->
+            <div class="control-group" style="margin-left: auto; align-items: flex-end;">
+                <label style="flex-direction: row; gap: 5px; cursor: pointer; margin-bottom: 5px;">
+                    <input type="checkbox" id="resizeToImage" checked> Resize Grid to Image
+                </label>
+                <button class="btn-action" onclick="importFromImages()"
+                    style="background: var(--accent-color); color: white; border: none;">Process Images</button>
+            </div>
+        </div>
+
+        <!-- Real World Factors -->
+        <div class="settings-bar" style="justify-content: flex-start;">
+            <div class="control-group">
+                <label style="color: var(--accent-color); font-weight: bold;">Real World Factors (Multiplier)</label>
+            </div>
+            <div class="control-group">
+                <label>RW Factor H</label>
+                <input type="number" id="rwFactorH" value="1.0" step="0.1">
+            </div>
+            <div class="control-group">
+                <label>RW Factor V</label>
+                <input type="number" id="rwFactorV" value="1.0" step="0.1">
+            </div>
+        </div>
+
+        <!-- Area Controls -->
+        <div class="controls-grid">
+            <!-- TL -->
+            <div class="area-controls" id="area-tl">
+                <div class="area-title">Top Left</div>
+                <div class="input-row">
+                    <div class="control-group"><label>Scale H</label><input type="number" class="scale-h" value="1.0"
+                            step="0.1"></div>
+                    <div class="control-group"><label>Scale V</label><input type="number" class="scale-v" value="1.0"
+                            step="0.1"></div>
+                    <div class="control-group"><label>Thresh</label><input type="number" class="threshold" value="100">
+                    </div>
+                </div>
+            </div>
+            <!-- TR -->
+            <div class="area-controls" id="area-tr">
+                <div class="area-title">Top Right</div>
+                <div class="input-row">
+                    <div class="control-group"><label>Scale H</label><input type="number" class="scale-h" value="1.5"
+                            step="0.1"></div>
+                    <div class="control-group"><label>Scale V</label><input type="number" class="scale-v" value="1.0"
+                            step="0.1"></div>
+                    <div class="control-group"><label>Thresh</label><input type="number" class="threshold" value="200">
+                    </div>
+                </div>
+            </div>
+            <!-- BL -->
+            <div class="area-controls" id="area-bl">
+                <div class="area-title">Bottom Left</div>
+                <div class="input-row">
+                    <div class="control-group"><label>Scale H</label><input type="number" class="scale-h" value="1.0"
+                            step="0.1"></div>
+                    <div class="control-group"><label>Scale V</label><input type="number" class="scale-v" value="2.0"
+                            step="0.1"></div>
+                    <div class="control-group"><label>Thresh</label><input type="number" class="threshold" value="150">
+                    </div>
+                </div>
+            </div>
+            <!-- BR -->
+            <div class="area-controls" id="area-br">
+                <div class="area-title">Bottom Right</div>
+                <div class="input-row">
+                    <div class="control-group"><label>Scale H</label><input type="number" class="scale-h" value="0.5"
+                            step="0.1"></div>
+                    <div class="control-group"><label>Scale V</label><input type="number" class="scale-v" value="0.5"
+                            step="0.1"></div>
+                    <div class="control-group"><label>Thresh</label><input type="number" class="threshold" value="50">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="label" style="width: 100%; box-sizing: border-box;">
+                <span>Main Overview</span>
+                <div class="header-controls">
+                    <label>Zoom:</label>
+                    <input type="range" id="mainZoomSlider" min="10" max="300" value="100" style="width: 100px;">
+                    <span id="zoomLabel" style="min-width: 35px; text-align: right;">100%</span>
+                    <button class="btn-reset" onclick="resetMainZoom()">Reset</button>
+
+                    <div style="width: 1px; height: 20px; background: #444; margin: 0 10px;"></div>
+
+                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                        <input type="checkbox" id="overlayToggle"> Overlay
+                    </label>
+                    <label style="margin-left: 10px;">Block:</label>
+                    <input type="number" id="overlayBlockSize" value="20" style="width: 50px;" min="1">
+                </div>
+            </div>
+            <div class="canvas-container-outer">
+                <canvas id="mainCanvas"></canvas>
+            </div>
+        </div>
+
+        <div class="detail-container">
+            <div class="label">
+                <span>Detail View (Click cell to edit)</span>
+                <div class="header-controls">
+                    <label>Zoom:</label>
+                    <input type="range" id="detailZoomSlider" min="0.5" max="100" step="0.5" value="50"
+                        style="width: 100px;">
+                    <span id="detailZoomLabel" style="min-width: 35px; text-align: right;">100%</span>
+                    <button class="btn-reset" onclick="resetDetailZoom()">Reset</button>
+                    <span id="editStatus" style="font-size: 0.7rem; color: #888; margin-left: 10px;">(Click to
+                        edit)</span>
+                </div>
+            </div>
+            <div class="detail-scroll" id="detailScroll">
+                <div id="detailSpacer"></div>
+                <canvas id="detailCanvas"></canvas>
+            </div>
+        </div>
+
+        <div class="legend">
+            <span>
+                <div class="legend-dot" style="background: var(--success-color);"></div> > Threshold
+            </span>
+            <span>
+                <div class="legend-dot" style="background: var(--fail-color);"></div>
+                < Threshold</span>
+                    <span>Values shown: H (Red) / V (Blue)</span>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div class="modal-overlay" id="editModal">
+        <div class="modal">
+            <h3>Edit Pixel</h3>
+            <div class="control-group">
+                <label>Horizontal Value (H)</label>
+                <input type="number" id="editH">
+            </div>
+            <div class="control-group">
+                <label>Vertical Value (V)</label>
+                <input type="number" id="editV">
+            </div>
+            <div class="modal-actions">
+                <button onclick="closeModal()">Cancel</button>
+                <button class="btn-apply" onclick="savePixel()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Init Params
+        let GRID_W = 500;
+        let GRID_H = 250;
+        let CUTOUT_W = 200;
+        let CUTOUT_H = 100;
+        let SPLIT_X = 100;
+        let SPLIT_Y = 50;
+
+        let DETAIL_CELL_SIZE = 50;
+        let MAIN_ZOOM = 1.0;
+        let RW_FACTOR_H = 1.0;
+        let RW_FACTOR_V = 1.0;
+
+        const mainCanvas = document.getElementById('mainCanvas');
+        const mainCtx = mainCanvas.getContext('2d', { willReadFrequently: true });
+
+        const detailScroll = document.getElementById('detailScroll');
+        const detailSpacer = document.getElementById('detailSpacer');
+        const detailCanvas = document.getElementById('detailCanvas');
+        const detailCtx = detailCanvas.getContext('2d', { alpha: false });
+
+        // State
+        let pixelData = null; // Float32Array
+        let cutout = { x: 0, y: 0, isDragging: false, dragOffsetX: 0, dragOffsetY: 0 };
+        let editingPixelIdx = -1;
+
+        let backgroundImage = null; // Image object
+        let animationFrameId = null;
+
+        // --- Core Logic ---
+
+        function init() {
+            // Apply size settings to canvas internal size
+            mainCanvas.width = GRID_W * MAIN_ZOOM;
+            mainCanvas.height = GRID_H * MAIN_ZOOM;
+
+            // Re-alloc data if size changes or first run
+            if (!pixelData || pixelData.length !== GRID_W * GRID_H * 2) {
+                // If we resize, we lose data, which is expected per plan
+                pixelData = new Float32Array(GRID_W * GRID_H * 2);
+                for (let y = 0; y < GRID_H; y++) {
+                    for (let x = 0; x < GRID_W; x++) {
+                        const idx = (y * GRID_W + x) * 2;
+                        pixelData[idx] = x;
+                        pixelData[idx + 1] = y;
+                    }
+                }
+            }
+
+            // Reset cutout pos if out of bounds
+            cutout.x = Math.min(cutout.x, GRID_W - CUTOUT_W);
+            cutout.y = Math.min(cutout.y, GRID_H - CUTOUT_H);
+
+            updateDetailCanvasSize();
+            draw();
+        }
+
+        // Keep existing data when zooming or resizing window, but reset if grid changes
+        function reInitCanvasSizeOnly() {
+            mainCanvas.width = GRID_W * MAIN_ZOOM;
+            mainCanvas.height = GRID_H * MAIN_ZOOM;
+            draw();
+        }
+
+        // VIRTUALIZATION UPDATE:
+        // detailSpacer gets full virtual size
+        // detailCanvas matches viewport size (detailScroll size)
+        function updateDetailCanvasSize() {
+            const totalW = CUTOUT_W * DETAIL_CELL_SIZE;
+            const totalH = CUTOUT_H * DETAIL_CELL_SIZE; // Square pixels
+
+            detailSpacer.style.width = totalW + 'px';
+            detailSpacer.style.height = totalH + 'px';
+
+            // Canvas matches the visible container
+            const rect = detailScroll.getBoundingClientRect();
+            detailCanvas.width = rect.width;
+            detailCanvas.height = rect.height;
+
+            detailCtx.font = Math.max(9, Math.floor(DETAIL_CELL_SIZE / 5)) + "px monospace";
+            detailCtx.textAlign = "center";
+            detailCtx.textBaseline = "middle";
+
+            drawDetail();
+        }
+
+        function applySettings() {
+            const newGW = parseInt(document.getElementById('gridW').value);
+            const newGH = parseInt(document.getElementById('gridH').value);
+            const newCW = parseInt(document.getElementById('cutoutW').value);
+            const newCH = parseInt(document.getElementById('cutoutH').value);
+            const newSX = parseInt(document.getElementById('splitX').value);
+            const newSY = parseInt(document.getElementById('splitY').value);
+
+            if (newSX < 1 || newSX >= newCW) { alert("Split X must be between 1 and Cutout Width - 1"); return; }
+            if (newSY < 1 || newSY >= newCH) { alert("Split Y must be between 1 and Cutout Height - 1"); return; }
+            if (newCW > newGW || newCH > newGH) { alert("Cutout cannot be larger than Grid"); return; }
+
+            // Check if grid size changed to warn about data reset - simplified for now just reset
+            pixelData = null; // Force reset
+
+            GRID_W = newGW;
+            GRID_H = newGH;
+            CUTOUT_W = newCW;
+            CUTOUT_H = newCH;
+            SPLIT_X = newSX;
+            SPLIT_Y = newSY;
+
+            init();
+        }
+
+        // --- Image Import ---
+
+        document.getElementById('bgImageInput').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                const img = new Image();
+                img.onload = () => {
+                    backgroundImage = img;
+                    draw();
+                };
+                img.src = evt.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        function clearImage() {
+            backgroundImage = null;
+            document.getElementById('bgImageInput').value = '';
+            draw();
+        }
+
+        // --- Drawing ---
+
+        function getAreaParams(id) {
+            const el = document.getElementById('area-' + id);
+            return {
+                scaleH: parseFloat(el.querySelector('.scale-h').value) || 1,
+                scaleV: parseFloat(el.querySelector('.scale-v').value) || 1,
+                thresh: parseFloat(el.querySelector('.threshold').value) || 0
+            };
+        }
+
+        function getFinalValues(x, y, pixelH, pixelV) {
+            // Determine Quadrant (Relative to Cutout)
+            const isLeft = x < SPLIT_X;
+            const isTop = y < SPLIT_Y;
+
+            let areaId;
+            if (isTop && isLeft) areaId = 'tl';
+            else if (isTop && !isLeft) areaId = 'tr';
+            else if (!isTop && isLeft) areaId = 'bl';
+            else areaId = 'br';
+
+            const p = getAreaParams(areaId);
+
+            // Raw Pixel * Area Scale * Global RW Factor
+            const realH = pixelH * p.scaleH * RW_FACTOR_H;
+            const realV = pixelV * p.scaleV * RW_FACTOR_V;
+
+            // Threshold Check
+            // Legend: Green > Threshold (Pass), Red < Threshold (Fail)
+            // So Fail if Value < Threshold
+            const fail = (realH < p.thresh || realV < p.thresh);
+
+            return { realH, realV, fail, areaId };
+        }
+
+        // Overlay Pixel Check Helper (Optimized - No DOM calls in loop)
+        function checkPixelThreshold(x, y, pTL, pTR, pBL, pBR) {
+            const idx = (y * GRID_W + x) * 2;
+            const hVal = pixelData[idx];
+            const vVal = pixelData[idx + 1];
+
+            // Split is relative to CUTOUT
+            const relX = x - cutout.x;
+            const relY = y - cutout.y;
+
+            const isLeft = relX < SPLIT_X;
+            const isTop = relY < SPLIT_Y;
+
+            let p;
+            if (isTop && isLeft) p = pTL;
+            else if (isTop && !isLeft) p = pTR;
+            else if (!isTop && isLeft) p = pBL;
+            else p = pBR;
+
+            const realH = hVal * p.scaleH * RW_FACTOR_H;
+            const realV = vVal * p.scaleV * RW_FACTOR_V;
+
+            // Return TRUE if PASS (Green, i.e., >= Thresh)
+            return (realH >= p.thresh && realV >= p.thresh);
+        }
+
+        function drawOverview() {
+            mainCtx.save();
+            mainCtx.scale(MAIN_ZOOM, MAIN_ZOOM);
+
+            if (backgroundImage) {
+                mainCtx.drawImage(backgroundImage, 0, 0, GRID_W, GRID_H);
+            } else {
+                const grad = mainCtx.createLinearGradient(0, 0, GRID_W, GRID_H);
+                grad.addColorStop(0, '#222');
+                grad.addColorStop(1, '#444');
+                mainCtx.fillStyle = grad;
+                mainCtx.fillRect(0, 0, GRID_W, GRID_H);
+
+                mainCtx.beginPath();
+                mainCtx.strokeStyle = '#333';
+                mainCtx.lineWidth = 1;
+                for (let x = 0; x < GRID_W; x += 50) { mainCtx.moveTo(x, 0); mainCtx.lineTo(x, GRID_H); }
+                for (let y = 0; y < GRID_H; y += 50) { mainCtx.moveTo(0, y); mainCtx.lineTo(GRID_W, y); }
+                mainCtx.stroke();
+            }
+
+            // Cutout
+            mainCtx.strokeStyle = '#fff';
+            mainCtx.lineWidth = 2 / MAIN_ZOOM;
+            mainCtx.strokeRect(cutout.x, cutout.y, CUTOUT_W, CUTOUT_H);
+
+            // Split lines
+            mainCtx.beginPath();
+            const splitAbsX = cutout.x + SPLIT_X;
+            mainCtx.moveTo(splitAbsX, cutout.y);
+            mainCtx.lineTo(splitAbsX, cutout.y + CUTOUT_H);
+
+            const splitAbsY = cutout.y + SPLIT_Y;
+            mainCtx.moveTo(cutout.x, splitAbsY);
+            mainCtx.lineTo(cutout.x + CUTOUT_W, splitAbsY);
+
+            mainCtx.strokeStyle = 'rgba(255,255,255,0.5)';
+            mainCtx.setLineDash([4 / MAIN_ZOOM, 4 / MAIN_ZOOM]);
+            mainCtx.stroke();
+            mainCtx.setLineDash([]);
+
+            // --- OVERLAY LOGIC ---
+            const showOverlay = document.getElementById('overlayToggle').checked;
+            if (showOverlay) {
+                const blockSize = parseInt(document.getElementById('overlayBlockSize').value) || 20;
+
+                // Fetch params once for speed
+                const pTL = getAreaParams('tl');
+                const pTR = getAreaParams('tr');
+                const pBL = getAreaParams('bl');
+                const pBR = getAreaParams('br');
+
+                // Loop through cutout area in blocks
+                for (let y = 0; y < CUTOUT_H; y += blockSize) {
+                    for (let x = 0; x < CUTOUT_W; x += blockSize) {
+                        // Current block dimensions (clipped to cutout)
+                        const w = Math.min(blockSize, CUTOUT_W - x);
+                        const h = Math.min(blockSize, CUTOUT_H - y);
+
+                        let hasFail = false;
+
+                        // Check pixels inside block
+                        pixelLoop:
+                        for (let by = 0; by < h; by++) {
+                            for (let bx = 0; bx < w; bx++) {
+                                const absX = cutout.x + x + bx;
+                                const absY = cutout.y + y + by;
+
+                                if (absX >= GRID_W || absY >= GRID_H) continue;
+
+                                if (!checkPixelThreshold(absX, absY, pTL, pTR, pBL, pBR)) {
+                                    hasFail = true;
+                                    break pixelLoop; // Stopchecking this block
+                                }
+                            }
+                        }
+
+                        // Draw block
+                        mainCtx.fillStyle = hasFail ? 'rgba(255, 40, 40, 0.4)' : 'rgba(40, 255, 40, 0.2)';
+                        mainCtx.fillRect(cutout.x + x, cutout.y + y, w, h);
+                    }
+                }
+            }
+
+            mainCtx.restore();
+        }
+
+        // VIRTUALIZED DRAW DETAIL
+        function drawDetail() {
+            // Virtualized Rendering
+            const container = document.getElementById('detailScroll');
+            const spacer = document.getElementById('detailSpacer');
+
+            // Set spacer size
+            spacer.style.width = (GRID_W * DETAIL_CELL_SIZE) + 'px';
+            spacer.style.height = (GRID_H * DETAIL_CELL_SIZE) + 'px';
+
+            const canvas = document.getElementById('detailCanvas');
+            const ctxDetail = canvas.getContext('2d');
+
+            // Viewport
+            const scrollTop = container.scrollTop;
+            const scrollLeft = container.scrollLeft;
+            const viewW = container.clientWidth;
+            const viewH = container.clientHeight;
+
+            // Calc visible range
+            const startCol = Math.floor(scrollLeft / DETAIL_CELL_SIZE);
+            const endCol = Math.min(GRID_W, Math.ceil((scrollLeft + viewW) / DETAIL_CELL_SIZE));
+            const startRow = Math.floor(scrollTop / DETAIL_CELL_SIZE);
+            const endRow = Math.min(GRID_H, Math.ceil((scrollTop + viewH) / DETAIL_CELL_SIZE));
+
+            // REMOVED recursive call: updateDetailCanvasSize();
+
+            ctxDetail.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Offset for smooth scrolling (sub-cell alignment)
+            const offsetX = -(scrollLeft % DETAIL_CELL_SIZE);
+            const offsetY = -(scrollTop % DETAIL_CELL_SIZE);
+
+            for (let r = startRow; r < endRow; r++) {
+                for (let c = startCol; c < endCol; c++) {
+                    const idx = (r * GRID_W + c) * 2;
+                    const h = pixelData[idx];
+                    const v = pixelData[idx + 1];
+
+                    // Use getFinalValues for RW factors and thresholding
+                    // r, c are absolute grid coordinates. 
+                    // getFinalValues expects coordinates RELATIVE TO CUTOUT for split logic?
+                    // "Split is relative to CUTOUT". 
+                    // However, drawDetail iterates over the whole GRID (or a viewport of it).
+                    // Wait, the previous logic in drawDetail (lines 860-867) used `x < SPLIT_X` where `x` was `c` (absolute col).
+                    // Is Split relative to Cutout or Grid?
+                    // In `drawOverview`, Split lines are drawn relative to Cutout (lines 749-755: `cutout.x + SPLIT_X`).
+                    // So Split defines regions WITHIN the cutout.
+                    // But in `drawDetail`, we are visualizing the WHOLE GRID?
+                    // Or is Detail View only for the CUTOUT?
+
+                    // Actually, Detail View shows `GRID_W x GRID_H`.
+                    // But `SPLIT_X` logic usually implies "Top Left of the Cutout".
+                    // Let's re-read the original logic in `drawDetail` (lines 860):
+                    // `const isLeft = x < SPLIT_X;`
+                    // This implies Split is applied to the GRID coordinates directly in previous code?
+                    // NO. In `drawOverview` it was relative to Cutout.
+                    // If `SPLIT_X` is 100, and Cutout is at 50, Split Line is at 150.
+                    // If `drawDetail` applies scale based on `c < SPLIT_X` (absolute), then it's applying based on grid pos 100.
+                    // This is inconsistent if Split is meant to be relative to Cutout.
+
+                    // Let's assume the user wants the Split to be consistent.
+                    // If the plan says "4 Areas logic", it usually relates to the Cutout's internal division.
+                    // But if Detail View shows the entire grid, how do we handle areas outside the cutout?
+                    // Usually we treat the whole grid relative to the split?
+                    // OR, we only colorize nicely inside the cutout?
+                    // The previous code `drawDetail` used `c < SPLIT_X`. Absolute.
+                    // The `drawOverview` used `cutout.x + SPLIT_X`.
+
+                    // If I use `getFinalValues`, it expects relative coordinates.
+                    // I should pass `c - cutout.x`, `r - cutout.y`.
+                    // But `drawDetail` shows the whole grid. What if we are outside the cutout?
+                    // `getFinalValues` handles any x/y, just checks `< SPLIT`.
+                    // So if I am to the left of the cutout (negative relative x), it counts as Left.
+                    // This seems consistent with "Infinite Split Lines" behavior if that's what was intended.
+                    // Let's stick to `getFinalValues` using relative coords to match `drawOverview` visualization logic.
+
+                    const relX = c - cutout.x;
+                    const relY = r - cutout.y;
+
+                    const { realH, realV, fail } = getFinalValues(relX, relY, h, v);
+
+                    const x = (c - startCol) * DETAIL_CELL_SIZE + offsetX;
+                    const y = (r - startRow) * DETAIL_CELL_SIZE + offsetY;
+
+                    // BG
+                    ctxDetail.fillStyle = fail ? '#451515' : '#154515';
+                    // 1px gap
+                    ctxDetail.fillRect(x, y, DETAIL_CELL_SIZE - 1, DETAIL_CELL_SIZE - 1);
+
+                    // Text
+                    if (DETAIL_CELL_SIZE >= 20) {
+                        ctxDetail.fillStyle = '#fff';
+                        ctxDetail.font = (DETAIL_CELL_SIZE < 40) ? '9px sans-serif' : '11px sans-serif';
+                        ctxDetail.textAlign = 'center';
+                        ctxDetail.textBaseline = 'middle';
+
+                        // Show Real World Values
+                        ctxDetail.fillStyle = '#ff6b6b';
+                        ctxDetail.fillText(`H:${realH.toFixed(1)}`, x + DETAIL_CELL_SIZE / 2, y + DETAIL_CELL_SIZE / 2 - 6);
+                        ctxDetail.fillStyle = '#4dabf7';
+                        ctxDetail.fillText(`V:${realV.toFixed(1)}`, x + DETAIL_CELL_SIZE / 2, y + DETAIL_CELL_SIZE / 2 + 6);
+                    }
+                }
+            }
+        }
+
+        function draw() {
+            drawOverview();
+            drawDetail();
+        }
+
+        // --- Interaction ---
+
+        // Dragging
+        mainCanvas.addEventListener('mousedown', (e) => {
+            const rect = mainCanvas.getBoundingClientRect();
+            const mx = (e.clientX - rect.left) / MAIN_ZOOM;
+            const my = (e.clientY - rect.top) / MAIN_ZOOM;
+
+            if (mx >= cutout.x && mx <= cutout.x + CUTOUT_W &&
+                my >= cutout.y && my <= cutout.y + CUTOUT_H) {
+                cutout.isDragging = true;
+                cutout.dragOffsetX = mx - cutout.x;
+                cutout.dragOffsetY = my - cutout.y;
+            }
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!cutout.isDragging) return;
+            const rect = mainCanvas.getBoundingClientRect();
+            let nx = ((e.clientX - rect.left) / MAIN_ZOOM) - cutout.dragOffsetX;
+            let ny = ((e.clientY - rect.top) / MAIN_ZOOM) - cutout.dragOffsetY;
+
+            nx = Math.max(0, Math.min(nx, GRID_W - CUTOUT_W));
+            ny = Math.max(0, Math.min(ny, GRID_H - CUTOUT_H));
+
+            if (Math.round(nx) !== cutout.x || Math.round(ny) !== cutout.y) {
+                cutout.x = Math.round(nx);
+                cutout.y = Math.round(ny);
+                // Debounce/Throttle redraw if needed, but rAF is usually fine
+                if (!animationFrameId) {
+                    animationFrameId = requestAnimationFrame(() => {
+                        draw();
+                        animationFrameId = null;
+                    });
+                }
+            }
+        });
+
+        window.addEventListener('mouseup', () => cutout.isDragging = false);
+
+        // Edit Check for Virtualization
+        // We need to map click coords (on detailCanvas) -> Scroll Offset -> Data Index
+        detailCanvas.addEventListener('click', (e) => {
+            if (DETAIL_CELL_SIZE < 20) return;
+
+            const rect = detailCanvas.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const clickY = e.clientY - rect.top;
+
+            // Add scroll offset
+            const totalX = clickX + detailScroll.scrollLeft;
+            const totalY = clickY + detailScroll.scrollTop;
+
+            const cellX = Math.floor(totalX / DETAIL_CELL_SIZE);
+            const cellY = Math.floor(totalY / DETAIL_CELL_SIZE);
+
+            if (cellX < 0 || cellX >= CUTOUT_W || cellY < 0 || cellY >= CUTOUT_H) return;
+
+            const absX = cutout.x + cellX;
+            const absY = cutout.y + cellY;
+
+            if (absX >= GRID_W || absY >= GRID_H) return;
+
+            editingPixelIdx = (absY * GRID_W + absX) * 2;
+
+            document.getElementById('editH').value = pixelData[editingPixelIdx];
+            document.getElementById('editV').value = pixelData[editingPixelIdx + 1];
+            document.getElementById('editModal').style.display = 'flex';
+        });
+
+        function closeModal() {
+            document.getElementById('editModal').style.display = 'none';
+            editingPixelIdx = -1;
+        }
+
+        function savePixel() {
+            if (editingPixelIdx === -1) return;
+            pixelData[editingPixelIdx] = parseFloat(document.getElementById('editH').value) || 0;
+            pixelData[editingPixelIdx + 1] = parseFloat(document.getElementById('editV').value) || 0;
+            closeModal();
+            drawDetail(); // Only detail needs update, overview overlay updates on next event or we can force
+            if (document.getElementById('overlayToggle').checked) drawOverview();
+        }
+
+        // Scroll listener for virtualization
+        detailScroll.addEventListener('scroll', () => {
+            drawDetail();
+        });
+        // Win resize
+        window.addEventListener('resize', () => {
+            updateDetailCanvasSize();
+        });
+
+        function resetMainZoom() {
+            MAIN_ZOOM = 1.0;
+            document.getElementById('mainZoomSlider').value = 100;
+            document.getElementById('zoomLabel').textContent = '100%';
+            reInitCanvasSizeOnly();
+        }
+
+        function resetDetailZoom() {
+            DETAIL_CELL_SIZE = 50;
+            document.getElementById('detailZoomSlider').value = 50;
+            document.getElementById('detailZoomLabel').textContent = '100%';
+            updateDetailCanvasSize(); // This triggers draw
+
+            updateEditStatus();
+        }
+
+        function updateEditStatus() {
+            const statusEl = document.getElementById('editStatus');
+            if (DETAIL_CELL_SIZE < 20) {
+                statusEl.textContent = "(Zoom in to edit)";
+                statusEl.style.color = "#d66";
+                detailCanvas.style.cursor = "default";
+            } else {
+                statusEl.textContent = "(Click to edit)";
+                statusEl.style.color = "#888";
+                detailCanvas.style.cursor = "pointer";
+            }
+        }
+
+        // Inputs
+        document.getElementById('detailZoomSlider').addEventListener('input', (e) => {
+            DETAIL_CELL_SIZE = parseFloat(e.target.value);
+            const pct = Math.round((DETAIL_CELL_SIZE / 50) * 100);
+            document.getElementById('detailZoomLabel').textContent = pct + '%';
+
+            updateEditStatus();
+            updateDetailCanvasSize();
+        });
+
+        document.getElementById('mainZoomSlider').addEventListener('input', (e) => {
+            const val = parseInt(e.target.value);
+            MAIN_ZOOM = val / 100;
+            document.getElementById('zoomLabel').textContent = val + '%';
+            reInitCanvasSizeOnly();
+        });
+
+        // NEW LISTENERS
+        document.getElementById('overlayToggle').addEventListener('change', draw);
+        document.getElementById('overlayBlockSize').addEventListener('input', draw);
+
+        document.querySelectorAll('input.scale-h, input.scale-v, input.threshold').forEach(el => {
+            el.addEventListener('input', () => {
+                requestAnimationFrame(draw);
+                updateThresholdLabels();
+            });
+        });
+
+        // RW Factor Listeners
+        document.getElementById('rwFactorH').addEventListener('input', (e) => {
+            RW_FACTOR_H = parseFloat(e.target.value) || 1.0;
+            updateThresholdLabels();
+            draw();
+        });
+        document.getElementById('rwFactorV').addEventListener('input', (e) => {
+            RW_FACTOR_V = parseFloat(e.target.value) || 1.0;
+            updateThresholdLabels();
+            draw();
+        });
+
+        function updateThresholdLabels() {
+            ['tl', 'tr', 'bl', 'br'].forEach(id => {
+                const el = document.getElementById('area-' + id);
+                const scaleH = parseFloat(el.querySelector('.scale-h').value) || 1;
+                const scaleV = parseFloat(el.querySelector('.scale-v').value) || 1;
+                const thresh = parseFloat(el.querySelector('.threshold').value) || 0;
+
+                // Raw = Thresh / (Scale * RW)
+                const rawH = thresh / (scaleH * RW_FACTOR_H);
+                const rawV = thresh / (scaleV * RW_FACTOR_V);
+
+                // Find or Create Label
+                let label = el.querySelector('.thresh-hint');
+                if (!label) {
+                    label = document.createElement('div');
+                    label.className = 'thresh-hint';
+                    label.style.fontSize = '0.7em';
+                    label.style.color = '#888';
+                    label.style.marginTop = '2px';
+                    el.appendChild(label);
+                }
+
+                const hStr = isFinite(rawH) ? rawH.toFixed(1) : 'Inf';
+                const vStr = isFinite(rawV) ? rawV.toFixed(1) : 'Inf';
+                label.innerText = `(Raw Limit - H: ${hStr}, V: ${vStr})`;
+            });
+        }
+
+        // --- Persistence ---
+
+        function exportData() {
+            const data = {
+                format: "compact_tuples_v1",
+                settings: {
+                    gridW: GRID_W, gridH: GRID_H,
+                    cutoutW: CUTOUT_W, cutoutH: CUTOUT_H,
+                    splitX: SPLIT_X, splitY: SPLIT_Y,
+                    rwFactorH: RW_FACTOR_H,
+                    rwFactorV: RW_FACTOR_V
+                },
+                areas: {
+                    tl: getAreaParams('tl'),
+                    tr: getAreaParams('tr'),
+                    bl: getAreaParams('bl'),
+                    br: getAreaParams('br')
+                },
+                pixelData: []
+            };
+
+            // COMPETAC TUPLE FORMAT OPTIMIZATION:
+            // Use simple arrays [h, v] instead of objects {x,y,h,v}
+            // Position is implicit based on index (Row-Major: i = y * WIDTH + x)
+            for (let i = 0; i < pixelData.length; i += 2) {
+                // Round to 2 decimals to save space if floats are used
+                // But generally users might want precision. Let's keep raw numbers but in array.
+                data.pixelData.push([pixelData[i], pixelData[i + 1]]);
+            }
+
+            const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'pixel_data.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importData(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+
+                    if (!data.settings || !data.pixelData) throw new Error("Invalid format");
+
+                    // Apply Settings
+                    document.getElementById('gridW').value = data.settings.gridW;
+                    document.getElementById('gridH').value = data.settings.gridH;
+                    document.getElementById('cutoutW').value = data.settings.cutoutW;
+                    document.getElementById('cutoutH').value = data.settings.cutoutH;
+                    document.getElementById('splitX').value = data.settings.splitX;
+                    document.getElementById('splitY').value = data.settings.splitY;
+
+                    if (data.settings.rwFactorH !== undefined) document.getElementById('rwFactorH').value = data.settings.rwFactorH;
+                    if (data.settings.rwFactorV !== undefined) document.getElementById('rwFactorV').value = data.settings.rwFactorV;
+
+                    // Apply Areas
+                    ['tl', 'tr', 'bl', 'br'].forEach(id => {
+                        if (data.areas && data.areas[id]) {
+                            const p = data.areas[id];
+                            const el = document.getElementById('area-' + id);
+                            el.querySelector('.scale-h').value = p.scaleH;
+                            el.querySelector('.scale-v').value = p.scaleV;
+                            el.querySelector('.threshold').value = p.thresh;
+                        }
+                    });
+
+                    // Force Reconfigure logic
+                    const newGW = data.settings.gridW;
+                    const newGH = data.settings.gridH;
+
+                    GRID_W = newGW;
+                    GRID_H = newGH;
+                    CUTOUT_W = data.settings.cutoutW;
+                    CUTOUT_H = data.settings.cutoutH;
+                    SPLIT_X = data.settings.splitX;
+                    SPLIT_Y = data.settings.splitY;
+                    RW_FACTOR_H = parseFloat(document.getElementById('rwFactorH').value) || 1.0;
+                    RW_FACTOR_V = parseFloat(document.getElementById('rwFactorV').value) || 1.0;
+
+                    // Alloc new data
+                    pixelData = new Float32Array(GRID_W * GRID_H * 2);
+
+                    // Import Pixel Data
+                    // Check format version
+                    if (data.format === "compact_tuples_v1") {
+                        // Implicit Indexing: data.pixelData is array of [h, v]
+                        // Map directly: idx 0 -> (0,0), idx 1 -> (1,0) etc.
+                        for (let i = 0; i < data.pixelData.length; i++) {
+                            const tuple = data.pixelData[i];
+                            const dataIdx = i * 2;
+                            if (dataIdx < pixelData.length) {
+                                pixelData[dataIdx] = tuple[0];
+                                pixelData[dataIdx + 1] = tuple[1];
+                            }
+                        }
+                    } else {
+                        // LEGACY / VERBOSE FORMAT (List of objects {x,y,h,v})
+                        // Kept for compatibility with pixel_sample.json if user hasn't updated it yet,
+                        // or if they manually edit to this format.
+                        for (const p of data.pixelData) {
+                            if (p.x >= 0 && p.x < GRID_W && p.y >= 0 && p.y < GRID_H) {
+                                const idx = (p.y * GRID_W + p.x) * 2;
+                                pixelData[idx] = p.h;
+                                pixelData[idx + 1] = p.v;
+                            }
+                        }
+                    }
+
+                    init();
+                    alert("Import successful!");
+
+                } catch (err) {
+                    alert("Error importing file: " + err.message);
+                }
+            };
+            reader.readAsText(file);
+            input.value = ''; // Reset
+        }
+
+        // --- Data Maps (Image Import) ---
+
+        async function importFromImages() {
+            const hInput = document.getElementById('hMapInput');
+            const vInput = document.getElementById('vMapInput');
+            const resize = document.getElementById('resizeToImage').checked;
+
+            if (!hInput.files[0] && !vInput.files[0]) {
+                alert("Please select at least one image (H-Map or V-Map).");
+                return;
+            }
+
+            const loadImage = (file) => {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const img = new Image();
+                        img.onload = () => resolve(img);
+                        img.onerror = reject;
+                        img.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                });
+            };
+
+            try {
+                let hImg = hInput.files[0] ? await loadImage(hInput.files[0]) : null;
+                let vImg = vInput.files[0] ? await loadImage(vInput.files[0]) : null;
+
+                // Validation
+                if (hImg && vImg) {
+                    if (hImg.width !== vImg.width || hImg.height !== vImg.height) {
+                        // Fallback? Or just warn?
+                        // For simplicity, let's enforce matching if resizing.
+                        if (resize && (hImg.width !== vImg.width || hImg.height !== vImg.height)) {
+                            alert("Error: H-Map and V-Map dimensions must match when resizing.");
+                            return;
+                        }
+                    }
+                }
+
+                // Determine new dimensions
+                let mainImg = hImg || vImg;
+                let newW = GRID_W;
+                let newH = GRID_H;
+
+                if (resize) {
+                    newW = mainImg.width;
+                    newH = mainImg.height;
+
+                    // Update UI inputs
+                    document.getElementById('gridW').value = newW;
+                    document.getElementById('gridH').value = newH;
+
+                    // Clamp cutout/split if they exceed new size?
+                    // init() usually handles cutout, but let's be safe
+                    if (CUTOUT_W > newW) CUTOUT_W = newW; // naive fix, user checks later
+                    if (CUTOUT_H > newH) CUTOUT_H = newH;
+
+                    GRID_W = newW;
+                    GRID_H = newH;
+
+                    // Re-alloc
+                    pixelData = new Float32Array(GRID_W * GRID_H * 2);
+                }
+
+                // Temporary Canvas for reading pixels
+                const tmpCanvas = document.createElement('canvas');
+                const tmpCtx = tmpCanvas.getContext('2d');
+                tmpCanvas.width = newW;
+                tmpCanvas.height = newH;
+
+                const processMap = (img, isH, minVal, maxVal) => {
+                    if (!img) return; // Scale old data? No, keep it.
+
+                    // Draw image to fit grid (if not resizing, this scales the image to the grid)
+                    tmpCtx.clearRect(0, 0, newW, newH);
+                    tmpCtx.drawImage(img, 0, 0, newW, newH);
+
+                    const imgData = tmpCtx.getImageData(0, 0, newW, newH);
+                    const pixels = imgData.data; // RGBA
+
+                    const range = maxVal - minVal;
+
+                    for (let i = 0; i < pixels.length; i += 4) {
+                        // idx in pixelData
+                        // pixels is 4 bytes per pixel. i/4 is pixel index.
+                        const pIdx = (i / 4) * 2; // *2 for float array stride
+
+                        // Brightness (simple avg or luminance)
+                        // Simple Avg: (r+g+b)/3
+                        const r = pixels[i];
+                        const g = pixels[i + 1];
+                        const b = pixels[i + 2];
+                        const valNorm = (r + g + b) / 3 / 255;
+
+                        const finalVal = (valNorm * range) + minVal;
+
+                        if (isH) pixelData[pIdx] = finalVal;
+                        else pixelData[pIdx + 1] = finalVal;
+                    }
+                };
+
+                // Process H
+                if (hImg) {
+                    const min = parseFloat(document.getElementById('hMapMin').value);
+                    const max = parseFloat(document.getElementById('hMapMax').value);
+                    processMap(hImg, true, min, max);
+                }
+
+                // Process V
+                if (vImg) {
+                    const min = parseFloat(document.getElementById('vMapMin').value);
+                    const max = parseFloat(document.getElementById('vMapMax').value);
+                    processMap(vImg, false, min, max);
+                }
+
+                init();
+                alert(`Imported successfully! Grid is now ${GRID_W}x${GRID_H}.`);
+
+                // Clear inputs
+                hInput.value = '';
+                vInput.value = '';
+
+            } catch (err) {
+                console.error(err);
+                alert("Error importing images: " + err.message);
+            }
+        }
+
+        init();
+        updateThresholdLabels();
+
+    </script>
+</body>
+
+</html>
