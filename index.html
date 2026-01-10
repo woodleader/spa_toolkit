@@ -228,6 +228,7 @@
             .view-toggle {
                 position: static;
                 justify-content: center;
+                margin-top: 24px;
                 margin-bottom: 32px;
                 padding: 0 16px;
             }
@@ -235,10 +236,17 @@
             .view-btn {
                 flex: 1;
                 justify-content: center;
-                padding: 12px 20px;
-                font-size: 0.95rem;
+                padding: 12px;
                 min-height: 44px;
-                /* Better touch target */
+            }
+
+            .view-btn-text {
+                display: none;
+            }
+
+            .view-btn svg {
+                width: 20px;
+                height: 20px;
             }
         }
 
@@ -334,7 +342,7 @@
                 <rect x="3" y="14" width="7" height="7"></rect>
                 <rect x="14" y="14" width="7" height="7"></rect>
             </svg>
-            Cards
+            <span class="view-btn-text">Cards</span>
         </button>
         <button class="view-btn" id="list-view-btn" onclick="setView('list')">
             <svg viewBox="0 0 24 24">
@@ -345,7 +353,7 @@
                 <line x1="3" y1="12" x2="3.01" y2="12"></line>
                 <line x1="3" y1="18" x2="3.01" y2="18"></line>
             </svg>
-            List
+            <span class="view-btn-text">List</span>
         </button>
     </div>
 
