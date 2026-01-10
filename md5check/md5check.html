@@ -6,44 +6,162 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Local Hash Checker</title>
     <style>
+        :root {
+            /* Light mode colors */
+            --bg-primary: #f4f4f9;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #fafafa;
+            --bg-code: #eee;
+            --text-primary: #333;
+            --text-secondary: #666;
+            --border-color: #ccc;
+            --shadow: rgba(0, 0, 0, 0.1);
+            --accent-color: #3b82f6;
+            --accent-bg: #eff6ff;
+            --success-bg: #d1fae5;
+            --success-text: #065f46;
+            --success-border: #34d399;
+            --error-bg: #fee2e2;
+            --error-text: #991b1b;
+            --error-border: #f87171;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                /* Dark mode colors - only apply if no manual preference */
+                --bg-primary: #0f172a;
+                --bg-secondary: #1e293b;
+                --bg-tertiary: #334155;
+                --bg-code: #475569;
+                --text-primary: #f8fafc;
+                --text-secondary: #94a3b8;
+                --border-color: #475569;
+                --shadow: rgba(0, 0, 0, 0.3);
+                --accent-color: #38bdf8;
+                --accent-bg: #0c4a6e;
+                --success-bg: #064e3b;
+                --success-text: #6ee7b7;
+                --success-border: #10b981;
+                --error-bg: #7f1d1d;
+                --error-text: #fca5a5;
+                --error-border: #ef4444;
+            }
+        }
+
+        /* Manual dark mode override */
+        [data-theme="dark"] {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --bg-code: #475569;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --border-color: #475569;
+            --shadow: rgba(0, 0, 0, 0.3);
+            --accent-color: #38bdf8;
+            --accent-bg: #0c4a6e;
+            --success-bg: #064e3b;
+            --success-text: #6ee7b7;
+            --success-border: #10b981;
+            --error-bg: #7f1d1d;
+            --error-text: #fca5a5;
+            --error-border: #ef4444;
+        }
+
+        /* Manual light mode override */
+        [data-theme="light"] {
+            --bg-primary: #f4f4f9;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #fafafa;
+            --bg-code: #eee;
+            --text-primary: #333;
+            --text-secondary: #666;
+            --border-color: #ccc;
+            --shadow: rgba(0, 0, 0, 0.1);
+            --accent-color: #3b82f6;
+            --accent-bg: #eff6ff;
+            --success-bg: #d1fae5;
+            --success-text: #065f46;
+            --success-border: #34d399;
+            --error-bg: #fee2e2;
+            --error-text: #991b1b;
+            --error-border: #f87171;
+        }
+
         * {
             box-sizing: border-box;
         }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #f4f4f9;
+            background-color: var(--bg-primary);
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             margin: 0;
-            color: #333;
+            color: var(--text-primary);
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
 
         .container {
-            background: white;
+            background: var(--bg-secondary);
             padding: 2rem;
             border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 6px var(--shadow);
             width: 70%;
             text-align: center;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+        }
+
+        /* Dark mode toggle button */
+        .theme-toggle {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            width: 40px;
+            height: 40px;
+        }
+
+        .theme-toggle:hover {
+            background: var(--bg-code);
+            transform: scale(1.1);
+        }
+
+        .theme-toggle svg {
+            width: 20px;
+            height: 20px;
+            stroke: var(--text-primary);
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
         }
 
         #drop-zone {
-            border: 2px dashed #ccc;
+            border: 2px dashed var(--border-color);
             border-radius: 8px;
             padding: 40px 20px;
             margin: 20px 0;
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
             cursor: pointer;
-            background-color: #fafafa;
+            background-color: var(--bg-tertiary);
         }
 
         #drop-zone.drag-over {
-            border-color: #3b82f6;
-            background-color: #eff6ff;
-            color: #3b82f6;
+            border-color: var(--accent-color);
+            background-color: var(--accent-bg);
+            color: var(--accent-color);
         }
 
         #file-input {
@@ -59,22 +177,24 @@
 
         .label {
             font-size: 0.85rem;
-            color: #666;
+            color: var(--text-secondary);
             margin-bottom: 4px;
             font-weight: 600;
         }
 
         .value {
             font-family: "Courier New", Courier, monospace;
-            background: #eee;
+            background: var(--bg-code);
             padding: 8px;
             border-radius: 4px;
             word-break: break-all;
             font-size: 0.9rem;
+            color: var(--text-primary);
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
 
         .loading {
-            color: #3b82f6;
+            color: var(--accent-color);
             font-weight: bold;
             display: none;
         }
@@ -89,10 +209,19 @@
             width: 100%;
             padding: 10px;
             margin-top: 5px;
-            border: 1px solid #ccc;
+            border: 1px solid var(--border-color);
             border-radius: 4px;
             font-family: monospace;
             font-size: 0.9rem;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+
+        .hash-input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            background: var(--bg-secondary);
         }
 
         .comparison-result {
@@ -108,6 +237,26 @@
 <body>
 
     <div class="container">
+        <!-- Theme Toggle Button -->
+        <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">
+            <!-- Sun icon (shown in dark mode) -->
+            <svg id="sun-icon" viewBox="0 0 24 24" style="display: none;">
+                <circle cx="12" cy="12" r="5"></circle>
+                <line x1="12" y1="1" x2="12" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="23"></line>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                <line x1="1" y1="12" x2="3" y2="12"></line>
+                <line x1="21" y1="12" x2="23" y2="12"></line>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+            <!-- Moon icon (shown in light mode) -->
+            <svg id="moon-icon" viewBox="0 0 24 24">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+        </button>
+
         <h2>Hash Checker</h2>
         <p>Drag & drop a file below</p>
 
@@ -316,14 +465,14 @@
                         comparisonResult.style.display = 'block';
                         if (expected === md5Hash || expected === sha256Hash) {
                             comparisonResult.textContent = "✅ Success: Hashes Match!";
-                            comparisonResult.style.backgroundColor = "#d1fae5";
-                            comparisonResult.style.color = "#065f46";
-                            comparisonResult.style.border = "1px solid #34d399";
+                            comparisonResult.style.backgroundColor = "var(--success-bg)";
+                            comparisonResult.style.color = "var(--success-text)";
+                            comparisonResult.style.border = "1px solid var(--success-border)";
                         } else {
                             comparisonResult.textContent = "❌ Error: Hash Mismatch!";
-                            comparisonResult.style.backgroundColor = "#fee2e2";
-                            comparisonResult.style.color = "#991b1b";
-                            comparisonResult.style.border = "1px solid #f87171";
+                            comparisonResult.style.backgroundColor = "var(--error-bg)";
+                            comparisonResult.style.color = "var(--error-text)";
+                            comparisonResult.style.border = "1px solid var(--error-border)";
                         }
                     } else {
                         comparisonResult.style.display = 'none';
@@ -336,6 +485,57 @@
 
             reader.readAsArrayBuffer(file);
         }
+    </script>
+
+    <script>
+        // Dark mode toggle logic
+        const themeToggle = document.getElementById('theme-toggle');
+        const sunIcon = document.getElementById('sun-icon');
+        const moonIcon = document.getElementById('moon-icon');
+        const html = document.documentElement;
+
+        // Check for saved theme preference or default to system preference
+        function getPreferredTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                return savedTheme;
+            }
+            return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+
+        // Set theme and update icons
+        function setTheme(theme) {
+            html.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+
+            if (theme === 'dark') {
+                sunIcon.style.display = 'block';
+                moonIcon.style.display = 'none';
+            } else {
+                sunIcon.style.display = 'none';
+                moonIcon.style.display = 'block';
+            }
+        }
+
+        // Toggle theme
+        function toggleTheme() {
+            const currentTheme = html.getAttribute('data-theme') || getPreferredTheme();
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            setTheme(newTheme);
+        }
+
+        // Initialize theme
+        setTheme(getPreferredTheme());
+
+        // Add click listener
+        themeToggle.addEventListener('click', toggleTheme);
+
+        // Listen for system theme changes (if no manual preference)
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+            if (!localStorage.getItem('theme')) {
+                setTheme(e.matches ? 'dark' : 'light');
+            }
+        });
     </script>
 
 </body>
