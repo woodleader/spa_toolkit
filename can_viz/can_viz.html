@@ -14,7 +14,6 @@
             --text-primary: #f8fafc;
             --text-secondary: #94a3b8;
             --accent: #38bdf8;
-            --bit-on: #38bdf8;
             --bit-off: #334155;
             --bit-hover: #475569;
             --bit-selected: #fbbf24;
@@ -129,14 +128,26 @@
 
         .hex-byte {
             display: inline-block;
-            margin-right: 8px;
-            padding: 2px 6px;
+            margin-right: 6px;
+            padding: 2px 5px;
             border-radius: 4px;
             font-family: var(--font-mono);
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             font-weight: 700;
             color: white;
             background: var(--row-color);
+            white-space: nowrap;
+        }
+
+        .hex-byte:last-child {
+            margin-right: 0;
+        }
+
+        #hex-summary-container {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 4px;
+            align-items: center;
         }
 
         .bit-grid-container {
@@ -196,8 +207,8 @@
         .bit-cell::after {
             content: '';
             position: absolute;
-            inset: -4px;
-            border-radius: 12px;
+            inset: -6px;
+            border-radius: 14px;
             background: var(--signal-gradient, transparent);
             z-index: -1;
         }
@@ -208,10 +219,13 @@
         }
 
         .bit-cell.on {
-            background: var(--bit-on);
-            color: var(--bg-deep);
-            font-weight: bold;
-            box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
+            /* No background color - state shown by number only */
+            font-weight: 700;
+        }
+
+        .bit-cell.on .bit-val {
+            color: var(--text-primary);
+            font-size: 1.2rem;
         }
 
         .bit-cell.selected {
@@ -389,9 +403,176 @@
             border-radius: 2px;
         }
 
+        /* Modal Overlay */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+            animation: slideUp 0.3s ease;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .modal-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .modal-close {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            background: var(--bit-hover);
+            color: var(--text-primary);
+        }
+
+        .value-mapping-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 16px;
+            padding: 16px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+        }
+
+        .value-mapping-row {
+            display: grid;
+            grid-template-columns: 100px 1fr 40px;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .value-mapping-row input {
+            font-size: 0.85rem;
+        }
+
+        .remove-mapping-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 4px;
+            transition: all 0.2s;
+            font-size: 1rem;
+        }
+
+        .remove-mapping-btn:hover {
+            background: #ef4444;
+            border-color: #ef4444;
+            color: white;
+        }
+
+        .add-mapping-btn {
+            background: transparent;
+            border: 1px dashed var(--border);
+            color: var(--text-secondary);
+            padding: 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .add-mapping-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .import-export-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .file-input-wrapper input[type="file"] {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         @media (max-width: 900px) {
             .container {
                 grid-template-columns: 1fr;
+            }
+
+            .modal-content {
+                padding: 24px;
+                width: 95%;
+            }
+
+            .value-mapping-row {
+                grid-template-columns: 80px 1fr 40px;
             }
         }
     </style>
@@ -408,7 +589,7 @@
             <div class="card">
                 <div class="section-title">
                     <span>Message Frame</span>
-                    <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                         <label style="font-size: 0.75rem; color: var(--text-secondary);">Endian:</label>
                         <select id="endian-select"
                             style="background: var(--bg-deep); color: white; border: 1px solid var(--border); border-radius: 4px; padding: 4px 8px; font-size: 0.75rem;">
@@ -455,27 +636,59 @@
 
                 <div class="input-group">
                     <span class="label">Signal Color</span>
-                    <div class="color-picker" id="color-picker">
-                        <div class="color-dot active" style="background: #38bdf8;" data-color="#38bdf8"></div>
-                        <div class="color-dot" style="background: #f87171;" data-color="#f87171"></div>
-                        <div class="color-dot" style="background: #4ade80;" data-color="#4ade80"></div>
-                        <div class="color-dot" style="background: #fbbf24;" data-color="#fbbf24"></div>
-                        <div class="color-dot" style="background: #a78bfa;" data-color="#a78bfa"></div>
-                        <div class="color-dot" style="background: #f472b6;" data-color="#f472b6"></div>
+                    <div class="color-picker" id="color-picker"
+                        style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px;">
+                        <!-- Row 1 -->
+                        <div class="color-dot active" style="background: #3b82f6;" data-color="#3b82f6" title="Blue">
+                        </div>
+                        <div class="color-dot" style="background: #06b6d4;" data-color="#06b6d4" title="Cyan"></div>
+                        <div class="color-dot" style="background: #10b981;" data-color="#10b981" title="Emerald"></div>
+                        <div class="color-dot" style="background: #f59e0b;" data-color="#f59e0b" title="Amber"></div>
+                        <div class="color-dot" style="background: #f97316;" data-color="#f97316" title="Orange"></div>
+                        <div class="color-dot" style="background: #ef4444;" data-color="#ef4444" title="Red"></div>
+                        <!-- Row 2 -->
+                        <div class="color-dot" style="background: #8b5cf6;" data-color="#8b5cf6" title="Violet"></div>
+                        <div class="color-dot" style="background: #d946ef;" data-color="#d946ef" title="Fuchsia"></div>
+                        <div class="color-dot" style="background: #ec4899;" data-color="#ec4899" title="Pink"></div>
+                        <div class="color-dot" style="background: #14b8a6;" data-color="#14b8a6" title="Teal"></div>
+                        <div class="color-dot" style="background: #eab308;" data-color="#eab308" title="Yellow"></div>
+                        <div class="color-dot" style="background: #64748b;" data-color="#64748b" title="Slate"></div>
                     </div>
                 </div>
 
                 <div class="input-group">
                     <span class="label">Map Value (Decimal)</span>
                     <input type="number" id="val-input" placeholder="Value..." min="0">
+                    <div id="range-indicator" style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 4px;">
+                    </div>
                 </div>
 
                 <div class="controls-grid">
                     <button class="btn" id="apply-val-btn">Map Value</button>
-                    <button class="btn btn-accent-outline" id="save-sig-btn">Save Signal</button>
                     <button class="btn btn-secondary" id="toggle-sel-btn">Flip Bits</button>
-                    <button class="btn btn-secondary" id="clear-sel-btn">Untick all</button>
                 </div>
+
+                <div style="display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 10px;">
+                    <button class="btn btn-accent-outline" id="save-sig-btn">💾 Save Signal</button>
+                    <button class="btn btn-secondary" id="advanced-save-btn">⚙️ Advanced Settings...</button>
+                    <button class="btn btn-secondary" id="clear-sel-btn">Clear Selection</button>
+                </div>
+
+                <!-- Collapsible Config Section -->
+                <details style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 16px;">
+                    <summary
+                        style="cursor: pointer; font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; user-select: none; padding: 4px 0;">
+                        📁 Configuration
+                    </summary>
+                    <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 8px;">
+                        <button class="btn btn-secondary" id="export-btn" style="font-size: 0.85rem;">⬇️ Export
+                            Config</button>
+                        <label for="import-file" class="btn btn-secondary"
+                            style="margin: 0; text-align: center; font-size: 0.85rem; cursor: pointer;">⬆️ Import
+                            Config</label>
+                        <input type="file" id="import-file" accept=".json" style="display: none;">
+                    </div>
+                </details>
 
                 <div style="margin-top: 15px; font-size: 0.75rem; color: var(--text-secondary); text-align: center;">
                     <b>Click:</b> Select | <b>Dbl-Click:</b> Flip Value
@@ -496,6 +709,46 @@
         </aside>
     </div>
 
+    <!-- Advanced Settings Modal -->
+    <div class="modal-overlay" id="advanced-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Advanced Signal Settings</h2>
+                <button class="modal-close" id="close-modal">&times;</button>
+            </div>
+
+            <div class="input-group">
+                <span class="label">Signal Name</span>
+                <input type="text" id="modal-name" placeholder="e.g. EngineRPM">
+            </div>
+
+            <div class="input-group">
+                <span class="label">Signal Description (Optional)</span>
+                <input type="text" id="modal-desc" placeholder="Brief description...">
+            </div>
+
+            <div class="input-group">
+                <span class="label">Unit (Optional)</span>
+                <input type="text" id="modal-unit" placeholder="e.g. RPM, km/h, °C">
+            </div>
+
+            <div class="input-group">
+                <span class="label">Value Mappings</span>
+                <div class="value-mapping-container" id="value-mappings">
+                    <div style="font-size: 0.8rem; color: var(--text-secondary); text-align: center; padding: 20px;">
+                        No value mappings defined. Click "Add Mapping" to create one.
+                    </div>
+                </div>
+                <button class="add-mapping-btn" id="add-mapping-btn">+ Add Mapping</button>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 24px;">
+                <button class="btn" id="save-advanced-btn" style="flex: 1;">Save Signal</button>
+                <button class="btn btn-secondary" id="cancel-advanced-btn" style="flex: 1;">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const gridRoot = document.getElementById('grid-root');
         const hexSumContainer = document.getElementById('hex-summary-container');
@@ -509,7 +762,7 @@
         let selectedIndices = new Set();
         let lastClicked = -1;
         let signals = [];
-        let activeColor = "#38bdf8";
+        let activeColor = "#3b82f6";
         let dlcSize = 8;
         let endianness = 'big'; // 'big' = Motorola, 'little' = Intel
 
@@ -613,19 +866,27 @@
                 cell.classList.toggle('selected', isSelected);
                 cell.querySelector('.bit-val').textContent = bits[i];
 
-                // Collect colors for overlap
                 const bitColors = [];
                 signals.forEach(sig => {
                     if (sig.indices.has(i)) bitColors.push(sig.color);
                 });
 
-                // Apply segmented gradient to the pseudo-element via CSS variable
                 if (bitColors.length > 0) {
                     cell.style.setProperty('--signal-gradient', getSegmentedGradient(bitColors));
                 } else {
                     cell.style.setProperty('--signal-gradient', 'transparent');
                 }
             });
+
+            // Update range indicator
+            const rangeIndicator = document.getElementById('range-indicator');
+            if (selectedIndices.size > 0) {
+                const maxValue = (1n << BigInt(selectedIndices.size)) - 1n;
+                rangeIndicator.textContent = `Valid range: 0 to ${maxValue} (${selectedIndices.size} bits selected)`;
+                rangeIndicator.style.color = 'var(--accent)';
+            } else {
+                rangeIndicator.textContent = '';
+            }
 
             // Update HEX strings with patterns
             let hexHtml = "";
@@ -675,27 +936,127 @@
 
                 const bitArr = Array.from(sig.indices).sort((a, b) => a - b);
                 const rangeLabel = bitArr.length > 1 ? `${bitArr[0]}-${bitArr[bitArr.length - 1]}` : bitArr[0];
+                const currentValue = calculateSignalValue(sig.indices);
+
+                // Check if there's a value mapping for this value
+                let displayValue = currentValue;
+                if (sig.valueMappings && sig.valueMappings.length > 0) {
+                    const mapping = sig.valueMappings.find(m => m.value === currentValue);
+                    if (mapping) {
+                        displayValue = `${currentValue} (${mapping.label})`;
+                    }
+                }
+                if (sig.unit) {
+                    displayValue += ` ${sig.unit}`;
+                }
+
+                let descriptionHtml = '';
+                if (sig.description) {
+                    descriptionHtml = `<div class="sig-meta" style="margin-top: 4px;">${sig.description}</div>`;
+                }
 
                 item.innerHTML = `
                     <div class="sig-header">
                         <span class="sig-name">${sig.name || "Signal " + (idx + 1)}</span>
-                        <span class="sig-val">${calculateSignalValue(sig.indices)}</span>
+                        <div style="display: flex; gap: 6px; align-items: center;">
+                            <span class="sig-val">${displayValue}</span>
+                        </div>
                     </div>
                     <div class="sig-meta">Range: ${rangeLabel} • ${sig.indices.size} bits</div>
+                    ${descriptionHtml}
+                    <div style="display: flex; gap: 6px; margin-top: 8px;">
+                        <button class="btn btn-secondary edit-signal-btn" data-idx="${idx}" style="flex: 1; font-size: 0.75rem; padding: 6px;">✏️ Edit</button>
+                        <button class="btn btn-secondary delete-signal-btn" data-idx="${idx}" style="flex: 1; font-size: 0.75rem; padding: 6px;">🗑️ Delete</button>
+                    </div>
                 `;
 
-                item.onclick = () => {
+                // Select bits on clicking the signal card (not the buttons)
+                item.addEventListener('click', (e) => {
+                    // Don't select if clicking on buttons
+                    if (e.target.classList.contains('edit-signal-btn') ||
+                        e.target.classList.contains('delete-signal-btn') ||
+                        e.target.tagName === 'BUTTON') {
+                        return;
+                    }
                     selectedIndices = new Set(sig.indices);
                     updateDisplay();
-                };
+                });
+
+                // Edit button handler
+                const editBtn = item.querySelector('.edit-signal-btn');
+                editBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    editSignal(idx);
+                });
+
+                // Delete button handler
+                const deleteBtn = item.querySelector('.delete-signal-btn');
+                deleteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    deleteSignal(idx);
+                });
+
                 historyList.appendChild(item);
             });
+        }
+
+        // Edit signal function
+        function editSignal(idx) {
+            const sig = signals[idx];
+            if (!sig) return;
+
+            // Pre-fill modal with signal data
+            selectedIndices = new Set(sig.indices);
+            modalName.value = sig.name || '';
+            modalDesc.value = sig.description || '';
+            modalUnit.value = sig.unit || '';
+            activeColor = sig.color;
+
+            // Update active color dot
+            colorPicker.querySelectorAll('.color-dot').forEach(dot => {
+                dot.classList.toggle('active', dot.dataset.color === sig.color);
+            });
+
+            // Load value mappings
+            currentMappings = sig.valueMappings ? [...sig.valueMappings] : [];
+            renderValueMappings();
+
+            // Store the index we're editing
+            advancedModal.dataset.editingIdx = idx;
+
+            advancedModal.classList.add('active');
+            updateDisplay();
+        }
+
+        // Delete signal function
+        function deleteSignal(idx) {
+            const sig = signals[idx];
+            if (!sig) return;
+
+            if (confirm(`Delete signal "${sig.name || 'Signal ' + (idx + 1)}"?`)) {
+                signals.splice(idx, 1);
+                updateDisplay();
+            }
         }
 
         // Action Buttons
         document.getElementById('apply-val-btn').onclick = () => {
             if (selectedIndices.size === 0) return;
+
+            const numBits = selectedIndices.size;
+            const maxValue = (1n << BigInt(numBits)) - 1n; // 2^n - 1
             let val = BigInt(valInput.value || 0);
+
+            // Validate value range
+            if (val < 0n) {
+                alert(`Error: Value cannot be negative!`);
+                return;
+            }
+            if (val > maxValue) {
+                alert(`Error: Value ${val} exceeds maximum for ${numBits} bit(s).\n\nValid range: 0 to ${maxValue}\n(${numBits} bits can hold values from 0 to ${maxValue})`);
+                return;
+            }
+
             const sorted = Array.from(selectedIndices).sort((a, b) => a - b);
             for (let i = sorted.length - 1; i >= 0; i--) {
                 bits[sorted[i]] = Number(val & 1n);
@@ -735,6 +1096,204 @@
         };
 
         updateDisplay();
+
+        // === Advanced Settings Modal ===
+        const advancedModal = document.getElementById('advanced-modal');
+        const modalName = document.getElementById('modal-name');
+        const modalDesc = document.getElementById('modal-desc');
+        const modalUnit = document.getElementById('modal-unit');
+        const valueMappingsContainer = document.getElementById('value-mappings');
+        let currentMappings = [];
+
+        function openAdvancedModal() {
+            if (selectedIndices.size === 0) {
+                alert('Please select bits first!');
+                return;
+            }
+            modalName.value = nameInput.value.trim();
+            modalDesc.value = '';
+            modalUnit.value = '';
+            currentMappings = [];
+            renderValueMappings();
+            advancedModal.classList.add('active');
+        }
+
+        function closeAdvancedModal() {
+            advancedModal.classList.remove('active');
+        }
+
+        function renderValueMappings() {
+            if (currentMappings.length === 0) {
+                valueMappingsContainer.innerHTML = `
+                    <div style="font-size: 0.8rem; color: var(--text-secondary); text-align: center; padding: 20px;">
+                        No value mappings defined. Click "Add Mapping" to create one.
+                    </div>
+                `;
+                return;
+            }
+
+            valueMappingsContainer.innerHTML = '';
+            currentMappings.forEach((mapping, idx) => {
+                const row = document.createElement('div');
+                row.className = 'value-mapping-row';
+                row.innerHTML = `
+                    <input type="number" value="${mapping.value}" placeholder="Value" data-idx="${idx}" class="mapping-value">
+                    <input type="text" value="${mapping.label}" placeholder="Label (e.g., 'Off', 'Active')" data-idx="${idx}" class="mapping-label">
+                    <button class="remove-mapping-btn" data-idx="${idx}">×</button>
+                `;
+                valueMappingsContainer.appendChild(row);
+            });
+
+            valueMappingsContainer.querySelectorAll('.mapping-value').forEach(input => {
+                input.addEventListener('input', (e) => {
+                    const idx = parseInt(e.target.dataset.idx);
+                    currentMappings[idx].value = e.target.value;
+                });
+            });
+
+            valueMappingsContainer.querySelectorAll('.mapping-label').forEach(input => {
+                input.addEventListener('input', (e) => {
+                    const idx = parseInt(e.target.dataset.idx);
+                    currentMappings[idx].label = e.target.value;
+                });
+            });
+
+            valueMappingsContainer.querySelectorAll('.remove-mapping-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const idx = parseInt(e.target.dataset.idx);
+                    currentMappings.splice(idx, 1);
+                    renderValueMappings();
+                });
+            });
+        }
+
+        document.getElementById('add-mapping-btn').onclick = () => {
+            if (selectedIndices.size === 0) {
+                alert('Please select bits first!');
+                return;
+            }
+            currentMappings.push({ value: '', label: '' });
+            renderValueMappings();
+        };
+
+        document.getElementById('advanced-save-btn').onclick = openAdvancedModal;
+        document.getElementById('close-modal').onclick = closeAdvancedModal;
+        document.getElementById('cancel-advanced-btn').onclick = closeAdvancedModal;
+
+        advancedModal.addEventListener('click', (e) => {
+            if (e.target === advancedModal) closeAdvancedModal();
+        });
+
+        document.getElementById('save-advanced-btn').onclick = () => {
+            if (selectedIndices.size === 0) return;
+
+            const numBits = selectedIndices.size;
+            const maxValue = (1n << BigInt(numBits)) - 1n;
+
+            const validMappings = [];
+            for (const mapping of currentMappings) {
+                if (mapping.value === '' || mapping.label === '') continue;
+
+                const val = BigInt(mapping.value);
+                if (val < 0n) {
+                    alert(`Error: Mapping value cannot be negative!\n\nInvalid value: ${mapping.value}`);
+                    return;
+                }
+                if (val > maxValue) {
+                    alert(`Error: Mapping value ${mapping.value} exceeds maximum for ${numBits} bit(s).\n\nValid range: 0 to ${maxValue}\n(${numBits} bits can hold values from 0 to ${maxValue})`);
+                    return;
+                }
+                validMappings.push(mapping);
+            }
+
+            const signal = {
+                name: modalName.value.trim() || 'Unnamed Signal',
+                color: activeColor,
+                indices: new Set(selectedIndices),
+                description: modalDesc.value.trim(),
+                unit: modalUnit.value.trim(),
+                valueMappings: validMappings
+            };
+
+            // Check if we're editing an existing signal
+            const editingIdx = advancedModal.dataset.editingIdx;
+            if (editingIdx !== undefined && editingIdx !== '') {
+                // Update existing signal
+                signals[parseInt(editingIdx)] = signal;
+                delete advancedModal.dataset.editingIdx;
+            } else {
+                // Create new signal
+                signals.push(signal);
+            }
+
+            nameInput.value = "";
+            closeAdvancedModal();
+            updateDisplay();
+        };
+
+        // === Import/Export Functionality ===
+        document.getElementById('export-btn').onclick = () => {
+            const config = {
+                version: '1.0',
+                dlc: dlcSize,
+                endianness: endianness,
+                bits: bits,
+                signals: signals.map(sig => ({
+                    name: sig.name,
+                    color: sig.color,
+                    indices: Array.from(sig.indices),
+                    description: sig.description || '',
+                    unit: sig.unit || '',
+                    valueMappings: sig.valueMappings || []
+                }))
+            };
+
+            const json = JSON.stringify(config, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `can-config-${new Date().toISOString().slice(0, 10)}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        };
+
+        document.getElementById('import-file').onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const config = JSON.parse(event.target.result);
+
+                    if (!config.version || !config.bits || !config.signals) {
+                        throw new Error('Invalid configuration file');
+                    }
+
+                    dlcSize = config.dlc || 8;
+                    endianness = config.endianness || 'big';
+                    bits = config.bits;
+                    signals = config.signals.map(sig => ({
+                        ...sig,
+                        indices: new Set(sig.indices)
+                    }));
+
+                    dlcSelect.value = dlcSize;
+                    endianSelect.value = endianness;
+                    buildGrid();
+                    updateDisplay();
+
+                    alert('Configuration imported successfully!');
+                } catch (err) {
+                    alert('Error importing configuration: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+            e.target.value = '';
+        };
     </script>
 </body>
 
