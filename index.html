@@ -16,6 +16,14 @@
             --accent-secondary: #818cf8;
             --hover-bg: rgba(255, 255, 255, 0.1);
             --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+            /* Tag Colors */
+            --tag-can: #f59e0b;
+            --tag-automotive: #10b981;
+            --tag-verification: #8b5cf6;
+            --tag-visualization: #ec4899;
+            --tag-compliance: #06b6d4;
+            --tag-camera: #f43f5e;
         }
 
         body {
@@ -29,7 +37,6 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
             overflow-x: hidden;
             -webkit-overflow-scrolling: touch;
         }
@@ -42,7 +49,7 @@
         }
 
         header {
-            margin-bottom: 60px;
+            margin-bottom: 30px;
             animation: fadeInDown 0.8s ease-out;
         }
 
@@ -63,6 +70,131 @@
             font-weight: 400;
         }
 
+        /* Filter & Sort Controls */
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 40px;
+            animation: fadeInDown 0.8s ease-out 0.1s both;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-label {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .filter-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .filter-chip {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-secondary);
+            padding: 6px 14px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .filter-chip:hover {
+            background: var(--hover-bg);
+            color: var(--text-primary);
+        }
+
+        .filter-chip.active {
+            background: var(--chip-color, var(--accent-primary));
+            border-color: var(--chip-color, var(--accent-primary));
+            color: #0f172a;
+        }
+
+        .filter-chip .chip-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--chip-color);
+        }
+
+        .filter-chip.active .chip-dot {
+            background: #0f172a;
+        }
+
+        /* Sort/Group Dropdown */
+        .sort-select {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-primary);
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: var(--transition);
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            padding-right: 32px;
+        }
+
+        .sort-select:hover {
+            background-color: var(--hover-bg);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .sort-select:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+        }
+
+        /* Group Header */
+        .group-header {
+            width: 100%;
+            text-align: left;
+            margin: 24px 0 16px 0;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--card-border);
+            color: var(--text-primary);
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .group-header:first-child {
+            margin-top: 0;
+        }
+
+        .group-header .group-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .group-header .group-count {
+            color: var(--text-secondary);
+            font-weight: 400;
+            font-size: 0.9rem;
+        }
+
         .launcher-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -71,13 +203,26 @@
             animation: fadeInUp 0.8s ease-out 0.2s both;
         }
 
+        .launcher-grid.grouped {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .launcher-grid.grouped .group-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
         .app-card {
             background: var(--card-bg);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             border: 1px solid var(--card-border);
             border-radius: 24px;
-            padding: 40px 30px;
+            padding: 40px 30px 30px;
             text-decoration: none;
             color: inherit;
             transition: var(--transition);
@@ -86,6 +231,10 @@
             align-items: center;
             position: relative;
             overflow: hidden;
+        }
+
+        .app-card.hidden {
+            display: none;
         }
 
         .app-card:hover {
@@ -109,6 +258,26 @@
 
         .app-card:hover::before {
             opacity: 1;
+        }
+
+        /* Tags on Cards */
+        .app-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+
+        .app-tag {
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 3px 8px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--tag-color, var(--text-secondary));
         }
 
         .icon-wrapper {
@@ -205,12 +374,25 @@
                 grid-template-columns: 1fr;
             }
 
+            .launcher-grid.grouped .group-section {
+                grid-template-columns: 1fr;
+            }
+
             .container {
                 padding: 20px 16px;
             }
 
             header {
-                margin-bottom: 40px;
+                margin-bottom: 20px;
+            }
+
+            .controls {
+                flex-direction: column;
+                gap: 16px;
+            }
+
+            .filter-chips {
+                max-width: 100%;
             }
         }
 
@@ -229,7 +411,7 @@
                 position: static;
                 justify-content: center;
                 margin-top: 24px;
-                margin-bottom: 32px;
+                margin-bottom: 16px;
                 padding: 0 16px;
             }
 
@@ -290,11 +472,28 @@
             gap: 12px;
         }
 
+        .launcher-grid.list-view.grouped {
+            gap: 0;
+        }
+
+        .launcher-grid.list-view .group-section {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
         .launcher-grid.list-view .app-card {
             flex-direction: row;
             padding: 16px 24px;
             border-radius: 12px;
             text-align: left;
+        }
+
+        .launcher-grid.list-view .app-tags {
+            position: absolute;
+            top: 8px;
+            right: 12px;
+            margin-bottom: 0;
         }
 
         .launcher-grid.list-view .icon-wrapper {
@@ -328,6 +527,20 @@
 
         .launcher-grid.list-view .app-card:hover .icon-wrapper {
             transform: scale(1.05);
+        }
+
+        /* No results message */
+        .no-results {
+            text-align: center;
+            color: var(--text-secondary);
+            padding: 60px 20px;
+            font-size: 1.1rem;
+        }
+
+        .no-results-icon {
+            font-size: 3rem;
+            margin-bottom: 16px;
+            opacity: 0.5;
         }
     </style>
 </head>
@@ -363,11 +576,50 @@
             <p class="subtitle">Select a tool to get started</p>
         </header>
 
-        <main class="launcher-grid">
+        <!-- Filter and Sort Controls -->
+        <div class="controls">
+            <div class="control-group">
+                <span class="control-label">Filter:</span>
+                <div class="filter-chips" id="filter-chips">
+                    <button class="filter-chip active" data-tag="all">All</button>
+                    <button class="filter-chip" data-tag="can" style="--chip-color: var(--tag-can)">
+                        <span class="chip-dot"></span>CAN
+                    </button>
+                    <button class="filter-chip" data-tag="automotive" style="--chip-color: var(--tag-automotive)">
+                        <span class="chip-dot"></span>Automotive
+                    </button>
+                    <button class="filter-chip" data-tag="verification" style="--chip-color: var(--tag-verification)">
+                        <span class="chip-dot"></span>Verification
+                    </button>
+                    <button class="filter-chip" data-tag="visualization" style="--chip-color: var(--tag-visualization)">
+                        <span class="chip-dot"></span>Visualization
+                    </button>
+                    <button class="filter-chip" data-tag="compliance" style="--chip-color: var(--tag-compliance)">
+                        <span class="chip-dot"></span>Compliance
+                    </button>
+                    <button class="filter-chip" data-tag="camera" style="--chip-color: var(--tag-camera)">
+                        <span class="chip-dot"></span>Camera
+                    </button>
+                </div>
+            </div>
+            <div class="control-group">
+                <span class="control-label">Group by:</span>
+                <select class="sort-select" id="group-select">
+                    <option value="none">None</option>
+                    <option value="tag">Category</option>
+                    <option value="alpha">Alphabetical</option>
+                </select>
+            </div>
+        </div>
+
+        <main class="launcher-grid" id="launcher-grid">
             <!-- Regulatory Markings -->
-            <a href="markings/regulatory_marks.html" class="app-card">
+            <a href="markings/regulatory_marks.html" class="app-card" data-tags="compliance,verification">
+                <div class="app-tags">
+                    <span class="app-tag" style="--tag-color: var(--tag-compliance)">Compliance</span>
+                    <span class="app-tag" style="--tag-color: var(--tag-verification)">Verification</span>
+                </div>
                 <div class="icon-wrapper">
-                    <!-- Custom SVG: Shield/Check icon -->
                     <svg viewBox="0 0 24 24">
                         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
                         <path d="M9 12l2 2 4-4"></path>
@@ -378,9 +630,11 @@
             </a>
 
             <!-- MD5 Check -->
-            <a href="md5check/md5check.html" class="app-card">
+            <a href="md5check/md5check.html" class="app-card" data-tags="verification">
+                <div class="app-tags">
+                    <span class="app-tag" style="--tag-color: var(--tag-verification)">Verification</span>
+                </div>
                 <div class="icon-wrapper">
-                    <!-- Custom SVG: Hash/File icon -->
                     <svg viewBox="0 0 24 24">
                         <path d="M4 9h16"></path>
                         <path d="M4 15h16"></path>
@@ -393,9 +647,12 @@
             </a>
 
             <!-- Magnification Tool -->
-            <a href="magnification_tool/pixel_viz.html" class="app-card">
+            <a href="magnification_tool/pixel_viz.html" class="app-card" data-tags="camera,visualization">
+                <div class="app-tags">
+                    <span class="app-tag" style="--tag-color: var(--tag-camera)">Camera</span>
+                    <span class="app-tag" style="--tag-color: var(--tag-visualization)">Visualization</span>
+                </div>
                 <div class="icon-wrapper">
-                    <!-- Custom SVG: Search/Magnify icon -->
                     <svg viewBox="0 0 24 24">
                         <circle cx="11" cy="11" r="8"></circle>
                         <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
@@ -406,10 +663,14 @@
                 <div class="app-title">Magnification Tool</div>
                 <div class="app-desc">Pixel-perfect visualization of camera magnification.</div>
             </a>
+
             <!-- Latency Timer -->
-            <a href="latency_timer/timer.html" class="app-card">
+            <a href="latency_timer/timer.html" class="app-card" data-tags="camera,verification">
+                <div class="app-tags">
+                    <span class="app-tag" style="--tag-color: var(--tag-camera)">Camera</span>
+                    <span class="app-tag" style="--tag-color: var(--tag-verification)">Verification</span>
+                </div>
                 <div class="icon-wrapper">
-                    <!-- Custom SVG: Stopwatch/Clock icon -->
                     <svg viewBox="0 0 24 24">
                         <circle cx="12" cy="13" r="8"></circle>
                         <path d="M12 9v4l2 2"></path>
@@ -421,10 +682,15 @@
                 <div class="app-title">Latency Timer</div>
                 <div class="app-desc">High-precision timer for measuring camera and display latency.</div>
             </a>
+
             <!-- CAN Visualizer -->
-            <a href="can_viz/can_viz.html" class="app-card">
+            <a href="can_viz/can_viz.html" class="app-card" data-tags="can,automotive,visualization">
+                <div class="app-tags">
+                    <span class="app-tag" style="--tag-color: var(--tag-can)">CAN</span>
+                    <span class="app-tag" style="--tag-color: var(--tag-automotive)">Automotive</span>
+                    <span class="app-tag" style="--tag-color: var(--tag-visualization)">Visualization</span>
+                </div>
                 <div class="icon-wrapper">
-                    <!-- Custom SVG: Network/Bits icon -->
                     <svg viewBox="0 0 24 24">
                         <rect x="2" y="2" width="6" height="6" rx="1"></rect>
                         <rect x="16" y="2" width="6" height="6" rx="1"></rect>
@@ -440,10 +706,14 @@
                 <div class="app-title">CAN Visualizer</div>
                 <div class="app-desc">Visualize and map signals within 64-bit CAN messages.</div>
             </a>
+
             <!-- ADAS Sensor FOV -->
-            <a href="adas_sensor_fov/adas_sensor_fov.html" class="app-card">
+            <a href="adas_sensor_fov/adas_sensor_fov.html" class="app-card" data-tags="automotive,visualization">
+                <div class="app-tags">
+                    <span class="app-tag" style="--tag-color: var(--tag-automotive)">Automotive</span>
+                    <span class="app-tag" style="--tag-color: var(--tag-visualization)">Visualization</span>
+                </div>
                 <div class="icon-wrapper">
-                    <!-- Custom SVG: Radar/Sensor icon -->
                     <svg viewBox="0 0 24 24">
                         <circle cx="12" cy="12" r="10"></circle>
                         <circle cx="12" cy="12" r="6"></circle>
@@ -458,10 +728,14 @@
                 <div class="app-desc">Visualize sensor coverage around a vehicle footprint to identify blind spots.
                 </div>
             </a>
+
             <!-- J1939 PGN Converter -->
-            <a href="j1939_converter/j1939_converter.html" class="app-card">
+            <a href="j1939_converter/j1939_converter.html" class="app-card" data-tags="can,automotive">
+                <div class="app-tags">
+                    <span class="app-tag" style="--tag-color: var(--tag-can)">CAN</span>
+                    <span class="app-tag" style="--tag-color: var(--tag-automotive)">Automotive</span>
+                </div>
                 <div class="icon-wrapper">
-                    <!-- Custom SVG: Protocol/ID icon -->
                     <svg viewBox="0 0 24 24">
                         <rect x="3" y="4" width="18" height="4" rx="1"></rect>
                         <rect x="3" y="10" width="18" height="4" rx="1"></rect>
@@ -477,10 +751,14 @@
                 <div class="app-title">J1939 PGN Converter</div>
                 <div class="app-desc">Convert 29-bit CAN IDs to J1939 PGN with field breakdown and PGN lookup.</div>
             </a>
+
             <!-- DBC Parser Lite -->
-            <a href="dbc_parser/dbc_parser.html" class="app-card">
+            <a href="dbc_parser/dbc_parser.html" class="app-card" data-tags="can,automotive">
+                <div class="app-tags">
+                    <span class="app-tag" style="--tag-color: var(--tag-can)">CAN</span>
+                    <span class="app-tag" style="--tag-color: var(--tag-automotive)">Automotive</span>
+                </div>
                 <div class="icon-wrapper">
-                    <!-- Custom SVG: Database/File icon -->
                     <svg viewBox="0 0 24 24">
                         <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
                         <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
@@ -493,6 +771,11 @@
             </a>
         </main>
 
+        <div class="no-results" id="no-results" style="display: none;">
+            <div class="no-results-icon">🔍</div>
+            <div>No tools match the selected filter.</div>
+        </div>
+
         <footer>
             Last Update: 11.01.2026
         </footer>
@@ -500,8 +783,24 @@
 </body>
 
 <script>
+    // Tag configuration with colors
+    const tagConfig = {
+        can: { label: 'CAN', color: 'var(--tag-can)' },
+        automotive: { label: 'Automotive', color: 'var(--tag-automotive)' },
+        verification: { label: 'Verification', color: 'var(--tag-verification)' },
+        visualization: { label: 'Visualization', color: 'var(--tag-visualization)' },
+        compliance: { label: 'Compliance', color: 'var(--tag-compliance)' },
+        camera: { label: 'Camera', color: 'var(--tag-camera)' }
+    };
+
+    let currentFilter = 'all';
+    let currentGroup = 'none';
+    let currentView = 'grid';
+
+    // View toggle
     function setView(view) {
-        const grid = document.querySelector('.launcher-grid');
+        currentView = view;
+        const grid = document.getElementById('launcher-grid');
         const gridBtn = document.getElementById('grid-view-btn');
         const listBtn = document.getElementById('list-view-btn');
 
@@ -515,11 +814,167 @@
             listBtn.classList.remove('active');
         }
         localStorage.setItem('toolboxView', view);
+        applyGrouping();
     }
 
-    // Load saved preference (default to grid)
-    const savedView = localStorage.getItem('toolboxView') || 'grid';
-    if (savedView === 'list') setView('list');
+    // Filter logic
+    function setFilter(tag) {
+        currentFilter = tag;
+
+        // Update active chip
+        document.querySelectorAll('.filter-chip').forEach(chip => {
+            chip.classList.toggle('active', chip.dataset.tag === tag);
+        });
+
+        applyFilterAndGroup();
+        localStorage.setItem('toolboxFilter', tag);
+    }
+
+    // Grouping logic
+    function setGroup(groupBy) {
+        currentGroup = groupBy;
+        applyFilterAndGroup();
+        localStorage.setItem('toolboxGroup', groupBy);
+    }
+
+    function applyFilterAndGroup() {
+        const grid = document.getElementById('launcher-grid');
+        const cards = Array.from(document.querySelectorAll('.app-card'));
+        const noResults = document.getElementById('no-results');
+
+        // Filter cards
+        let visibleCards = cards.filter(card => {
+            const tags = card.dataset.tags ? card.dataset.tags.split(',') : [];
+            const visible = currentFilter === 'all' || tags.includes(currentFilter);
+            card.classList.toggle('hidden', !visible);
+            return visible;
+        });
+
+        // Show/hide no results message
+        noResults.style.display = visibleCards.length === 0 ? 'block' : 'none';
+
+        applyGrouping(visibleCards);
+    }
+
+    function applyGrouping(visibleCards) {
+        const grid = document.getElementById('launcher-grid');
+        const cards = visibleCards || Array.from(document.querySelectorAll('.app-card:not(.hidden)'));
+
+        // Remove existing group headers and sections
+        document.querySelectorAll('.group-header, .group-section').forEach(el => el.remove());
+
+        if (currentGroup === 'none') {
+            grid.classList.remove('grouped');
+            // Re-append cards directly to grid
+            cards.forEach(card => grid.appendChild(card));
+        } else if (currentGroup === 'tag') {
+            grid.classList.add('grouped');
+
+            // Group by primary tag (first tag)
+            const groups = {};
+            cards.forEach(card => {
+                const tags = card.dataset.tags ? card.dataset.tags.split(',') : ['other'];
+                const primaryTag = tags[0];
+                if (!groups[primaryTag]) groups[primaryTag] = [];
+                groups[primaryTag].push(card);
+            });
+
+            // Sort groups by tag label
+            const sortedTags = Object.keys(groups).sort((a, b) => {
+                const labelA = tagConfig[a]?.label || a;
+                const labelB = tagConfig[b]?.label || b;
+                return labelA.localeCompare(labelB);
+            });
+
+            // Render groups
+            sortedTags.forEach(tag => {
+                const config = tagConfig[tag] || { label: tag, color: 'var(--text-secondary)' };
+
+                const header = document.createElement('div');
+                header.className = 'group-header';
+                header.innerHTML = `
+                    <span class="group-dot" style="background: ${config.color}"></span>
+                    ${config.label}
+                    <span class="group-count">(${groups[tag].length})</span>
+                `;
+                grid.appendChild(header);
+
+                const section = document.createElement('div');
+                section.className = 'group-section';
+                groups[tag].forEach(card => section.appendChild(card));
+                grid.appendChild(section);
+            });
+        } else if (currentGroup === 'alpha') {
+            grid.classList.add('grouped');
+
+            // Group alphabetically by first letter
+            const groups = {};
+            cards.forEach(card => {
+                const title = card.querySelector('.app-title').textContent.trim();
+                const letter = title.charAt(0).toUpperCase();
+                if (!groups[letter]) groups[letter] = [];
+                groups[letter].push(card);
+            });
+
+            // Sort groups
+            const sortedLetters = Object.keys(groups).sort();
+
+            sortedLetters.forEach(letter => {
+                const header = document.createElement('div');
+                header.className = 'group-header';
+                header.innerHTML = `${letter} <span class="group-count">(${groups[letter].length})</span>`;
+                grid.appendChild(header);
+
+                const section = document.createElement('div');
+                section.className = 'group-section';
+                // Sort cards within group
+                groups[letter].sort((a, b) => {
+                    const titleA = a.querySelector('.app-title').textContent;
+                    const titleB = b.querySelector('.app-title').textContent;
+                    return titleA.localeCompare(titleB);
+                });
+                groups[letter].forEach(card => section.appendChild(card));
+                grid.appendChild(section);
+            });
+        }
+    }
+
+    // Event listeners
+    document.getElementById('filter-chips').addEventListener('click', (e) => {
+        const chip = e.target.closest('.filter-chip');
+        if (chip) {
+            setFilter(chip.dataset.tag);
+        }
+    });
+
+    document.getElementById('group-select').addEventListener('change', (e) => {
+        setGroup(e.target.value);
+    });
+
+    // Initialize from saved preferences
+    document.addEventListener('DOMContentLoaded', () => {
+        const savedView = localStorage.getItem('toolboxView') || 'grid';
+        const savedFilter = localStorage.getItem('toolboxFilter') || 'all';
+        const savedGroup = localStorage.getItem('toolboxGroup') || 'none';
+
+        currentView = savedView;
+        currentFilter = savedFilter;
+        currentGroup = savedGroup;
+
+        // Apply saved view
+        if (savedView === 'list') setView('list');
+
+        // Apply saved filter
+        document.querySelectorAll('.filter-chip').forEach(chip => {
+            chip.classList.toggle('active', chip.dataset.tag === savedFilter);
+        });
+
+        // Apply saved group
+        document.getElementById('group-select').value = savedGroup;
+
+        // Apply filter and grouping
+        applyFilterAndGroup();
+    });
 </script>
 
 </html>
