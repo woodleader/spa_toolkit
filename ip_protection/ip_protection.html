@@ -1,0 +1,1693 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IP Protection Class Guide</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --text-color: #f8fafc;
+            --accent-color: #38bdf8;
+            --accent-hover: #0ea5e9;
+            --secondary-text: #94a3b8;
+            --success-color: #22c55e;
+            --warning-color: #facc15;
+            --info-color: #3b82f6;
+            --border-color: rgba(148, 163, 184, 0.1);
+            --water-color: #0ea5e9;
+            --dust-color: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            min-height: 100vh;
+            background-image:
+                radial-gradient(circle at 10% 20%, rgba(56, 189, 248, 0.1) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(139, 92, 246, 0.1) 0%, transparent 20%);
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Back Button */
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--secondary-text);
+            text-decoration: none;
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+        }
+
+        .back-link:hover {
+            color: var(--text-color);
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--accent-color);
+        }
+
+        .back-link svg {
+            width: 16px;
+            height: 16px;
+            stroke: currentColor;
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(to right, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--secondary-text);
+            margin-bottom: 1.5rem;
+            font-size: 1rem;
+        }
+
+        .standards-ref {
+            text-align: center;
+            color: var(--secondary-text);
+            font-size: 0.85rem;
+            margin-bottom: 2rem;
+            padding: 0.75rem 1rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .standards-ref strong {
+            color: var(--accent-color);
+        }
+
+        /* Device Selector */
+        .device-selector {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 2rem;
+        }
+
+        .device-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 2px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem 2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.75rem;
+            min-width: 140px;
+        }
+
+        .device-card:hover {
+            border-color: var(--accent-color);
+            transform: translateY(-4px);
+            box-shadow: 0 10px 30px rgba(56, 189, 248, 0.2);
+        }
+
+        .device-card.selected {
+            border-color: var(--success-color);
+            background: rgba(34, 197, 94, 0.1);
+        }
+
+        .device-icon {
+            width: 48px;
+            height: 48px;
+            stroke: var(--accent-color);
+            stroke-width: 1.5;
+            fill: none;
+        }
+
+        .device-card.selected .device-icon {
+            stroke: var(--success-color);
+        }
+
+        .device-name {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .device-ip {
+            font-size: 0.85rem;
+            color: var(--secondary-text);
+            padding: 0.25rem 0.75rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+        }
+
+        .device-card.selected .device-ip {
+            background: rgba(34, 197, 94, 0.2);
+            color: var(--success-color);
+        }
+
+        /* Main Display */
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        @media (max-width: 1000px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 1.5rem;
+        }
+
+        .panel-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .panel-title svg {
+            width: 20px;
+            height: 20px;
+            stroke: var(--accent-color);
+        }
+
+        /* IP Code Display */
+        .ip-code-display {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 16px;
+            margin-bottom: 1.5rem;
+        }
+
+        .ip-code-large {
+            font-size: 2.5rem;
+            font-weight: 800;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .ip-code-large .dust-digit {
+            color: var(--dust-color);
+        }
+
+        .ip-code-large .water-digit {
+            color: var(--water-color);
+        }
+
+        .ip-code-large .suffix {
+            color: var(--info-color);
+            font-size: 1.8rem;
+        }
+
+        .ip-code-meaning {
+            font-size: 0.85rem;
+            color: var(--secondary-text);
+            text-align: center;
+        }
+
+        /* IEC 60529 Equivalence */
+        .iec-equivalence {
+            margin-top: 1rem;
+            padding: 0.75rem 1rem;
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 10px;
+        }
+
+        .iec-header {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #a78bfa;
+            margin-bottom: 0.4rem;
+        }
+
+        .iec-header svg {
+            stroke: #a78bfa;
+        }
+
+        .iec-code {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text-color);
+            margin-bottom: 0.25rem;
+        }
+
+        .iec-code .no-equiv {
+            color: var(--warning-color);
+            font-size: 1rem;
+        }
+
+        .iec-notes {
+            font-size: 0.75rem;
+            color: var(--secondary-text);
+            line-height: 1.4;
+        }
+
+        .iec-notes .warning {
+            color: var(--warning-color);
+        }
+
+        .iec-notes .identical {
+            color: var(--success-color);
+        }
+
+        /* Protection Levels Selector */
+        .protection-selectors {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        @media (max-width: 500px) {
+            .protection-selectors {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .selector-group {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            padding: 1rem;
+        }
+
+        .selector-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .selector-label.dust {
+            color: var(--dust-color);
+        }
+
+        .selector-label.water {
+            color: var(--water-color);
+        }
+
+        .level-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+        }
+
+        .level-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 0.4rem 0.6rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            min-width: 32px;
+            text-align: center;
+        }
+
+        .level-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .level-btn.selected.dust {
+            background: rgba(245, 158, 11, 0.2);
+            border-color: var(--dust-color);
+            color: var(--dust-color);
+        }
+
+        .level-btn.selected.water {
+            background: rgba(14, 165, 233, 0.2);
+            border-color: var(--water-color);
+            color: var(--water-color);
+        }
+
+        /* Suffix Selector */
+        .suffix-group {
+            padding: 0.75rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+        }
+
+        .suffix-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .suffix-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--info-color);
+            white-space: nowrap;
+        }
+
+        .suffix-buttons {
+            display: flex;
+            gap: 0.35rem;
+        }
+
+        .suffix-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 0.4rem 0.6rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .suffix-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .suffix-btn.selected {
+            background: rgba(59, 130, 246, 0.2);
+            border-color: var(--info-color);
+            color: var(--info-color);
+        }
+
+        /* ===== VISUALIZATION AREA ===== */
+        .test-visual {
+            background: linear-gradient(180deg, #1a2332 0%, #0d1520 100%);
+            border-radius: 16px;
+            height: 320px;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+
+        /* Device SVG */
+        .viz-device {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+        }
+
+        .viz-device svg {
+            width: 120px;
+            height: 100px;
+            filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.5));
+        }
+
+        /* Dust Cloud Container */
+        .dust-cloud {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .dust-cloud.active {
+            opacity: 1;
+        }
+
+        .dust-particle {
+            position: absolute;
+            background: var(--dust-color);
+            border-radius: 50%;
+            opacity: 0;
+        }
+
+        /* Water Spray Container */
+        .water-spray {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .water-spray.active {
+            opacity: 1;
+        }
+
+        /* Water jet nozzle */
+        .nozzle {
+            position: absolute;
+            width: 20px;
+            height: 40px;
+            background: linear-gradient(90deg, #4a5568, #2d3748);
+            border-radius: 4px 10px 10px 4px;
+        }
+
+        .nozzle.left {
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .nozzle.right {
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%) scaleX(-1);
+        }
+
+        .nozzle.top {
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) rotate(90deg);
+        }
+
+        /* Water stream */
+        .water-stream {
+            position: absolute;
+            height: 8px;
+            background: linear-gradient(90deg,
+                    rgba(14, 165, 233, 0.9),
+                    rgba(14, 165, 233, 0.6),
+                    rgba(14, 165, 233, 0.2));
+            border-radius: 4px;
+            opacity: 0;
+        }
+
+        /* Water droplets */
+        .water-droplet {
+            position: absolute;
+            background: var(--water-color);
+            border-radius: 50%;
+            opacity: 0;
+        }
+
+        /* Splash effect */
+        .splash-ring {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            border: 3px solid var(--water-color);
+            border-radius: 50%;
+            opacity: 0;
+        }
+
+        /* Submersion water */
+        .submersion-water {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 0;
+            background: linear-gradient(180deg,
+                    rgba(14, 165, 233, 0.2) 0%,
+                    rgba(14, 165, 233, 0.5) 50%,
+                    rgba(7, 89, 133, 0.7) 100%);
+            transition: height 1s ease;
+        }
+
+        .submersion-water.active {
+            height: 80%;
+        }
+
+        .submersion-water.deep {
+            height: 100%;
+            background: linear-gradient(180deg,
+                    rgba(14, 165, 233, 0.4) 0%,
+                    rgba(7, 89, 133, 0.8) 100%);
+        }
+
+        /* Bubbles for submersion */
+        .bubble {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            opacity: 0;
+        }
+
+        /* Protection level indicator */
+        .viz-label {
+            position: absolute;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.6);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-color);
+            z-index: 20;
+            white-space: nowrap;
+        }
+
+        .viz-label .dust-label {
+            color: var(--dust-color);
+        }
+
+        .viz-label .water-label {
+            color: var(--water-color);
+        }
+
+        /* Test Description */
+        .test-description {
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        .test-item {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            border-left: 3px solid var(--accent-color);
+        }
+
+        .test-item.dust-test {
+            border-left-color: var(--dust-color);
+        }
+
+        .test-item.water-test {
+            border-left-color: var(--water-color);
+        }
+
+        .test-title {
+            font-weight: 600;
+            font-size: 0.85rem;
+            margin-bottom: 0.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .test-title svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        .test-details {
+            font-size: 0.8rem;
+            color: var(--secondary-text);
+            line-height: 1.4;
+        }
+
+        .test-params {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+            margin-top: 0.35rem;
+        }
+
+        .test-param {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            color: var(--text-color);
+        }
+
+        /* Animations */
+        @keyframes dustFloat {
+            0% {
+                opacity: 0;
+                transform: translateX(0) translateY(0);
+            }
+
+            10% {
+                opacity: 0.9;
+            }
+
+            90% {
+                opacity: 0.7;
+            }
+
+            100% {
+                opacity: 0;
+                transform: translateX(var(--dx)) translateY(var(--dy));
+            }
+        }
+
+        @keyframes waterJet {
+            0% {
+                opacity: 0;
+                width: 0;
+            }
+
+            20% {
+                opacity: 1;
+            }
+
+            80% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0;
+                width: var(--jet-width);
+            }
+        }
+
+        @keyframes dropletFall {
+            0% {
+                opacity: 0;
+                transform: translateY(0) scale(1);
+            }
+
+            20% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0;
+                transform: translateY(var(--fall-dist)) scale(0.5);
+            }
+        }
+
+        @keyframes splashRing {
+            0% {
+                opacity: 0.8;
+                width: 20px;
+                height: 20px;
+            }
+
+            100% {
+                opacity: 0;
+                width: 150px;
+                height: 150px;
+            }
+        }
+
+        @keyframes bubbleRise {
+            0% {
+                opacity: 0;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* IPX3 angled spray animation - water falling at 60° angles */
+        @keyframes angledSprayFall {
+            0% {
+                opacity: 0;
+                transform: translate(0, 0);
+            }
+
+            10% {
+                opacity: 0.85;
+            }
+
+            90% {
+                opacity: 0.6;
+            }
+
+            100% {
+                opacity: 0;
+                transform: translate(var(--spray-dx), var(--spray-dy));
+            }
+        }
+
+        /* IPX3 spray nozzle pointing down at angle */
+        .spray-nozzle {
+            position: absolute;
+            width: 12px;
+            height: 25px;
+            background: linear-gradient(180deg, #4a5568, #2d3748);
+            border-radius: 3px 3px 6px 6px;
+        }
+
+        .spray-nozzle::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 8px;
+            height: 8px;
+            background: radial-gradient(circle, var(--water-color), transparent);
+            border-radius: 50%;
+            opacity: 0.6;
+        }
+
+        .spray-cone {
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-left: 40px solid transparent;
+            border-right: 40px solid transparent;
+            border-top: 80px solid rgba(14, 165, 233, 0.15);
+            opacity: 0;
+            animation: sprayConeFlash 1.2s ease-in-out infinite;
+        }
+
+        @keyframes sprayConeFlash {
+
+            0%,
+            100% {
+                opacity: 0.1;
+            }
+
+            50% {
+                opacity: 0.25;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Back Button -->
+        <a href="../index.html" class="back-link">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 12H5M12 19l-7-7 7-7" />
+            </svg>
+            Back to Toolbox
+        </a>
+
+        <h1>IP Protection Class Guide</h1>
+        <p class="subtitle">Understand and visualize IP ratings for automotive components</p>
+
+        <div class="standards-ref">
+            Based on: <strong>ISO 20653:2023</strong> (Road vehicles — Degrees of protection (IP code))
+        </div>
+
+        <!-- Device Selector -->
+        <div class="device-selector" id="deviceSelector">
+            <div class="device-card" data-device="camera" data-ip="6K7">
+                <svg class="device-icon" viewBox="0 0 24 24">
+                    <!-- ADAS Camera with mounting bracket -->
+                    <rect x="8" y="8" width="8" height="6" rx="1" />
+                    <circle cx="12" cy="11" r="2" />
+                    <path d="M10 14 L10 16 M14 14 L14 16" />
+                    <rect x="9" y="16" width="6" height="1.5" rx="0.5" />
+                    <!-- Mounting bracket -->
+                    <path d="M12 17.5 L12 20 M10 20 L14 20" stroke-width="2" stroke-linecap="round" />
+                    <!-- Sensor lens indicators -->
+                    <circle cx="12" cy="11" r="1" fill="currentColor" opacity="0.3" />
+                </svg>
+                <span class="device-name">Camera</span>
+                <span class="device-ip">IP6K7</span>
+            </div>
+            <div class="device-card" data-device="ecu" data-ip="5K4">
+                <svg class="device-icon" viewBox="0 0 24 24">
+                    <!-- Automotive ECU housing -->
+                    <rect x="3" y="5" width="18" height="14" rx="1.5" />
+                    <!-- Connector section -->
+                    <rect x="2" y="10" width="2" height="4" rx="0.5" />
+                    <!-- Heat sink fins -->
+                    <line x1="7" y1="5" x2="7" y2="2" stroke-width="1.5" />
+                    <line x1="10" y1="5" x2="10" y2="2" stroke-width="1.5" />
+                    <line x1="14" y1="5" x2="14" y2="2" stroke-width="1.5" />
+                    <line x1="17" y1="5" x2="17" y2="2" stroke-width="1.5" />
+                    <!-- PCB components -->
+                    <rect x="6" y="9" width="3" height="3" rx="0.5" fill="currentColor" opacity="0.3" />
+                    <rect x="10.5" y="9" width="3" height="3" rx="0.5" fill="currentColor" opacity="0.3" />
+                    <rect x="15" y="9" width="3" height="3" rx="0.5" fill="currentColor" opacity="0.3" />
+                    <circle cx="7.5" cy="15" r="1" fill="currentColor" opacity="0.5" />
+                    <circle cx="12" cy="15" r="1" fill="currentColor" opacity="0.5" />
+                    <circle cx="16.5" cy="15" r="1" fill="currentColor" opacity="0.5" />
+                </svg>
+                <span class="device-name">ECU</span>
+                <span class="device-ip">IP5K4</span>
+            </div>
+            <div class="device-card" data-device="monitor" data-ip="4K0">
+                <svg class="device-icon" viewBox="0 0 24 24">
+                    <!-- Automotive infotainment display -->
+                    <rect x="2" y="4" width="20" height="13" rx="1.5" />
+                    <!-- Screen bezel -->
+                    <rect x="3" y="5" width="18" height="11" rx="0.5" fill="currentColor" opacity="0.1" />
+                    <!-- Dashboard integration -->
+                    <path d="M2 17 L2 19 Q2 20 3 20 L21 20 Q22 20 22 19 L22 17" />
+                    <!-- Touch interface indicators -->
+                    <circle cx="6" cy="10" r="1" fill="currentColor" opacity="0.3" />
+                    <circle cx="12" cy="10" r="1.5" fill="currentColor" opacity="0.3" />
+                    <circle cx="18" cy="10" r="1" fill="currentColor" opacity="0.3" />
+                    <!-- Control buttons -->
+                    <rect x="4" y="18.5" width="2" height="1" rx="0.3" fill="currentColor" opacity="0.5" />
+                    <rect x="11" y="18.5" width="2" height="1" rx="0.3" fill="currentColor" opacity="0.5" />
+                    <rect x="18" y="18.5" width="2" height="1" rx="0.3" fill="currentColor" opacity="0.5" />
+                </svg>
+                <span class="device-name">Monitor</span>
+                <span class="device-ip">IP4K0</span>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <!-- Left Panel: IP Code Configuration -->
+            <div class="panel">
+                <div class="panel-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                    </svg>
+                    Protection Configuration
+                </div>
+
+                <!-- IP Code Display -->
+                <div class="ip-code-display">
+                    <div class="ip-code-large">
+                        IP<span class="dust-digit" id="dustDigit">-</span><span class="suffix"
+                            id="suffixDisplay"></span><span class="water-digit" id="waterDigit">-</span>
+                    </div>
+                    <div class="ip-code-meaning" id="codeMeaning">
+                        Select protection levels below
+                    </div>
+                </div>
+
+                <!-- IEC 60529 Equivalence -->
+                <div class="iec-equivalence" id="iecEquivalence">
+                    <div class="iec-header">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path
+                                d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+                        </svg>
+                        <span>IEC 60529 Equivalent</span>
+                    </div>
+                    <div class="iec-code" id="iecCode">IP67</div>
+                    <div class="iec-notes" id="iecNotes"></div>
+                </div>
+
+                <!-- Protection Level Selectors -->
+                <div class="protection-selectors">
+                    <div class="selector-group">
+                        <div class="selector-label dust">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <circle cx="12" cy="12" r="3" />
+                                <circle cx="5" cy="7" r="2" />
+                                <circle cx="19" cy="17" r="2" />
+                            </svg>
+                            Dust (1st)
+                        </div>
+                        <div class="level-buttons" id="dustButtons">
+                            <button class="level-btn dust" data-level="0">0</button>
+                            <button class="level-btn dust" data-level="1">1</button>
+                            <button class="level-btn dust" data-level="2">2</button>
+                            <button class="level-btn dust" data-level="3">3</button>
+                            <button class="level-btn dust" data-level="4">4</button>
+                            <button class="level-btn dust" data-level="5K">5K</button>
+                            <button class="level-btn dust" data-level="6K">6K</button>
+                        </div>
+                    </div>
+                    <div class="selector-group">
+                        <div class="selector-label water">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
+                            </svg>
+                            Water (2nd)
+                        </div>
+                        <div class="level-buttons" id="waterButtons">
+                            <button class="level-btn water" data-level="0">0</button>
+                            <button class="level-btn water" data-level="1">1</button>
+                            <button class="level-btn water" data-level="2">2</button>
+                            <button class="level-btn water" data-level="3">3</button>
+                            <button class="level-btn water" data-level="4">4</button>
+                            <button class="level-btn water" data-level="4K">4K</button>
+                            <button class="level-btn water" data-level="5">5</button>
+                            <button class="level-btn water" data-level="6">6</button>
+                            <button class="level-btn water" data-level="6K">6K</button>
+                            <button class="level-btn water" data-level="7">7</button>
+                            <button class="level-btn water" data-level="8">8</button>
+                            <button class="level-btn water" data-level="9K">9K</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Visualization -->
+            <div class="panel">
+                <div class="panel-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <polygon points="10,8 16,12 10,16" />
+                    </svg>
+                    Test Simulation
+                </div>
+
+                <!-- Visualization Area -->
+                <div class="test-visual" id="testVisual">
+                    <!-- Device Display -->
+                    <div class="viz-device" id="vizDevice">
+                        <!-- SVG populated by JS -->
+                    </div>
+
+                    <!-- Dust Cloud -->
+                    <div class="dust-cloud" id="dustCloud"></div>
+
+                    <!-- Water Spray -->
+                    <div class="water-spray" id="waterSpray"></div>
+
+                    <!-- Submersion Water -->
+                    <div class="submersion-water" id="submersionWater"></div>
+
+                    <!-- Label -->
+                    <div class="viz-label" id="vizLabel">
+                        <span class="dust-label">Dust Test</span> + <span class="water-label">Water Test</span>
+                    </div>
+                </div>
+
+                <!-- Test Descriptions -->
+                <div class="test-description" id="testDescription"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State
+        const state = {
+            device: 'camera',
+            dustLevel: '6K',
+            waterLevel: '7',
+            suffix: ''
+        };
+
+        // Device SVGs
+        const deviceSVGs = {
+            camera: `
+                <svg viewBox="0 0 120 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="cameraBody" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stop-color="#4a5568"/>
+                            <stop offset="100%" stop-color="#2d3748"/>
+                        </linearGradient>
+                        <linearGradient id="lens" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#1a202c"/>
+                            <stop offset="50%" stop-color="#2d3748"/>
+                            <stop offset="100%" stop-color="#1a202c"/>
+                        </linearGradient>
+                    </defs>
+                    <!-- ADAS Camera Housing -->
+                    <rect x="25" y="25" width="70" height="50" rx="5" fill="url(#cameraBody)" stroke="#718096" stroke-width="2"/>
+                    <!-- Lens -->
+                    <circle cx="60" cy="50" r="18" fill="url(#lens)" stroke="#718096" stroke-width="2"/>
+                    <circle cx="60" cy="50" r="12" fill="#1a202c" stroke="#4a5568" stroke-width="1"/>
+                    <circle cx="60" cy="50" r="6" fill="#0ea5e9" opacity="0.3"/>
+                    <circle cx="60" cy="50" r="2" fill="#38bdf8"/>
+                    <!-- Mounting bracket arms -->
+                    <rect x="35" y="75" width="6" height="15" rx="1" fill="#4a5568" stroke="#718096" stroke-width="1"/>
+                    <rect x="79" y="75" width="6" height="15" rx="1" fill="#4a5568" stroke="#718096" stroke-width="1"/>
+                    <!-- Mounting base -->
+                    <rect x="30" y="88" width="60" height="8" rx="2" fill="#2d3748" stroke="#718096" stroke-width="1.5"/>
+                    <!-- Status LED -->
+                    <circle cx="80" cy="35" r="3" fill="#22c55e" opacity="0.8"/>
+                </svg>`,
+            ecu: `
+                <svg viewBox="0 0 120 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="ecuBody" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stop-color="#4a5568"/>
+                            <stop offset="100%" stop-color="#2d3748"/>
+                        </linearGradient>
+                    </defs>
+                    <!-- ECU Housing -->
+                    <rect x="15" y="25" width="90" height="55" rx="5" fill="url(#ecuBody)" stroke="#718096" stroke-width="2"/>
+                    <!-- Connector Section -->
+                    <rect x="10" y="40" width="8" height="18" rx="2" fill="#2d3748" stroke="#718096" stroke-width="1.5"/>
+                    <rect x="11" y="43" width="2" height="3" fill="#f59e0b"/>
+                    <rect x="11" y="49" width="2" height="3" fill="#f59e0b"/>
+                    <rect x="11" y="55" width="2" height="3" fill="#f59e0b"/>
+                    <!-- Heat Sink Fins on top -->
+                    <line x1="30" y1="25" x2="30" y2="15" stroke="#718096" stroke-width="2.5"/>
+                    <line x1="42" y1="25" x2="42" y2="15" stroke="#718096" stroke-width="2.5"/>
+                    <line x1="54" y1="25" x2="54" y2="15" stroke="#718096" stroke-width="2.5"/>
+                    <line x1="66" y1="25" x2="66" y2="15" stroke="#718096" stroke-width="2.5"/>
+                    <line x1="78" y1="25" x2="78" y2="15" stroke="#718096" stroke-width="2.5"/>
+                    <line x1="90" y1="25" x2="90" y2="15" stroke="#718096" stroke-width="2.5"/>
+                    <!-- PCB Components -->
+                    <rect x="25" y="35" width="15" height="15" rx="2" fill="#1a202c" stroke="#4a5568" stroke-width="1"/>
+                    <rect x="45" y="35" width="15" height="15" rx="2" fill="#1a202c" stroke="#4a5568" stroke-width="1"/>
+                    <rect x="65" y="35" width="15" height="15" rx="2" fill="#1a202c" stroke="#4a5568" stroke-width="1"/>
+                    <!-- Status LEDs -->
+                    <circle cx="30" cy="62" r="3" fill="#22c55e" opacity="0.9"/>
+                    <circle cx="50" cy="62" r="3" fill="#3b82f6" opacity="0.9"/>
+                    <circle cx="70" cy="62" r="3" fill="#f59e0b" opacity="0.9"/>
+                </svg>`,
+            monitor: `
+                <svg viewBox="0 0 120 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="monitorBody" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stop-color="#4a5568"/>
+                            <stop offset="100%" stop-color="#2d3748"/>
+                        </linearGradient>
+                        <linearGradient id="screen" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#1e3a5f"/>
+                            <stop offset="100%" stop-color="#0f172a"/>
+                        </linearGradient>
+                    </defs>
+                    <!-- Automotive Infotainment Display Housing -->
+                    <rect x="10" y="15" width="100" height="55" rx="5" fill="url(#monitorBody)" stroke="#718096" stroke-width="2"/>
+                    <!-- Screen with bezel -->
+                    <rect x="15" y="20" width="90" height="45" rx="2" fill="url(#screen)"/>
+                    <!-- Touch interface indicators -->
+                    <circle cx="30" cy="42" r="4" fill="#38bdf8" opacity="0.5"/>
+                    <circle cx="60" cy="42" r="6" fill="#38bdf8" opacity="0.5"/>
+                    <circle cx="90" cy="42" r="4" fill="#38bdf8" opacity="0.5"/>
+                    <!-- Dashboard integration base -->
+                    <path d="M10 70 L10 75 Q10 80 15 80 L105 80 Q110 80 110 75 L110 70" fill="#2d3748" stroke="#718096" stroke-width="1.5"/>
+                    <!-- Control buttons -->
+                    <rect x="25" y="76" width="8" height="3" rx="1" fill="#4a5568"/>
+                    <rect x="56" y="76" width="8" height="3" rx="1" fill="#4a5568"/>
+                    <rect x="87" y="76" width="8" height="3" rx="1" fill="#4a5568"/>
+                </svg>`
+        };
+
+        // Protection Level Definitions per ISO 20653:2023(E)
+        const dustProtection = {
+            '0': { name: 'Not protected', desc: 'No protection against foreign objects or contact', test: null, access: 'Not protected' },
+            '1': { name: 'Objects ≥50mm', desc: 'Protection against objects with diameter ≥50mm', test: 'Sphere (50mm) shall not penetrate completely', access: 'Back of hand' },
+            '2': { name: 'Objects ≥12.5mm', desc: 'Protection against objects with diameter ≥12.5mm', test: 'Sphere (12.5mm) shall not penetrate completely', access: 'Finger' },
+            '3': { name: 'Objects ≥2.5mm', desc: 'Protection against objects with diameter ≥2.5mm', test: 'Rigid test rod (2.5mm) shall not penetrate', access: 'Tool' },
+            '4': { name: 'Objects ≥1.0mm', desc: 'Protection against objects with diameter ≥1.0mm', test: 'Rigid test wire (1.0mm) shall not penetrate', access: 'Wire' },
+            '5K': { name: 'Dust-protected', desc: 'Dust may only penetrate in quantities that do not impair performance and safety', test: 'Dust test per ISO 20653', access: 'Wire' },
+            '6K': { name: 'Dust-tight', desc: 'No dust shall penetrate', test: 'Dust-tight test per ISO 20653', access: 'Wire' }
+        };
+
+        const waterProtection = {
+            '0': { name: 'Not protected', desc: 'No protection against water', test: null, params: null },
+            '1': { name: 'Vertical drips', desc: 'Vertical water drips shall have no harmful effects', test: 'Drip test', params: ['Vertical drops'] },
+            '2': { name: 'Drips (15° tilt)', desc: 'Vertical drips with enclosure tilted up to 15°', test: 'Drip test (tilted)', params: ['15° inclination'] },
+            '3': { name: 'Water spray', desc: 'Spray at angle up to 60° on either side of vertical', test: 'Spray test', params: ['60° angle'] },
+            '4': { name: 'Splash water', desc: 'Water splashed from any direction', test: 'Splash test', params: ['Any direction'] },
+            '4K': { name: 'Splash (increased)', desc: 'Splash water with increased pressure (ISO 20653)', test: 'Splash test (high pressure)', params: ['Increased pressure', '360°'] },
+            '5': { name: 'Water jets', desc: 'High-velocity water directed as a jet from any direction', test: 'Jet test (Ø6.3mm)', params: ['12.5 L/min'] },
+            '6': { name: 'Powerful jets', desc: 'Strong high-velocity water directed from any direction', test: 'Jet test (Ø12.5mm)', params: ['100 L/min'] },
+            '6K': { name: 'Powerful jets (increased)', desc: 'Strong jet with increased pressure (ISO 20653)', test: 'High-pressure jet test', params: ['Increased pressure'] },
+            '7': { name: 'Temporary immersion', desc: 'Water shall not penetrate in harmful quantities during temporary immersion', test: 'Immersion test', params: ['1m depth', '30 min'] },
+            '8': { name: 'Continuous submersion', desc: 'Conditions more severe than code 7, agreed between supplier and manufacturer', test: 'Submersion test', params: ['Per agreement'] },
+            '9K': { name: 'High-pressure/steam', desc: 'Water via high-pressure/steam-jet nozzle from any direction', test: 'Steam-jet test (ISO 20653)', params: ['80°C', '8-10 MPa'] }
+        };
+
+        // Device presets (typical automotive ratings)
+        const devicePresets = {
+            camera: { dustLevel: '6K', waterLevel: '7', suffix: '' },
+            ecu: { dustLevel: '5K', waterLevel: '4K', suffix: '' },
+            monitor: { dustLevel: '4', waterLevel: '0', suffix: '' }
+        };
+
+        // IEC 60529 Equivalence Mapping
+        const iecDustEquivalence = {
+            '0': { iec: '0', type: 'Identical', note: '' },
+            '1': { iec: '1', type: 'Identical', note: '' },
+            '2': { iec: '2', type: 'Identical', note: '' },
+            '3': { iec: '3', type: 'Identical', note: '' },
+            '4': { iec: '4', type: 'Identical', note: '' },
+            '5K': { iec: '5', type: 'Functional', note: 'ISO 5K uses Arizona test dust (A2) for automotive testing.' },
+            '6K': { iec: '6', type: 'Functional', note: 'ISO 6K uses automotive-specific dust test procedures.' }
+        };
+
+        const iecWaterEquivalence = {
+            '0': { iec: '0', type: 'Identical', note: '' },
+            '1': { iec: '1', type: 'Identical', note: '' },
+            '2': { iec: '2', type: 'Identical', note: '' },
+            '3': { iec: '3', type: 'Identical', note: '' },
+            '4': { iec: '4', type: 'Identical', note: '' },
+            '4K': { iec: null, type: 'No Equivalent', note: 'ISO 4K specifies splash water with increased pressure (~400 kPa) - vehicle-specific.' },
+            '5': { iec: '5', type: 'Identical', note: '' },
+            '6': { iec: '6', type: 'Identical', note: '' },
+            '6K': { iec: null, type: 'No Equivalent', note: 'ISO 6K specifies strong jets with increased pressure (~1000 kPa) - vehicle-specific.' },
+            '7': { iec: '7', type: 'Identical', note: '' },
+            '8': { iec: '8', type: 'Identical', note: '' },
+            '9K': { iec: '9', type: 'Close Functional', note: 'ISO 9K uses pressure measurement (8-10 MPa); IEC 9 uses impact force. Nozzle distance differs.' }
+        };
+
+        // DOM Elements
+        const dustDigit = document.getElementById('dustDigit');
+        const waterDigit = document.getElementById('waterDigit');
+        const suffixDisplay = document.getElementById('suffixDisplay');
+        const codeMeaning = document.getElementById('codeMeaning');
+        const testDescription = document.getElementById('testDescription');
+        const vizDevice = document.getElementById('vizDevice');
+        const dustCloud = document.getElementById('dustCloud');
+        const waterSpray = document.getElementById('waterSpray');
+        const submersionWater = document.getElementById('submersionWater');
+        const vizLabel = document.getElementById('vizLabel');
+        const iecCode = document.getElementById('iecCode');
+        const iecNotes = document.getElementById('iecNotes');
+
+        let animationInterval = null;
+
+        // Event Listeners
+        document.getElementById('deviceSelector').addEventListener('click', (e) => {
+            const card = e.target.closest('.device-card');
+            if (card) {
+                document.querySelectorAll('.device-card').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+
+                const device = card.dataset.device;
+                const preset = devicePresets[device];
+                state.device = device;
+                state.dustLevel = preset.dustLevel;
+                state.waterLevel = preset.waterLevel;
+                state.suffix = preset.suffix;
+
+                updateButtonStates();
+                updateDisplay();
+            }
+        });
+
+        document.getElementById('dustButtons').addEventListener('click', (e) => {
+            if (e.target.classList.contains('level-btn')) {
+                state.dustLevel = e.target.dataset.level;
+                updateButtonStates();
+                updateDisplay();
+            }
+        });
+
+        document.getElementById('waterButtons').addEventListener('click', (e) => {
+            if (e.target.classList.contains('level-btn')) {
+                state.waterLevel = e.target.dataset.level;
+                updateButtonStates();
+                updateDisplay();
+            }
+        });
+
+        document.getElementById('suffixButtons').addEventListener('click', (e) => {
+            if (e.target.classList.contains('suffix-btn')) {
+                state.suffix = e.target.dataset.suffix;
+                updateButtonStates();
+                updateDisplay();
+            }
+        });
+
+        function updateButtonStates() {
+            // Dust buttons
+            document.querySelectorAll('#dustButtons .level-btn').forEach(btn => {
+                btn.classList.toggle('selected', btn.dataset.level === state.dustLevel);
+            });
+
+            // Water buttons
+            document.querySelectorAll('#waterButtons .level-btn').forEach(btn => {
+                btn.classList.toggle('selected', btn.dataset.level === state.waterLevel);
+            });
+
+            // Suffix buttons
+            document.querySelectorAll('#suffixButtons .suffix-btn').forEach(btn => {
+                btn.classList.toggle('selected', btn.dataset.suffix === state.suffix);
+            });
+
+            // Update device card IP display
+            document.querySelectorAll('.device-card').forEach(card => {
+                if (card.dataset.device === state.device) {
+                    const ipCode = `IP${state.dustLevel}${state.waterLevel}`;
+                    card.querySelector('.device-ip').textContent = ipCode;
+                }
+            });
+        }
+
+        function updateDisplay() {
+            // Update device SVG
+            vizDevice.innerHTML = deviceSVGs[state.device];
+
+            // Update IP code display
+            dustDigit.textContent = state.dustLevel;
+            waterDigit.textContent = state.waterLevel;
+            suffixDisplay.style.display = 'none'; // K is now part of the level codes per ISO 20653
+
+            // Update meaning
+            const dustInfo = dustProtection[state.dustLevel];
+            const waterInfo = waterProtection[state.waterLevel];
+            codeMeaning.textContent = `${dustInfo.name} | ${waterInfo.name}`;
+
+            // Update IEC 60529 equivalence
+            updateIECEquivalence();
+
+            // Update label
+            vizLabel.innerHTML = `
+                <span class="dust-label">${dustInfo.name}</span> + 
+                <span class="water-label">${waterInfo.name}</span>
+            `;
+
+            // Update test descriptions
+            updateTestDescriptions(dustInfo, waterInfo);
+
+            // Update visualization
+            updateVisualization();
+        }
+
+        function updateIECEquivalence() {
+            const dustEquiv = iecDustEquivalence[state.dustLevel];
+            const waterEquiv = iecWaterEquivalence[state.waterLevel];
+
+            // Build IEC code string
+            let iecCodeStr = 'IP';
+            let notes = [];
+            let hasNoEquiv = false;
+
+            // Dust part
+            if (dustEquiv.iec !== null) {
+                iecCodeStr += dustEquiv.iec;
+            } else {
+                iecCodeStr += '<span class="no-equiv">X</span>';
+                hasNoEquiv = true;
+            }
+
+            // Water part
+            if (waterEquiv.iec !== null) {
+                iecCodeStr += waterEquiv.iec;
+            } else {
+                iecCodeStr += '<span class="no-equiv">X</span>';
+                hasNoEquiv = true;
+            }
+
+            iecCode.innerHTML = iecCodeStr;
+
+            // Collect notes
+            if (dustEquiv.note) {
+                notes.push(`<strong>Dust:</strong> ${dustEquiv.note}`);
+            }
+            if (waterEquiv.note) {
+                notes.push(`<strong>Water:</strong> ${waterEquiv.note}`);
+            }
+
+            // Show equivalence status
+            if (hasNoEquiv) {
+                notes.unshift('<span class="warning">⚠ No direct IEC 60529 equivalent for K-rated levels</span>');
+            } else if (dustEquiv.type === 'Identical' && waterEquiv.type === 'Identical') {
+                notes.unshift('<span class="identical">✓ Identical to IEC 60529</span>');
+            }
+
+            iecNotes.innerHTML = notes.join('<br>');
+        }
+
+        function updateTestDescriptions(dustInfo, waterInfo) {
+            let html = '';
+
+            if (dustInfo.test) {
+                html += `
+                    <div class="test-item dust-test">
+                        <div class="test-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="var(--dust-color)" stroke-width="2">
+                                <circle cx="12" cy="12" r="3"/>
+                                <circle cx="5" cy="7" r="2"/>
+                            </svg>
+                            Dust Test: ${dustInfo.name}
+                        </div>
+                        <div class="test-details">${dustInfo.desc}</div>
+                        <div class="test-params">
+                            <span class="test-param">${dustInfo.test}</span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (waterInfo.test) {
+                html += `
+                    <div class="test-item water-test">
+                        <div class="test-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="var(--water-color)" stroke-width="2">
+                                <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
+                            </svg>
+                            Water Test: ${waterInfo.name}
+                        </div>
+                        <div class="test-details">${waterInfo.desc}</div>
+                        <div class="test-params">
+                            <span class="test-param">${waterInfo.test}</span>
+                            ${waterInfo.params ? waterInfo.params.map(p => `<span class="test-param">${p}</span>`).join('') : ''}
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (!dustInfo.test && !waterInfo.test) {
+                html = `
+                    <div class="test-item" style="border-left-color: var(--secondary-text);">
+                        <div class="test-title" style="color: var(--secondary-text);">No Protection Tests</div>
+                        <div class="test-details">This rating indicates no specific protection requirements.</div>
+                    </div>
+                `;
+            }
+
+            testDescription.innerHTML = html;
+        }
+
+        function updateVisualization() {
+            // Clear previous animations
+            if (animationInterval) {
+                clearInterval(animationInterval);
+                animationInterval = null;
+            }
+            dustCloud.innerHTML = '';
+            waterSpray.innerHTML = '';
+            dustCloud.classList.remove('active');
+            waterSpray.classList.remove('active');
+            submersionWater.classList.remove('active', 'deep');
+
+            // Get numeric values for comparison
+            const dustNum = parseInt(state.dustLevel) || (state.dustLevel.includes('5') ? 5 : state.dustLevel.includes('6') ? 6 : 0);
+            const waterNum = parseInt(state.waterLevel) || (state.waterLevel.includes('4') ? 4 : state.waterLevel.includes('6') ? 6 : state.waterLevel.includes('9') ? 9 : 0);
+
+            // Start appropriate animation based on levels
+            if (dustNum >= 5) {
+                startDustAnimation();
+            }
+
+            // Determine water animation type
+            if (waterNum >= 1 && waterNum <= 6) {
+                startSprayAnimation();
+            } else if (waterNum >= 7) {
+                startSubmersionAnimation();
+            }
+        }
+
+        function startDustAnimation() {
+            dustCloud.classList.add('active');
+
+            // Create initial dust particles
+            for (let i = 0; i < 30; i++) {
+                createDustParticle(Math.random() * 3000);
+            }
+
+            // Continue creating particles
+            animationInterval = setInterval(() => {
+                createDustParticle(0);
+            }, 150);
+        }
+
+        function createDustParticle(delay) {
+            const particle = document.createElement('div');
+            particle.className = 'dust-particle';
+
+            const size = 3 + Math.random() * 6;
+            const startX = Math.random() * 100;
+            const startY = 20 + Math.random() * 60;
+            const dx = (Math.random() - 0.5) * 100;
+            const dy = (Math.random() - 0.5) * 60;
+            const duration = 2 + Math.random() * 2;
+
+            particle.style.cssText = `
+                width: ${size}px;
+                height: ${size}px;
+                left: ${startX}%;
+                top: ${startY}%;
+                --dx: ${dx}px;
+                --dy: ${dy}px;
+                animation: dustFloat ${duration}s ${delay}ms linear forwards;
+            `;
+
+            dustCloud.appendChild(particle);
+
+            // Remove after animation
+            setTimeout(() => {
+                particle.remove();
+            }, (duration * 1000) + delay + 100);
+        }
+
+        function startSprayAnimation() {
+            waterSpray.classList.add('active');
+
+            const intensity = state.waterLevel;
+            // Parse intensity level for numeric comparison
+            const intensityNum = parseInt(intensity) || (intensity.includes('4') ? 4 : intensity.includes('6') ? 6 : intensity.includes('9') ? 9 : 0);
+
+            // Add nozzles for higher levels (IPX5+)
+            if (intensityNum >= 5) {
+                waterSpray.innerHTML = `
+                    <div class="nozzle left"></div>
+                    <div class="nozzle right"></div>
+                `;
+            }
+
+            // Add spray nozzles for IPX3 (angled spray from above)
+            if (intensityNum === 3) {
+                waterSpray.innerHTML = `
+                    <div class="spray-nozzle" style="left: 25%; top: 0; transform: rotate(-30deg);"></div>
+                    <div class="spray-nozzle" style="left: 50%; top: -5px; transform: translateX(-50%);"></div>
+                    <div class="spray-nozzle" style="right: 25%; top: 0; transform: rotate(30deg);"></div>
+                    <div class="spray-cone" style="left: 25%; top: 20px; transform: translateX(-50%) rotate(-30deg);"></div>
+                    <div class="spray-cone" style="left: 50%; top: 15px; transform: translateX(-50%);"></div>
+                    <div class="spray-cone" style="right: 25%; top: 20px; transform: translateX(50%) rotate(30deg);"></div>
+                `;
+            }
+
+            // Create water effects based on protection level
+            const createEffects = () => {
+                if (intensityNum <= 2) {
+                    // IPX1-2: Dripping - drops from top (vertical)
+                    for (let i = 0; i < 5; i++) {
+                        createWaterDrop(30 + Math.random() * 40, 0, Math.random() * 500);
+                    }
+                } else if (intensityNum === 3) {
+                    // IPX3: Spray at 60° angles from vertical - drops fall at angles from above
+                    createAngledSprayDroplets();
+                } else if (intensityNum === 4 || intensity.includes('4K')) {
+                    // IPX4/IPX4K: Splash from ALL directions (360°) - radial pattern
+                    for (let i = 0; i < 10; i++) {
+                        const angle = Math.random() * 360;
+                        createSplashDroplet(angle);
+                    }
+                    createSplashRing();
+                } else {
+                    // IPX5+: Jets - streams from sides
+                    createWaterJet('left');
+                    createWaterJet('right');
+                    for (let i = 0; i < 6; i++) {
+                        createSplashDroplet(Math.random() * 360);
+                    }
+                }
+            };
+
+            createEffects();
+            animationInterval = setInterval(createEffects, 800);
+        }
+
+        // IPX3: Angled spray droplets falling from above at 60° angles
+        function createAngledSprayDroplets() {
+            // Create drops from three spray nozzle positions
+            const nozzlePositions = [
+                { x: 25, angle: -30 },   // Left nozzle, angled right
+                { x: 50, angle: 0 },     // Center nozzle, straight down
+                { x: 75, angle: 30 }     // Right nozzle, angled left
+            ];
+
+            nozzlePositions.forEach(nozzle => {
+                for (let i = 0; i < 4; i++) {
+                    createAngledDrop(nozzle.x, nozzle.angle, Math.random() * 300);
+                }
+            });
+        }
+
+        function createAngledDrop(startX, angle, delay) {
+            const drop = document.createElement('div');
+            drop.className = 'water-droplet';
+
+            const size = 3 + Math.random() * 3;
+            const rad = (angle + (Math.random() - 0.5) * 20) * Math.PI / 180;
+            const fallDist = 150 + Math.random() * 80;
+            const duration = 0.8 + Math.random() * 0.4;
+
+            // Calculate movement based on angle
+            const dx = Math.sin(rad) * fallDist * 0.5;
+            const dy = Math.cos(rad) * fallDist;
+
+            drop.style.cssText = `
+                width: ${size}px;
+                height: ${size * 1.4}px;
+                left: ${startX + (Math.random() - 0.5) * 8}%;
+                top: 5%;
+                --spray-dx: ${dx}px;
+                --spray-dy: ${dy}px;
+                animation: angledSprayFall ${duration}s ${delay}ms ease-in forwards;
+            `;
+
+            waterSpray.appendChild(drop);
+            setTimeout(() => drop.remove(), (duration * 1000) + delay + 100);
+        }
+
+        // IPX4: Splash droplets coming from all directions (360°)
+        function createSplashDroplet(angle) {
+            const drop = document.createElement('div');
+            drop.className = 'water-droplet';
+
+            const size = 3 + Math.random() * 4;
+            const rad = angle * Math.PI / 180;
+            const distance = 85 + Math.random() * 35;
+            const centerX = 50;
+            const centerY = 50;
+
+            const startX = centerX + Math.cos(rad) * distance;
+            const startY = centerY + Math.sin(rad) * distance;
+
+            const moveX = -Math.cos(rad) * (45 + Math.random() * 35);
+            const moveY = -Math.sin(rad) * (45 + Math.random() * 35);
+            const duration = 0.4 + Math.random() * 0.3;
+
+            drop.style.cssText = `
+                width: ${size}px;
+                height: ${size}px;
+                left: ${startX}%;
+                top: ${startY}%;
+                opacity: 0;
+                animation: none;
+            `;
+
+            waterSpray.appendChild(drop);
+
+            // Animate inward toward device
+            requestAnimationFrame(() => {
+                drop.style.transition = `all ${duration}s ease-out`;
+                drop.style.opacity = '0.85';
+                drop.style.left = `calc(${startX}% + ${moveX}px)`;
+                drop.style.top = `calc(${startY}% + ${moveY}px)`;
+            });
+
+            setTimeout(() => {
+                drop.style.opacity = '0';
+                setTimeout(() => drop.remove(), 300);
+            }, duration * 1000);
+        }
+
+        function createWaterDrop(x, y, delay) {
+            const drop = document.createElement('div');
+            drop.className = 'water-droplet';
+
+            const size = 4 + Math.random() * 4;
+            const fallDist = 200 + Math.random() * 100;
+            const duration = 1 + Math.random() * 0.5;
+
+            drop.style.cssText = `
+                width: ${size}px;
+                height: ${size * 1.3}px;
+                left: ${x}%;
+                top: ${y}%;
+                --fall-dist: ${fallDist}px;
+                animation: dropletFall ${duration}s ${delay}ms ease-in forwards;
+            `;
+
+            waterSpray.appendChild(drop);
+            setTimeout(() => drop.remove(), (duration * 1000) + delay + 100);
+        }
+
+
+
+        function createWaterJet(side) {
+            const jet = document.createElement('div');
+            jet.className = 'water-stream';
+
+            const width = 60 + Math.random() * 30;
+
+            if (side === 'left') {
+                jet.style.cssText = `
+                    left: 40px;
+                    top: ${45 + Math.random() * 10}%;
+                    --jet-width: ${width}px;
+                    animation: waterJet 0.4s ease-out forwards;
+                `;
+            } else {
+                jet.style.cssText = `
+                    right: 40px;
+                    top: ${45 + Math.random() * 10}%;
+                    --jet-width: ${width}px;
+                    transform: scaleX(-1);
+                    animation: waterJet 0.4s ease-out forwards;
+                `;
+            }
+
+            waterSpray.appendChild(jet);
+            setTimeout(() => jet.remove(), 600);
+        }
+
+        function createSplashRing() {
+            const ring = document.createElement('div');
+            ring.className = 'splash-ring';
+            ring.style.animation = 'splashRing 0.8s ease-out forwards';
+            waterSpray.appendChild(ring);
+            setTimeout(() => ring.remove(), 900);
+        }
+
+        function startSubmersionAnimation() {
+            if (state.waterLevel === 7) {
+                submersionWater.classList.add('active');
+            } else {
+                submersionWater.classList.add('deep');
+            }
+
+            // Add bubbles
+            const createBubble = () => {
+                const bubble = document.createElement('div');
+                bubble.className = 'bubble';
+
+                const size = 4 + Math.random() * 8;
+                const x = 20 + Math.random() * 60;
+                const duration = 2 + Math.random() * 2;
+
+                bubble.style.cssText = `
+                    width: ${size}px;
+                    height: ${size}px;
+                    left: ${x}%;
+                    bottom: 10%;
+                    animation: bubbleRise ${duration}s ease-out forwards;
+                `;
+
+                submersionWater.appendChild(bubble);
+                setTimeout(() => bubble.remove(), duration * 1000 + 100);
+            };
+
+            // Create initial bubbles
+            setTimeout(() => {
+                for (let i = 0; i < 5; i++) {
+                    setTimeout(createBubble, i * 200);
+                }
+            }, 500);
+
+            animationInterval = setInterval(() => {
+                if (Math.random() > 0.3) createBubble();
+            }, 400);
+        }
+
+        // Initialize
+        vizDevice.innerHTML = deviceSVGs[state.device];
+        updateButtonStates();
+        updateDisplay();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Glass-to-Glass Latency Visualizer</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --text-color: #f8fafc;
+            --accent-color: #38bdf8;
+            --secondary-text: #94a3b8;
+            --success-color: #22c55e;
+            --warning-color: #facc15;
+            --sensor-color: #f97316;
+            --ecu-color: #a855f7;
+            --monitor-color: #10b981;
+            --border-color: rgba(148, 163, 184, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            min-height: 100vh;
+            background-image:
+                radial-gradient(circle at 10% 20%, rgba(56, 189, 248, 0.1) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(139, 92, 246, 0.1) 0%, transparent 20%);
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--secondary-text);
+            text-decoration: none;
+            font-size: 0.85rem;
+            padding: 0.4rem 0.8rem;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+        }
+
+        .back-link:hover {
+            color: var(--text-color);
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--accent-color);
+        }
+
+        .back-link svg {
+            width: 14px;
+            height: 14px;
+            stroke: currentColor;
+        }
+
+        .header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin: 0;
+            background: linear-gradient(to right, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--secondary-text);
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 900px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 1.5rem;
+        }
+
+        .panel-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .panel-title svg {
+            width: 20px;
+            height: 20px;
+            stroke: var(--accent-color);
+            fill: none;
+        }
+
+        .latency-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .latency-label {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+
+        .latency-label-left {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .latency-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .latency-dot.sensor {
+            background: var(--sensor-color);
+        }
+
+        .latency-dot.ecu {
+            background: var(--ecu-color);
+        }
+
+        .latency-dot.monitor {
+            background: var(--monitor-color);
+        }
+
+        .latency-name {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .latency-value {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--accent-color);
+            min-width: 70px;
+            text-align: right;
+        }
+
+        .latency-desc {
+            font-size: 0.75rem;
+            color: var(--secondary-text);
+            margin-bottom: 0.5rem;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            flex: 1;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        input[type="number"] {
+            width: 70px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-color);
+            padding: 0.4rem 0.5rem;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        .fps-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .fps-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .fps-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s ease;
+        }
+
+        .fps-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .fps-btn.selected {
+            background: rgba(249, 115, 22, 0.2);
+            border-color: var(--sensor-color);
+            color: var(--sensor-color);
+        }
+
+        .total-latency {
+            background: rgba(56, 189, 248, 0.1);
+            border: 2px solid var(--accent-color);
+            border-radius: 16px;
+            padding: 1.25rem;
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        .total-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--secondary-text);
+            margin-bottom: 0.5rem;
+        }
+
+        .total-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--accent-color);
+        }
+
+        .total-unit {
+            font-size: 1rem;
+            color: var(--secondary-text);
+        }
+
+        .breakdown {
+            margin-top: 1rem;
+        }
+
+        .breakdown-bar {
+            display: flex;
+            height: 12px;
+            border-radius: 6px;
+            overflow: hidden;
+            margin-bottom: 0.5rem;
+        }
+
+        .breakdown-segment {
+            transition: width 0.3s ease;
+        }
+
+        .breakdown-segment.sensor {
+            background: var(--sensor-color);
+        }
+
+        .breakdown-segment.ecu {
+            background: var(--ecu-color);
+        }
+
+        .breakdown-segment.monitor {
+            background: var(--monitor-color);
+        }
+
+        .breakdown-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            font-size: 0.75rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .viz-panel {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .mode-selector {
+            margin-bottom: 1rem;
+        }
+
+        .mode-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--secondary-text);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .mode-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .mode-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .mode-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .mode-btn.selected {
+            background: rgba(56, 189, 248, 0.2);
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+        }
+
+        .viz-container {
+            display: flex;
+            gap: 1rem;
+            background: linear-gradient(180deg, #1a2332 0%, #0d1520 100%);
+            border-radius: 16px;
+            padding: 1rem;
+            min-height: 320px;
+        }
+
+        .viz-box {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .viz-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--secondary-text);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .canvas-wrapper canvas {
+            display: block;
+            border-radius: 8px;
+            width: 100%;
+            height: 300px;
+        }
+
+        .real-canvas {
+            border: 2px solid var(--accent-color);
+        }
+
+        .delayed-canvas {
+            border: 2px solid var(--monitor-color);
+        }
+
+        .latency-badge {
+            position: absolute;
+            bottom: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            padding: 0.3rem 0.6rem;
+            border-radius: 8px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .latency-badge.real {
+            color: var(--accent-color);
+        }
+
+        .latency-badge.delayed {
+            color: var(--monitor-color);
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .info-item {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 0.5rem 1rem;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .info-item strong {
+            color: var(--warning-color);
+        }
+
+        .info-item.latency strong {
+            color: var(--accent-color);
+        }
+
+        .anim-controls {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: center;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .anim-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s ease;
+        }
+
+        .anim-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--accent-color);
+        }
+
+        .anim-btn.active {
+            background: rgba(56, 189, 248, 0.2);
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+        }
+
+        .anim-btn svg {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header-row">
+            <a href="../index.html" class="back-link">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7" />
+                </svg>
+                Back to Toolbox
+            </a>
+            <h1>Glass-to-Glass Latency</h1>
+            <div style="width: 130px;"></div>
+        </div>
+        <p class="subtitle">Interactive visualization for R46 CMS and automotive camera systems</p>
+
+        <div class="main-content">
+            <div class="panel">
+                <div class="panel-title">
+                    <svg viewBox="0 0 24 24" stroke-width="2">
+                        <circle cx="12" cy="12" r="3" />
+                        <path
+                            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                    </svg>
+                    Latency Parameters
+                </div>
+
+                <div class="fps-group">
+                    <div class="latency-label">
+                        <div class="latency-label-left">
+                            <span class="latency-dot sensor"></span>
+                            <span class="latency-name">Camera FPS</span>
+                        </div>
+                    </div>
+                    <p class="latency-desc">Frame capture rate affects sensor capture latency</p>
+                    <div class="fps-buttons" id="fps-buttons">
+                        <button class="fps-btn" data-fps="15">15 fps</button>
+                        <button class="fps-btn selected" data-fps="30">30 fps</button>
+                        <button class="fps-btn" data-fps="60">60 fps</button>
+                        <button class="fps-btn" data-fps="120">120 fps</button>
+                    </div>
+                </div>
+
+                <div class="latency-group">
+                    <div class="latency-label">
+                        <div class="latency-label-left">
+                            <span class="latency-dot sensor"></span>
+                            <span class="latency-name">Sensor Capture</span>
+                        </div>
+                        <span class="latency-value" id="sensor-value">33.3 ms</span>
+                    </div>
+                    <p class="latency-desc">Time to expose and read out image sensor (1/FPS)</p>
+                </div>
+
+                <div class="latency-group">
+                    <div class="latency-label">
+                        <div class="latency-label-left">
+                            <span class="latency-dot ecu"></span>
+                            <span class="latency-name">ECU Processing</span>
+                        </div>
+                        <span class="latency-value" id="ecu-value">25 ms</span>
+                    </div>
+                    <p class="latency-desc">Image processing, encoding, and transmission</p>
+                    <div class="slider-container">
+                        <input type="range" id="ecu-slider" min="5" max="100" value="25">
+                        <input type="number" id="ecu-input" min="5" max="100" value="25">
+                    </div>
+                </div>
+
+                <div class="latency-group">
+                    <div class="latency-label">
+                        <div class="latency-label-left">
+                            <span class="latency-dot monitor"></span>
+                            <span class="latency-name">Monitor Display</span>
+                        </div>
+                        <span class="latency-value" id="monitor-value">16.7 ms</span>
+                    </div>
+                    <p class="latency-desc">Image formation and pixel response time</p>
+                    <div class="slider-container">
+                        <input type="range" id="monitor-slider" min="5" max="50" value="17">
+                        <input type="number" id="monitor-input" min="5" max="50" value="17">
+                    </div>
+                </div>
+
+                <div class="latency-group" id="speed-group">
+                    <div class="latency-label">
+                        <div class="latency-label-left">
+                            <span class="latency-dot" style="background: var(--warning-color)"></span>
+                            <span class="latency-name">Vehicle Speed</span>
+                        </div>
+                        <span class="latency-value" id="speed-value">100 km/h</span>
+                    </div>
+                    <p class="latency-desc">Speed affects perceived position offset</p>
+                    <div class="slider-container">
+                        <input type="range" id="speed-slider" min="30" max="200" value="100">
+                        <input type="number" id="speed-input" min="30" max="200" value="100">
+                    </div>
+                </div>
+
+                <div class="total-latency">
+                    <div class="total-label">Total Glass-to-Glass Latency</div>
+                    <div class="total-value" id="total-value">75.0</div>
+                    <span class="total-unit">milliseconds</span>
+                    <div class="breakdown">
+                        <div class="breakdown-bar">
+                            <div class="breakdown-segment sensor" id="bar-sensor"></div>
+                            <div class="breakdown-segment ecu" id="bar-ecu"></div>
+                            <div class="breakdown-segment monitor" id="bar-monitor"></div>
+                        </div>
+                        <div class="breakdown-legend">
+                            <div class="legend-item"><span class="legend-dot"
+                                    style="background: var(--sensor-color)"></span>Sensor</div>
+                            <div class="legend-item"><span class="legend-dot"
+                                    style="background: var(--ecu-color)"></span>ECU</div>
+                            <div class="legend-item"><span class="legend-dot"
+                                    style="background: var(--monitor-color)"></span>Monitor</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel viz-panel">
+                <div class="panel-title">
+                    <svg viewBox="0 0 24 24" stroke-width="2">
+                        <polygon points="23 7 16 12 23 17 23 7" />
+                        <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+                    </svg>
+                    Live Latency Demonstration
+                </div>
+
+                <div class="mode-selector">
+                    <div class="mode-label">Animation Mode</div>
+                    <div class="mode-buttons">
+                        <button class="mode-btn selected" data-mode="person">👤 Person</button>
+                        <button class="mode-btn" data-mode="road">🛣️ Lane Lines</button>
+                        <button class="mode-btn" data-mode="overtake">🚗 Overtake</button>
+                    </div>
+                </div>
+
+                <div class="viz-container">
+                    <div class="viz-box">
+                        <div class="viz-label">🔵 Real World (Camera View)</div>
+                        <div class="canvas-wrapper">
+                            <canvas id="real-canvas" class="real-canvas" width="280" height="220"></canvas>
+                            <div class="latency-badge real">Real-time</div>
+                        </div>
+                    </div>
+                    <div class="viz-box">
+                        <div class="viz-label">🟢 Monitor Display</div>
+                        <div class="canvas-wrapper">
+                            <canvas id="delayed-canvas" class="delayed-canvas" width="280" height="220"></canvas>
+                            <div class="latency-badge delayed" id="delay-badge">+75ms delay</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-row">
+                    <div class="info-item latency">⏱️ Latency: <strong id="info-latency">75.0 ms</strong></div>
+                    <div class="info-item">🚗 Speed: <strong id="info-speed">100 km/h</strong></div>
+                    <div class="info-item">📏 Offset: <strong id="info-offset">2.08 m</strong></div>
+                </div>
+
+                <div class="anim-controls">
+                    <button class="anim-btn active" id="play-btn">
+                        <svg viewBox="0 0 24 24">
+                            <polygon points="5 3 19 12 5 21 5 3" />
+                        </svg>
+                        Play
+                    </button>
+                    <button class="anim-btn" id="speed-btn">Speed: 1x</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let fps = 30;
+        let ecuLatency = 25;
+        let monitorLatency = 17;
+        let vehicleSpeed = 100;
+        let isPlaying = true;
+        let animSpeed = 1;
+        let currentMode = 'person';
+
+        // History buffer for delay simulation
+        const stateHistory = [];
+        const MAX_HISTORY_MS = 500;
+
+        // Canvas setup
+        const realCanvas = document.getElementById('real-canvas');
+        const delayedCanvas = document.getElementById('delayed-canvas');
+        const realCtx = realCanvas.getContext('2d');
+        const delayedCtx = delayedCanvas.getContext('2d');
+
+        // Elements
+        const fpsButtons = document.querySelectorAll('.fps-btn');
+        const modeButtons = document.querySelectorAll('.mode-btn');
+        const ecuSlider = document.getElementById('ecu-slider');
+        const ecuInput = document.getElementById('ecu-input');
+        const monitorSlider = document.getElementById('monitor-slider');
+        const monitorInput = document.getElementById('monitor-input');
+        const speedSlider = document.getElementById('speed-slider');
+        const speedInput = document.getElementById('speed-input');
+        const sensorValue = document.getElementById('sensor-value');
+        const ecuValue = document.getElementById('ecu-value');
+        const monitorValue = document.getElementById('monitor-value');
+        const speedValue = document.getElementById('speed-value');
+        const totalValue = document.getElementById('total-value');
+        const playBtn = document.getElementById('play-btn');
+        const speedBtn = document.getElementById('speed-btn');
+        const barSensor = document.getElementById('bar-sensor');
+        const barEcu = document.getElementById('bar-ecu');
+        const barMonitor = document.getElementById('bar-monitor');
+        const delayBadge = document.getElementById('delay-badge');
+        const infoLatency = document.getElementById('info-latency');
+        const infoSpeed = document.getElementById('info-speed');
+        const infoOffset = document.getElementById('info-offset');
+
+        function getSensorLatency() { return 1000 / fps; }
+        function getTotalLatency() { return getSensorLatency() + ecuLatency + monitorLatency; }
+        function getPositionOffset() {
+            const latencySeconds = getTotalLatency() / 1000;
+            const speedMs = (vehicleSpeed * 1000) / 3600;
+            return latencySeconds * speedMs;
+        }
+
+        function updateDisplay() {
+            const sensorLat = getSensorLatency();
+            const total = getTotalLatency();
+            const offset = getPositionOffset();
+
+            sensorValue.textContent = `${sensorLat.toFixed(1)} ms`;
+            ecuValue.textContent = `${ecuLatency} ms`;
+            monitorValue.textContent = `${monitorLatency} ms`;
+            speedValue.textContent = `${vehicleSpeed} km/h`;
+            totalValue.textContent = total.toFixed(1);
+
+            delayBadge.textContent = `+${total.toFixed(0)}ms delay`;
+            infoLatency.textContent = `${total.toFixed(1)} ms`;
+            infoSpeed.textContent = `${vehicleSpeed} km/h`;
+            infoOffset.textContent = `${offset.toFixed(2)} m`;
+
+            barSensor.style.width = `${(sensorLat / total) * 100}%`;
+            barEcu.style.width = `${(ecuLatency / total) * 100}%`;
+            barMonitor.style.width = `${(monitorLatency / total) * 100}%`;
+        }
+
+        // Drawing functions
+        function drawRoad(ctx, laneOffset, overtakeCarY = null) {
+            const w = ctx.canvas.width;
+            const h = ctx.canvas.height;
+            const horizon = h * 0.15; // Moved horizon up for more road
+
+            // Sky gradient (smaller)
+            const skyGrad = ctx.createLinearGradient(0, 0, 0, horizon);
+            skyGrad.addColorStop(0, '#1e3a5f');
+            skyGrad.addColorStop(1, '#2d4a6f');
+            ctx.fillStyle = skyGrad;
+            ctx.fillRect(0, 0, w, horizon);
+
+            // Road (trapezoidal perspective - extended)
+            ctx.fillStyle = '#374151';
+            ctx.beginPath();
+            ctx.moveTo(0, h);           // Bottom left corner
+            ctx.lineTo(w, h);           // Bottom right corner
+            ctx.lineTo(w * 0.58, horizon); // Top right of road
+            ctx.lineTo(w * 0.42, horizon); // Top left of road
+            ctx.closePath();
+            ctx.fill();
+
+            // Lane edge lines (solid white)
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            // Left edge
+            ctx.beginPath();
+            ctx.moveTo(w * 0.08, h);
+            ctx.lineTo(w * 0.44, horizon);
+            ctx.stroke();
+            // Right edge
+            ctx.beginPath();
+            ctx.moveTo(w * 0.92, h);
+            ctx.lineTo(w * 0.56, horizon);
+            ctx.stroke();
+
+            // Center dashed line - realistic proportions (6m dash, 12m gap = 18m cycle)
+            const roadHeight = h - horizon;
+            const cycleLength = 18; // 18 meters total cycle
+            const dashLength = 6;   // 6 meter dash
+
+            // How many cycles fit on the visible road (~50m of road visible)
+            const visibleRoadMeters = 50;
+            const numCycles = Math.ceil(visibleRoadMeters / cycleLength) + 1;
+            const pixelsPerMeter = roadHeight / visibleRoadMeters;
+
+            // Animation offset in pixels
+            const animOffsetPixels = (laneOffset % cycleLength) * pixelsPerMeter;
+
+            for (let i = -1; i < numCycles; i++) {
+                // Position of this dash in meters from horizon
+                const dashStartMeters = i * cycleLength;
+                const dashStartPixels = dashStartMeters * pixelsPerMeter + animOffsetPixels;
+                const baseY = horizon + dashStartPixels;
+
+                if (baseY > h || baseY + dashLength * pixelsPerMeter < horizon) continue;
+
+                // Perspective scaling based on position
+                const progress = Math.max(0, Math.min(1, (baseY - horizon) / roadHeight));
+                const dashW = 4 + progress * 6;
+                const dashH = dashLength * pixelsPerMeter * (0.3 + progress * 0.7); // Perspective on dash height too
+
+                ctx.fillStyle = '#ffffff';
+                const clampedY = Math.max(horizon, baseY);
+                ctx.fillRect(w * 0.5 - dashW / 2, clampedY, dashW, Math.min(dashH, h - clampedY));
+            }
+
+            // Draw overtaking car if in overtake mode
+            if (overtakeCarY !== null && overtakeCarY >= horizon && overtakeCarY <= h) {
+                // Calculate X position based on perspective (car in left lane)
+                const carProgress = (overtakeCarY - horizon) / roadHeight;
+                const leftEdgeAtY = w * 0.44 + (w * 0.08 - w * 0.44) * carProgress; // Left edge X at this Y
+                const centerAtY = w * 0.5; // Center of road
+                const carX = leftEdgeAtY + (centerAtY - leftEdgeAtY) * 0.5; // Middle of left lane
+                const scale = 0.3 + carProgress * 0.8;
+                drawCar(ctx, carX, overtakeCarY, scale);
+            }
+        }
+
+        function drawCar(ctx, x, y, scale) {
+            const w = 30 * scale;
+            const h = 50 * scale;
+
+            // Car body
+            ctx.fillStyle = '#ef4444';
+            ctx.beginPath();
+            ctx.roundRect(x - w / 2, y - h, w, h, 4 * scale);
+            ctx.fill();
+
+            // Windshield
+            ctx.fillStyle = '#60a5fa';
+            ctx.beginPath();
+            ctx.roundRect(x - w / 2 + 4 * scale, y - h + 8 * scale, w - 8 * scale, 15 * scale, 2 * scale);
+            ctx.fill();
+
+            // Lights
+            ctx.fillStyle = '#fef08a';
+            ctx.fillRect(x - w / 2 + 3 * scale, y - 5 * scale, 6 * scale, 4 * scale);
+            ctx.fillRect(x + w / 2 - 9 * scale, y - 5 * scale, 6 * scale, 4 * scale);
+        }
+
+        function drawPerson(ctx, yOffset, color) {
+            const w = ctx.canvas.width;
+            const h = ctx.canvas.height;
+            const cx = w / 2;
+            const groundY = h - 30;
+            const personY = groundY - yOffset;
+
+            // Ground
+            ctx.fillStyle = '#374151';
+            ctx.fillRect(0, groundY + 20, w, h - groundY - 20);
+
+            // Background
+            const bgGrad = ctx.createLinearGradient(0, 0, 0, groundY);
+            bgGrad.addColorStop(0, '#1e3a5f');
+            bgGrad.addColorStop(1, '#2d4a6f');
+            ctx.fillStyle = bgGrad;
+            ctx.fillRect(0, 0, w, groundY + 20);
+
+            // Ground line
+            ctx.strokeStyle = '#4b5563';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, groundY + 20);
+            ctx.lineTo(w, groundY + 20);
+            ctx.stroke();
+
+            // Person
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 3;
+            ctx.lineCap = 'round';
+
+            // Head
+            ctx.beginPath();
+            ctx.arc(cx, personY - 50, 12, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Body
+            ctx.beginPath();
+            ctx.moveTo(cx, personY - 38);
+            ctx.lineTo(cx, personY - 10);
+            ctx.stroke();
+
+            // Arms
+            ctx.beginPath();
+            ctx.moveTo(cx - 20, personY - 25);
+            ctx.lineTo(cx, personY - 30);
+            ctx.lineTo(cx + 20, personY - 25);
+            ctx.stroke();
+
+            // Legs
+            ctx.beginPath();
+            ctx.moveTo(cx, personY - 10);
+            ctx.lineTo(cx - 15, personY + 20);
+            ctx.moveTo(cx, personY - 10);
+            ctx.lineTo(cx + 15, personY + 20);
+            ctx.stroke();
+        }
+
+        function switchMode(mode) {
+            currentMode = mode;
+            modeButtons.forEach(btn => btn.classList.toggle('selected', btn.dataset.mode === mode));
+            stateHistory.length = 0;
+
+            // Hide speed/offset for person mode (not applicable)
+            const infoSpeedItem = infoSpeed.closest('.info-item');
+            const infoOffsetItem = infoOffset.closest('.info-item');
+            if (mode === 'person') {
+                infoSpeedItem.style.display = 'none';
+                infoOffsetItem.style.display = 'none';
+            } else {
+                infoSpeedItem.style.display = '';
+                infoOffsetItem.style.display = '';
+            }
+        }
+
+        // Event handlers
+        fpsButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                fpsButtons.forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                fps = parseInt(btn.dataset.fps);
+                updateDisplay();
+            });
+        });
+
+        modeButtons.forEach(btn => {
+            btn.addEventListener('click', () => switchMode(btn.dataset.mode));
+        });
+
+        ecuSlider.addEventListener('input', () => { ecuLatency = parseInt(ecuSlider.value); ecuInput.value = ecuLatency; updateDisplay(); });
+        ecuInput.addEventListener('change', () => { ecuLatency = Math.max(5, Math.min(100, parseInt(ecuInput.value) || 25)); ecuInput.value = ecuLatency; ecuSlider.value = ecuLatency; updateDisplay(); });
+        monitorSlider.addEventListener('input', () => { monitorLatency = parseInt(monitorSlider.value); monitorInput.value = monitorLatency; updateDisplay(); });
+        monitorInput.addEventListener('change', () => { monitorLatency = Math.max(5, Math.min(50, parseInt(monitorInput.value) || 17)); monitorInput.value = monitorLatency; monitorSlider.value = monitorLatency; updateDisplay(); });
+        speedSlider.addEventListener('input', () => { vehicleSpeed = parseInt(speedSlider.value); speedInput.value = vehicleSpeed; updateDisplay(); });
+        speedInput.addEventListener('change', () => { vehicleSpeed = Math.max(30, Math.min(200, parseInt(speedInput.value) || 100)); speedInput.value = vehicleSpeed; speedSlider.value = vehicleSpeed; updateDisplay(); });
+
+        playBtn.addEventListener('click', () => {
+            isPlaying = !isPlaying;
+            playBtn.classList.toggle('active', isPlaying);
+            playBtn.innerHTML = isPlaying
+                ? '<svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg> Play'
+                : '<svg viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg> Pause';
+        });
+
+        speedBtn.addEventListener('click', () => {
+            const speeds = [0.5, 1, 2];
+            const idx = speeds.indexOf(animSpeed);
+            animSpeed = speeds[(idx + 1) % speeds.length];
+            speedBtn.textContent = `Speed: ${animSpeed}x`;
+        });
+
+        // Animation
+        let startTime = null;
+
+        function animate(timestamp) {
+            if (!startTime) startTime = timestamp;
+
+            if (isPlaying) {
+                const elapsed = (timestamp - startTime) * animSpeed;
+                const totalLat = getTotalLatency();
+
+                let currentState = {};
+
+                if (currentMode === 'person') {
+                    const jumpHeight = 50;
+                    const jumpFreq = 2;
+                    const yOffset = Math.abs(Math.sin(elapsed / 1000 * Math.PI * jumpFreq)) * jumpHeight;
+                    currentState = { yOffset };
+
+                    realCtx.clearRect(0, 0, realCanvas.width, realCanvas.height);
+                    drawPerson(realCtx, yOffset, '#38bdf8');
+
+                } else if (currentMode === 'road') {
+                    // Realistic lane marking: 6m dash + 12m gap = 18m per cycle
+                    // At 100 km/h = 27.78 m/s, one cycle takes ~0.65s
+                    const speedMs = vehicleSpeed / 3.6; // Convert km/h to m/s
+                    const metersPerMs = speedMs / 1000;
+                    const laneOffset = (elapsed * metersPerMs) % 18; // 18m cycle
+                    currentState = { laneOffset };
+
+                    realCtx.clearRect(0, 0, realCanvas.width, realCanvas.height);
+                    drawRoad(realCtx, laneOffset);
+
+                } else if (currentMode === 'overtake') {
+                    // Same realistic lane speed
+                    const speedMs = vehicleSpeed / 3.6;
+                    const metersPerMs = speedMs / 1000;
+                    const laneOffset = (elapsed * metersPerMs) % 18;
+
+                    // Car approaches faster than lane lines (relative speed ~30 km/h)
+                    const relativeSpeed = 30 / 3.6; // 30 km/h faster than us
+                    const cycleTime = 6000; // 6 seconds for car to approach
+                    const carProgress = (elapsed % cycleTime) / cycleTime;
+                    const horizon = realCanvas.height * 0.15;
+                    const roadHeight = realCanvas.height - horizon;
+                    const carY = horizon + carProgress * roadHeight;
+                    currentState = { laneOffset, carY };
+
+                    realCtx.clearRect(0, 0, realCanvas.width, realCanvas.height);
+                    drawRoad(realCtx, laneOffset, carY);
+                }
+
+                // Store state
+                stateHistory.push({ time: elapsed, state: currentState });
+                const minTime = elapsed - MAX_HISTORY_MS;
+                while (stateHistory.length > 0 && stateHistory[0].time < minTime) {
+                    stateHistory.shift();
+                }
+
+                // Find delayed state
+                const delayedTime = elapsed - totalLat;
+                let delayedState = currentState;
+                for (let i = stateHistory.length - 1; i >= 0; i--) {
+                    if (stateHistory[i].time <= delayedTime) {
+                        delayedState = stateHistory[i].state;
+                        break;
+                    }
+                }
+
+                // Draw delayed canvas
+                delayedCtx.clearRect(0, 0, delayedCanvas.width, delayedCanvas.height);
+                if (currentMode === 'person') {
+                    drawPerson(delayedCtx, delayedState.yOffset || 0, '#10b981');
+                } else if (currentMode === 'road') {
+                    drawRoad(delayedCtx, delayedState.laneOffset || 0);
+                } else if (currentMode === 'overtake') {
+                    drawRoad(delayedCtx, delayedState.laneOffset || 0, delayedState.carY);
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        // Initialize
+        updateDisplay();
+        switchMode(currentMode); // Apply initial mode state (hides speed/offset for person)
+        requestAnimationFrame(animate);
+    </script>
+</body>
+
+</html>
