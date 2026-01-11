@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADAS Sensor FOV Visualizer</title>
+    <style>
+        :root {
+            --bg-deep: #0f172a;
+            --bg-card: #1e293b;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --border: rgba(255, 255, 255, 0.1);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent: #38bdf8;
+            --accent-secondary: #818cf8;
+            --vehicle-color: #475569;
+            --grid-color: rgba(148, 163, 184, 0.1);
+            --blind-spot-color: rgba(239, 68, 68, 0.2);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-deep);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .container {
+            max-width: 1600px;
+            width: 95%;
+            margin: 0 auto;
+            padding: 40px 0;
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 30px;
+        }
+
+        header {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            margin: 0;
+            background: linear-gradient(to right, var(--accent), var(--accent-secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .back-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            border: 1px solid var(--border);
+            padding: 6px 12px;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .back-link:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            overflow: hidden;
+        }
+
+        .section-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .visualization-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .view-container {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 16px;
+            position: relative;
+        }
+
+        .view-title {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .vehicle {
+            fill: var(--vehicle-color);
+            stroke: var(--text-primary);
+            stroke-width: 0.15;
+        }
+
+        .grid-line {
+            stroke: var(--grid-color);
+            stroke-width: 0.05;
+        }
+
+        .grid-label {
+            fill: var(--text-secondary);
+            font-size: 1.2px;
+            font-family: monospace;
+        }
+
+        .sensor-fov {
+            opacity: 0.3;
+            stroke-width: 0.1;
+            transition: opacity 0.2s;
+        }
+
+        .sensor-fov:hover {
+            opacity: 0.5;
+        }
+
+        .sensor-marker {
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .sensor-marker:hover {
+            transform: scale(1.2);
+        }
+
+        .sensor-label {
+            fill: var(--text-primary);
+            font-size: 1px;
+            font-weight: 600;
+            pointer-events: none;
+        }
+
+        .blind-spot {
+            fill: var(--blind-spot-color);
+            stroke: #ef4444;
+            stroke-width: 0.1;
+            stroke-dasharray: 0.3 0.15;
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .preset-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+        }
+
+        .preset-btn {
+            background: rgba(56, 189, 248, 0.1);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 10px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.85rem;
+            text-align: left;
+        }
+
+        .preset-btn:hover {
+            background: rgba(56, 189, 248, 0.2);
+            border-color: var(--accent);
+        }
+
+        .sensor-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .sensor-item {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 14px;
+            border-radius: 12px;
+            border-left: 4px solid;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .sensor-item:hover {
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .sensor-item.selected {
+            background: rgba(56, 189, 248, 0.1);
+            border-left-color: var(--accent);
+        }
+
+        .sensor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .sensor-name {
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        .sensor-meta {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        .btn {
+            background: var(--accent);
+            color: var(--bg-deep);
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.85rem;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .label {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input,
+        select {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 10px 14px;
+            border-radius: 8px;
+            outline: none;
+            font-size: 0.85rem;
+            min-width: 0;
+            width: 100%;
+        }
+
+        input:focus,
+        select:focus {
+            border-color: var(--accent);
+        }
+
+        input[type="number"] {
+            font-family: monospace;
+        }
+
+        .color-picker {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
+        }
+
+        .color-dot {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .color-dot.active {
+            border-color: white;
+            transform: scale(1.2);
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        details {
+            border-top: 1px solid var(--border);
+            padding-top: 16px;
+            margin-top: 16px;
+        }
+
+        summary {
+            cursor: pointer;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            user-select: none;
+            padding: 4px 0;
+        }
+
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 2px;
+        }
+
+        @media (max-width: 1200px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+
+            .controls {
+                max-width: 100%;
+            }
+        }
+
+        .dimension-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+        }
+
+        .zoom-btn {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            background: var(--bg-deep);
+            color: var(--text-primary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.2s;
+            padding: 0;
+        }
+
+        .zoom-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>ADAS Sensor FOV Visualizer</h1>
+            <a href="../index.html" class="back-link">← Return to Toolbox</a>
+        </header>
+
+        <main class="visualization-container">
+            <div class="card">
+                <div class="view-container">
+                    <div class="view-title" style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>Top-Down View (XY Plane)</span>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <button class="zoom-btn" onclick="zoomTopView(-10)">−</button>
+                            <input type="range" id="top-zoom" min="10" max="100" value="30" step="5"
+                                style="width: 80px; accent-color: var(--accent);" oninput="setTopViewZoom(this.value)">
+                            <button class="zoom-btn" onclick="zoomTopView(10)">+</button>
+                            <span id="top-zoom-label"
+                                style="font-size: 0.6rem; color: var(--text-secondary); min-width: 35px;">±30m</span>
+                        </div>
+                    </div>
+                    <svg id="top-view" viewBox="-30 -30 60 60" preserveAspectRatio="xMidYMid meet">
+                        <defs>
+                            <pattern id="grid" width="1" height="1" patternUnits="userSpaceOnUse">
+                                <line x1="0" y1="0" x2="0" y2="1" class="grid-line" />
+                                <line x1="0" y1="0" x2="1" y2="0" class="grid-line" />
+                            </pattern>
+                        </defs>
+                        <g id="top-grid"></g>
+                        <g id="top-sensors"></g>
+                        <g id="top-vehicle"></g>
+                        <g id="top-labels"></g>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="view-container">
+                    <div class="view-title"
+                        style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                        <span>Side View (XZ Plane)</span>
+                        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                            <div style="display: flex; gap: 4px; align-items: center;">
+                                <span style="font-size: 0.6rem; color: var(--text-secondary);">View:</span>
+                                <select id="side-view-perspective" onchange="updateVehicle()"
+                                    style="background: var(--bg-deep); color: white; border: 1px solid var(--border); border-radius: 4px; padding: 2px 6px; font-size: 0.65rem;">
+                                    <option value="left">Left</option>
+                                    <option value="right">Right</option>
+                                    <option value="front">Front</option>
+                                    <option value="rear">Rear</option>
+                                </select>
+                            </div>
+                            <div style="display: flex; gap: 4px; align-items: center;">
+                                <button class="zoom-btn" onclick="zoomSideView(-5)">−</button>
+                                <input type="range" id="side-zoom" min="5" max="50" value="30" step="5"
+                                    style="width: 60px; accent-color: var(--accent);"
+                                    oninput="setSideViewZoom(this.value)">
+                                <button class="zoom-btn" onclick="zoomSideView(5)">+</button>
+                                <span id="side-zoom-label"
+                                    style="font-size: 0.6rem; color: var(--text-secondary); min-width: 30px;">±30m</span>
+                            </div>
+                        </div>
+                    </div>
+                    <svg id="side-view" viewBox="-30 -5 60 10" preserveAspectRatio="xMidYMid meet">
+                        <g id="side-grid"></g>
+                        <g id="side-sensors"></g>
+                        <g id="side-vehicle"></g>
+                        <g id="side-labels"></g>
+                    </svg>
+                </div>
+            </div>
+        </main>
+
+        <aside class="controls">
+            <div class="card">
+                <div class="section-title">Sensor Presets</div>
+                <div class="preset-grid">
+                    <button class="preset-btn" onclick="loadPreset('front-camera')">📷 Front Camera</button>
+                    <button class="preset-btn" onclick="loadPreset('side-radars')">📡 Side Radars</button>
+                    <button class="preset-btn" onclick="loadPreset('rear-camera')">📷 Rear Camera</button>
+                    <button class="preset-btn" onclick="loadPreset('surround-360')">🔄 360° Surround View</button>
+                    <button class="preset-btn" onclick="loadPreset('clear')">🗑️ Clear All</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="section-title">Active Sensors</div>
+                <div class="sensor-list" id="sensor-list">
+                    <div
+                        style="text-align: center; padding: 40px 20px; color: var(--text-secondary); font-size: 0.85rem;">
+                        No sensors configured. Select a preset or add a custom sensor.
+                    </div>
+                </div>
+                <button class="btn" style="width: 100%; margin-top: 16px;" onclick="addCustomSensor()">+ Add Custom
+                    Sensor</button>
+            </div>
+
+            <div class="card" id="sensor-editor" style="display: none;">
+                <div class="section-title">Sensor Configuration</div>
+
+                <div class="input-group">
+                    <label class="label">Sensor Name</label>
+                    <input type="text" id="sensor-name" placeholder="e.g., Front Camera">
+                </div>
+
+                <div class="input-group">
+                    <label class="label">Position (X, Y, Z) in meters</label>
+                    <div class="dimension-grid">
+                        <input type="number" id="sensor-x" step="0.1" placeholder="X">
+                        <input type="number" id="sensor-y" step="0.1" placeholder="Y">
+                        <input type="number" id="sensor-z" step="0.1" placeholder="Z">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label class="label">Orientation (degrees, 0° = front)</label>
+                    <input type="number" id="sensor-orientation" step="1" min="0" max="360" placeholder="0">
+                </div>
+
+                <div class="input-group">
+                    <label class="label">Vertical Angle (degrees)</label>
+                    <input type="number" id="sensor-vertical" step="1" min="-90" max="90" placeholder="0">
+                </div>
+
+                <div class="input-group">
+                    <label class="label">Horizontal FOV (degrees)</label>
+                    <input type="number" id="sensor-fov" step="1" min="1" max="360" placeholder="60">
+                </div>
+
+                <div class="input-group">
+                    <label class="label">Vertical FOV (degrees)</label>
+                    <input type="number" id="sensor-vfov" step="1" min="1" max="180" placeholder="45">
+                </div>
+
+                <div class="input-group">
+                    <label class="label">Range (meters)</label>
+                    <input type="number" id="sensor-range" step="1" min="1" placeholder="50">
+                </div>
+
+                <div class="input-group">
+                    <label class="label">Color</label>
+                    <div class="color-picker" id="color-picker">
+                        <div class="color-dot active" style="background: #3b82f6;" data-color="#3b82f6"></div>
+                        <div class="color-dot" style="background: #22c55e;" data-color="#22c55e"></div>
+                        <div class="color-dot" style="background: #f59e0b;" data-color="#f59e0b"></div>
+                        <div class="color-dot" style="background: #ef4444;" data-color="#ef4444"></div>
+                        <div class="color-dot" style="background: #8b5cf6;" data-color="#8b5cf6"></div>
+                        <div class="color-dot" style="background: #ec4899;" data-color="#ec4899"></div>
+                    </div>
+                </div>
+
+                <div class="button-group" style="margin-top: 16px;">
+                    <button class="btn" onclick="saveSensor()">Save</button>
+                    <button class="btn btn-secondary" onclick="cancelEdit()">Cancel</button>
+                </div>
+                <button class="btn btn-danger" style="width: 100%; margin-top: 8px;" onclick="deleteSensor()">Delete
+                    Sensor</button>
+            </div>
+
+            <div class="card">
+                <div class="section-title">Vehicle Settings</div>
+
+                <div class="input-group">
+                    <label class="label">Dimensions (L × W × H) in meters</label>
+                    <div class="dimension-grid">
+                        <input type="number" id="vehicle-length" step="0.1" value="4.5" onchange="updateVehicle()">
+                        <input type="number" id="vehicle-width" step="0.1" value="1.8" onchange="updateVehicle()">
+                        <input type="number" id="vehicle-height" step="0.1" value="1.5" onchange="updateVehicle()">
+                    </div>
+                </div>
+
+                <details style="margin-top: 16px;">
+                    <summary>⚙️ Configuration</summary>
+                    <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 8px;">
+                        <button class="btn btn-secondary" onclick="exportConfig()">⬇️ Export Config</button>
+                        <label for="import-file" class="btn btn-secondary"
+                            style="margin: 0; text-align: center; cursor: pointer;">⬆️ Import Config</label>
+                        <input type="file" id="import-file" accept=".json" style="display: none;"
+                            onchange="importConfig(event)">
+                    </div>
+                </details>
+            </div>
+        </aside>
+    </div>
+
+    <script>
+        // Vehicle dimensions (meters)
+        let vehicle = {
+            length: 4.5,
+            width: 1.8,
+            height: 1.5
+        };
+
+        // Sensor configuration
+        let sensors = [];
+        let selectedSensorIndex = -1;
+        let editingSensorIndex = -1;
+        let activeColor = '#3b82f6';
+
+        // Zoom levels
+        let topViewZoom = 30;  // Range in meters (±30m = 60m total)
+        let sideViewZoom = 30; // Range in meters (±30m = 60m total)
+
+        // Zoom functions
+        function setTopViewZoom(value) {
+            topViewZoom = parseInt(value);
+            document.getElementById('top-zoom').value = topViewZoom;
+            document.getElementById('top-zoom-label').textContent = `±${topViewZoom}m`;
+            const svg = document.getElementById('top-view');
+            svg.setAttribute('viewBox', `${-topViewZoom} ${-topViewZoom} ${topViewZoom * 2} ${topViewZoom * 2}`);
+            renderVisualization();
+        }
+
+        function zoomTopView(delta) {
+            const slider = document.getElementById('top-zoom');
+            const newValue = Math.max(10, Math.min(100, topViewZoom + delta));
+            setTopViewZoom(newValue);
+        }
+
+        function setSideViewZoom(value) {
+            sideViewZoom = parseInt(value);
+            document.getElementById('side-zoom').value = sideViewZoom;
+            document.getElementById('side-zoom-label').textContent = `±${sideViewZoom}m`;
+            const svg = document.getElementById('side-view');
+            // Keep height proportional (1/6 of width)
+            const height = Math.max(5, sideViewZoom / 3);
+            svg.setAttribute('viewBox', `${-sideViewZoom} ${-height} ${sideViewZoom * 2} ${height * 2}`);
+            renderVisualization();
+        }
+
+        function zoomSideView(delta) {
+            const newValue = Math.max(5, Math.min(50, sideViewZoom + delta));
+            setSideViewZoom(newValue);
+        }
+
+        // Preset configurations
+        const presets = {
+            'front-camera': [
+                { name: 'Front Camera', x: 2.25, y: 0, z: 1.2, orientation: 0, vertical: 0, fov: 60, vfov: 45, range: 50, color: '#3b82f6' }
+            ],
+            'side-radars': [
+                { name: 'Left Radar', x: 0, y: -0.9, z: 0.5, orientation: -90, vertical: 0, fov: 120, vfov: 30, range: 20, color: '#22c55e' },
+                { name: 'Right Radar', x: 0, y: 0.9, z: 0.5, orientation: 90, vertical: 0, fov: 120, vfov: 30, range: 20, color: '#22c55e' }
+            ],
+            'rear-camera': [
+                { name: 'Rear Camera', x: -2.25, y: 0, z: 1.0, orientation: 180, vertical: -10, fov: 150, vfov: 60, range: 10, color: '#f59e0b' }
+            ],
+            'surround-360': [
+                { name: 'Front Camera', x: 2.25, y: 0, z: 1.2, orientation: 0, vertical: 0, fov: 60, vfov: 45, range: 50, color: '#3b82f6' },
+                { name: 'Left Camera', x: 0, y: -0.9, z: 1.0, orientation: -90, vertical: 0, fov: 90, vfov: 60, range: 15, color: '#22c55e' },
+                { name: 'Right Camera', x: 0, y: 0.9, z: 1.0, orientation: 90, vertical: 0, fov: 90, vfov: 60, range: 15, color: '#8b5cf6' },
+                { name: 'Rear Camera', x: -2.25, y: 0, z: 1.0, orientation: 180, vertical: -10, fov: 150, vfov: 60, range: 10, color: '#f59e0b' }
+            ]
+        };
+
+        // Color picker initialization
+        document.querySelectorAll('.color-dot').forEach(dot => {
+            dot.addEventListener('click', () => {
+                document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
+                dot.classList.add('active');
+                activeColor = dot.dataset.color;
+            });
+        });
+
+        // Initialize
+        function init() {
+            updateVehicle();
+            renderSensors();
+        }
+
+        // Update vehicle dimensions
+        function updateVehicle() {
+            vehicle.length = parseFloat(document.getElementById('vehicle-length').value);
+            vehicle.width = parseFloat(document.getElementById('vehicle-width').value);
+            vehicle.height = parseFloat(document.getElementById('vehicle-height').value);
+            renderVisualization();
+        }
+
+        // Render complete visualization
+        function renderVisualization() {
+            renderTopView();
+            renderSideView();
+        }
+
+        // Render top-down view
+        function renderTopView() {
+            const grid = document.getElementById('top-grid');
+            const vehicleG = document.getElementById('top-vehicle');
+            const sensorsG = document.getElementById('top-sensors');
+            const labelsG = document.getElementById('top-labels');
+
+            const zoom = topViewZoom;
+            const gridStep = zoom > 50 ? 10 : 5; // Larger step for zoomed out view
+
+            // Clear
+            grid.innerHTML = '';
+            vehicleG.innerHTML = '';
+            sensorsG.innerHTML = '';
+            labelsG.innerHTML = '';
+
+            // Draw grid
+            for (let i = -zoom; i <= zoom; i += gridStep) {
+                // Vertical lines
+                grid.innerHTML += `<line x1="${i}" y1="${-zoom}" x2="${i}" y2="${zoom}" class="grid-line"/>`;
+                if (i !== 0) {
+                    grid.innerHTML += `<text x="${i}" y="${-zoom + 2}" class="grid-label" text-anchor="middle">${i}m</text>`;
+                }
+                // Horizontal lines
+                grid.innerHTML += `<line x1="${-zoom}" y1="${i}" x2="${zoom}" y2="${i}" class="grid-line"/>`;
+                if (i !== 0) {
+                    grid.innerHTML += `<text x="${-zoom + 2}" y="${i}" class="grid-label" text-anchor="end" dy="0.3em">${-i}m</text>`;
+                }
+            }
+
+            // Axes - Front is UP (-Y in SVG), Right is RIGHT (+X in SVG)
+            grid.innerHTML += `<line x1="0" y1="${-zoom}" x2="0" y2="${zoom}" stroke="${activeColor}" stroke-width="0.1"/>`;
+            grid.innerHTML += `<line x1="${-zoom}" y1="0" x2="${zoom}" y2="0" stroke="${activeColor}" stroke-width="0.1"/>`;
+            grid.innerHTML += `<text x="0" y="${-zoom + 1.5}" class="grid-label" fill="${activeColor}" text-anchor="middle">↑ Front</text>`;
+            grid.innerHTML += `<text x="0" y="${zoom - 0.5}" class="grid-label" fill="${activeColor}" text-anchor="middle">↓ Rear</text>`;
+            grid.innerHTML += `<text x="${zoom - 1}" y="0" class="grid-label" text-anchor="end" fill="${activeColor}" dy="-0.5em">Right →</text>`;
+            grid.innerHTML += `<text x="${-zoom + 1}" y="0" class="grid-label" fill="${activeColor}" dy="-0.5em">← Left</text>`;
+
+            // Draw vehicle (centered at origin) - rotated so front is UP
+            // Vehicle length runs along Y axis (front/back), width along X axis (left/right)
+            const vl = vehicle.length;
+            const vw = vehicle.width;
+            vehicleG.innerHTML = `
+                <rect x="${-vw / 2}" y="${-vl / 2}" width="${vw}" height="${vl}" class="vehicle" rx="0.2"/>
+                <line x1="0" y1="${-vl / 2}" x2="0" y2="${vl / 2}" stroke="white" stroke-width="0.05" opacity="0.3"/>
+                <line x1="${-vw / 2}" y1="0" x2="${vw / 2}" y2="0" stroke="white" stroke-width="0.05" opacity="0.3"/>
+                <polygon points="0,${-vl / 2} -0.2,${-vl / 2 + 0.3} 0.2,${-vl / 2 + 0.3}" fill="white" opacity="0.8"/>
+            `;
+
+            // Draw sensors - transform from vehicle coords to SVG coords
+            // Vehicle: +X = front, +Y = left
+            // SVG: +X = right, +Y = down (so we map vehicle X to -SVG Y, vehicle Y to -SVG X)
+            sensors.forEach((sensor, idx) => {
+                const { x, y, orientation, fov, range, color } = sensor;
+
+                // Transform vehicle coords to SVG coords: svgX = -y, svgY = -x
+                const svgX = -y;
+                const svgY = -x;
+
+                // Transform orientation: vehicle 0° = front (+X) = SVG up (-Y) = -90° in math
+                // So SVG angle = vehicle orientation - 90°
+                const svgOrientation = orientation - 90;
+
+                // Calculate FOV wedge in SVG coords
+                const startAngle = (svgOrientation - fov / 2) * Math.PI / 180;
+                const endAngle = (svgOrientation + fov / 2) * Math.PI / 180;
+
+                // Create arc path
+                const x1 = svgX + range * Math.cos(startAngle);
+                const y1 = svgY + range * Math.sin(startAngle);
+                const x2 = svgX + range * Math.cos(endAngle);
+                const y2 = svgY + range * Math.sin(endAngle);
+
+                const largeArc = fov > 180 ? 1 : 0;
+
+                sensorsG.innerHTML += `
+                    <path d="M ${svgX} ${svgY} L ${x1} ${y1} A ${range} ${range} 0 ${largeArc} 1 ${x2} ${y2} Z"
+                          class="sensor-fov" fill="${color}" stroke="${color}" data-sensor="${idx}"/>
+                    <circle cx="${svgX}" cy="${svgY}" r="0.4" fill="${color}" stroke="white" stroke-width="0.08" class="sensor-marker" data-sensor="${idx}" onclick="selectSensor(${idx})"/>
+                `;
+
+                // Position label along sensor direction (at 30% of range)
+                const labelDist = Math.min(range * 0.3, 5);
+                const orientRad = svgOrientation * Math.PI / 180;
+                const labelX = svgX + labelDist * Math.cos(orientRad);
+                const labelY = svgY + labelDist * Math.sin(orientRad);
+
+                labelsG.innerHTML += `
+                    <text x="${labelX}" y="${labelY}" class="sensor-label" text-anchor="middle" dy="0.3em">${sensor.name}</text>
+                `;
+            });
+        }
+
+        // Render side view
+        function renderSideView() {
+            const grid = document.getElementById('side-grid');
+            const vehicleG = document.getElementById('side-vehicle');
+            const sensorsG = document.getElementById('side-sensors');
+            const labelsG = document.getElementById('side-labels');
+
+            // Get perspective
+            const perspectiveEl = document.getElementById('side-view-perspective');
+            const perspective = perspectiveEl ? perspectiveEl.value : 'left';
+
+            // Determine which plane we're viewing and coordinate transforms
+            const isLateralView = (perspective === 'left' || perspective === 'right'); // XZ plane
+            const isLongitudinalView = (perspective === 'front' || perspective === 'rear'); // YZ plane
+            const flipHoriz = (perspective === 'right' || perspective === 'rear') ? -1 : 1;
+
+            // Clear
+            grid.innerHTML = '';
+            vehicleG.innerHTML = '';
+            sensorsG.innerHTML = '';
+            labelsG.innerHTML = '';
+
+            const zoom = sideViewZoom;
+            const height = Math.max(5, zoom / 3);
+            const gridStep = zoom > 30 ? 10 : 5;
+
+            // Draw grid
+            for (let i = -zoom; i <= zoom; i += gridStep) {
+                grid.innerHTML += `<line x1="${i}" y1="${-height}" x2="${i}" y2="${height}" class="grid-line"/>`;
+                if (i !== 0 && i % 10 === 0) {
+                    grid.innerHTML += `<text x="${i}" y="${height - 0.5}" class="grid-label" text-anchor="middle" style="font-size: 0.4px">${i * flipHoriz}m</text>`;
+                }
+            }
+            for (let i = Math.floor(-height); i <= Math.ceil(height); i += 1) {
+                grid.innerHTML += `<line x1="${-zoom}" y1="${i}" x2="${zoom}" y2="${i}" class="grid-line"/>`;
+                if (i !== 0 && i % 2 === 0) {
+                    grid.innerHTML += `<text x="${-zoom + 1}" y="${i}" class="grid-label" text-anchor="start" dy="0.15em" style="font-size: 0.4px">${-i}m</text>`;
+                }
+            }
+
+            // Axes
+            grid.innerHTML += `<line x1="0" y1="${-height}" x2="0" y2="${height}" stroke="${activeColor}" stroke-width="0.03"/>`;
+            grid.innerHTML += `<line x1="${-zoom}" y1="0" x2="${zoom}" y2="0" stroke="${activeColor}" stroke-width="0.03"/>`;
+
+            // Draw vehicle based on perspective
+            const vl = vehicle.length;
+            const vw = vehicle.width;
+            const vh = vehicle.height;
+
+            if (isLateralView) {
+                // Side view: show length x height, front/rear labels
+                const frontX = vl / 2 * flipHoriz;
+                const rearX = -vl / 2 * flipHoriz;
+                vehicleG.innerHTML = `
+                    <rect x="${-vl / 2}" y="${-vh}" width="${vl}" height="${vh}" class="vehicle" rx="0.1"/>
+                    <polygon points="${frontX},-${vh / 2} ${frontX - 0.2 * flipHoriz},-${vh / 2 - 0.15} ${frontX - 0.2 * flipHoriz},-${vh / 2 + 0.15}" fill="white" opacity="0.8"/>
+                    <text x="${frontX + 0.5 * flipHoriz}" y="${-vh / 2}" class="grid-label" fill="${activeColor}" dy="0.1em" text-anchor="${flipHoriz > 0 ? 'start' : 'end'}" style="font-size: 0.4px">Front</text>
+                    <text x="${rearX - 0.5 * flipHoriz}" y="${-vh / 2}" class="grid-label" fill="${activeColor}" text-anchor="${flipHoriz > 0 ? 'end' : 'start'}" dy="0.1em" style="font-size: 0.4px">Rear</text>
+                `;
+            } else {
+                // Front/rear view: show width x height, left/right labels
+                const leftX = -vw / 2 * flipHoriz;
+                const rightX = vw / 2 * flipHoriz;
+                vehicleG.innerHTML = `
+                    <rect x="${-vw / 2}" y="${-vh}" width="${vw}" height="${vh}" class="vehicle" rx="0.1"/>
+                    <text x="${leftX - 0.3 * flipHoriz}" y="${-vh / 2}" class="grid-label" fill="${activeColor}" dy="0.1em" text-anchor="${flipHoriz > 0 ? 'end' : 'start'}" style="font-size: 0.4px">Left</text>
+                    <text x="${rightX + 0.3 * flipHoriz}" y="${-vh / 2}" class="grid-label" fill="${activeColor}" text-anchor="${flipHoriz > 0 ? 'start' : 'end'}" dy="0.1em" style="font-size: 0.4px">Right</text>
+                `;
+            }
+
+            // Draw sensors
+            sensors.forEach((sensor, idx) => {
+                const { x, y, z, orientation, vertical, vfov, range, color } = sensor;
+
+                // Normalize orientation
+                const normalizedOrientation = ((orientation % 360) + 360) % 360;
+                const isFrontFacing = normalizedOrientation < 45 || normalizedOrientation > 315;
+                const isRearFacing = normalizedOrientation > 135 && normalizedOrientation < 225;
+                const isLeftFacing = normalizedOrientation > 225 && normalizedOrientation < 315;
+                const isRightFacing = normalizedOrientation > 45 && normalizedOrientation < 135;
+
+                // In side view (lateral): show front/rear facing sensors
+                // In front/rear view (longitudinal): show left/right facing sensors
+                let showFOV = false;
+                let svgX, horizDir;
+
+                if (isLateralView) {
+                    // Side view: X axis shows front/back position
+                    svgX = x * flipHoriz;
+                    if (isFrontFacing || isRearFacing) {
+                        showFOV = true;
+                        horizDir = (isFrontFacing ? 1 : -1) * flipHoriz;
+                    }
+                } else {
+                    // Front/rear view: X axis shows left/right position
+                    svgX = -y * flipHoriz; // Negative because left is -Y in vehicle coords
+                    if (isLeftFacing || isRightFacing) {
+                        showFOV = true;
+                        horizDir = (isLeftFacing ? -1 : 1) * flipHoriz;
+                    }
+                }
+
+                const svgZ = -z; // Flip Z because SVG Y is inverted
+
+                if (showFOV) {
+                    const baseAngle = horizDir > 0 ? 0 : 180;
+                    const startAngle = (baseAngle + vertical - vfov / 2) * Math.PI / 180;
+                    const endAngle = (baseAngle + vertical + vfov / 2) * Math.PI / 180;
+
+                    const x1 = svgX + range * Math.cos(startAngle);
+                    const z1 = svgZ - range * Math.sin(startAngle);
+                    const x2 = svgX + range * Math.cos(endAngle);
+                    const z2 = svgZ - range * Math.sin(endAngle);
+
+                    const largeArc = vfov > 180 ? 1 : 0;
+
+                    sensorsG.innerHTML += `
+                        <path d="M ${svgX} ${svgZ} L ${x1} ${z1} A ${range} ${range} 0 ${largeArc} 1 ${x2} ${z2} Z"
+                              class="sensor-fov" fill="${color}" stroke="${color}" opacity="0.3"/>
+                        <circle cx="${svgX}" cy="${svgZ}" r="0.15" fill="${color}" stroke="white" stroke-width="0.05" class="sensor-marker"/>
+                    `;
+                } else {
+                    // Sensor faces perpendicular to this view, just show position
+                    sensorsG.innerHTML += `
+                        <circle cx="${svgX}" cy="${svgZ}" r="0.15" fill="${color}" stroke="white" stroke-width="0.05" class="sensor-marker"/>
+                    `;
+                }
+            });
+        }
+
+        // Load preset
+        function loadPreset(preset) {
+            if (preset === 'clear') {
+                sensors = [];
+            } else if (presets[preset]) {
+                sensors = JSON.parse(JSON.stringify(presets[preset]));
+            }
+            renderSensors();
+            renderVisualization();
+        }
+
+        // Render sensor list
+        function renderSensors() {
+            const list = document.getElementById('sensor-list');
+
+            if (sensors.length === 0) {
+                list.innerHTML = `
+                    <div style="text-align: center; padding: 40px 20px; color: var(--text-secondary); font-size: 0.85rem;">
+                        No sensors configured. Select a preset or add a custom sensor.
+                    </div>
+                `;
+                return;
+            }
+
+            list.innerHTML = sensors.map((sensor, idx) => `
+                <div class="sensor-item ${idx === selectedSensorIndex ? 'selected' : ''}" 
+                     style="border-left-color: ${sensor.color};" 
+                     onclick="selectSensor(${idx})">
+                    <div class="sensor-header">
+                        <div class="sensor-name">${sensor.name}</div>
+                    </div>
+                    <div class="sensor-meta">
+                        Position: (${sensor.x.toFixed(1)}, ${sensor.y.toFixed(1)}, ${sensor.z.toFixed(1)})m<br>
+                        FOV: ${sensor.fov}° × ${sensor.vfov}° | Range: ${sensor.range}m
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Select sensor
+        function selectSensor(idx) {
+            selectedSensorIndex = idx;
+            editingSensorIndex = idx;
+            renderSensors();
+
+            // Populate editor
+            const sensor = sensors[idx];
+            document.getElementById('sensor-name').value = sensor.name;
+            document.getElementById('sensor-x').value = sensor.x;
+            document.getElementById('sensor-y').value = sensor.y;
+            document.getElementById('sensor-z').value = sensor.z;
+            document.getElementById('sensor-orientation').value = sensor.orientation;
+            document.getElementById('sensor-vertical').value = sensor.vertical;
+            document.getElementById('sensor-fov').value = sensor.fov;
+            document.getElementById('sensor-vfov').value = sensor.vfov;
+            document.getElementById('sensor-range').value = sensor.range;
+
+            // Set color
+            document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
+            const colorDot = document.querySelector(`.color-dot[data-color="${sensor.color}"]`);
+            if (colorDot) colorDot.classList.add('active');
+            activeColor = sensor.color;
+
+            document.getElementById('sensor-editor').style.display = 'block';
+        }
+
+        // Add custom sensor
+        function addCustomSensor() {
+            editingSensorIndex = -1;
+            document.getElementById('sensor-name').value = `Sensor ${sensors.length + 1}`;
+            document.getElementById('sensor-x').value = '0';
+            document.getElementById('sensor-y').value = '0';
+            document.getElementById('sensor-z').value = '1';
+            document.getElementById('sensor-orientation').value = '0';
+            document.getElementById('sensor-vertical').value = '0';
+            document.getElementById('sensor-fov').value = '60';
+            document.getElementById('sensor-vfov').value = '45';
+            document.getElementById('sensor-range').value = '30';
+            document.getElementById('sensor-editor').style.display = 'block';
+        }
+
+        // Save sensor
+        function saveSensor() {
+            const sensor = {
+                name: document.getElementById('sensor-name').value,
+                x: parseFloat(document.getElementById('sensor-x').value) || 0,
+                y: parseFloat(document.getElementById('sensor-y').value) || 0,
+                z: parseFloat(document.getElementById('sensor-z').value) || 1,
+                orientation: parseFloat(document.getElementById('sensor-orientation').value) || 0,
+                vertical: parseFloat(document.getElementById('sensor-vertical').value) || 0,
+                fov: parseFloat(document.getElementById('sensor-fov').value) || 60,
+                vfov: parseFloat(document.getElementById('sensor-vfov').value) || 45,
+                range: parseFloat(document.getElementById('sensor-range').value) || 30,
+                color: activeColor
+            };
+
+            if (editingSensorIndex >= 0) {
+                sensors[editingSensorIndex] = sensor;
+            } else {
+                sensors.push(sensor);
+            }
+
+            cancelEdit();
+            renderSensors();
+            renderVisualization();
+        }
+
+        // Delete sensor
+        function deleteSensor() {
+            if (editingSensorIndex >= 0) {
+                sensors.splice(editingSensorIndex, 1);
+                cancelEdit();
+                renderSensors();
+                renderVisualization();
+            }
+        }
+
+        // Cancel edit
+        function cancelEdit() {
+            editingSensorIndex = -1;
+            selectedSensorIndex = -1;
+            document.getElementById('sensor-editor').style.display = 'none';
+            renderSensors();
+        }
+
+        // Export configuration
+        function exportConfig() {
+            const config = {
+                vehicle,
+                sensors
+            };
+            const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'adas_sensor_config.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Import configuration
+        function importConfig(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const config = JSON.parse(e.target.result);
+                    if (config.vehicle) {
+                        vehicle = config.vehicle;
+                        document.getElementById('vehicle-length').value = vehicle.length;
+                        document.getElementById('vehicle-width').value = vehicle.width;
+                        document.getElementById('vehicle-height').value = vehicle.height;
+                    }
+                    if (config.sensors) {
+                        sensors = config.sensors;
+                    }
+                    renderSensors();
+                    renderVisualization();
+                } catch (err) {
+                    alert('Error importing configuration: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Initialize on load
+        init();
+    </script>
+</body>
+
+</html>

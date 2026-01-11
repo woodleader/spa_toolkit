@@ -1,0 +1,1369 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>J1939 PGN Converter</title>
+    <style>
+        :root {
+            --bg-deep: #0f172a;
+            --bg-card: #1e293b;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --border: rgba(255, 255, 255, 0.1);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent: #38bdf8;
+            --accent-secondary: #818cf8;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --font-mono: "ui-monospace", monospace;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-deep);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 95%;
+            padding: 40px 0;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            margin: 0;
+            background: linear-gradient(to right, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .back-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            border: 1px solid var(--border);
+            padding: 6px 12px;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .back-link:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .section-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 16px;
+            align-items: end;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .label {
+            display: block;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-family: var(--font-mono);
+            font-size: 1.1rem;
+            outline: none;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        input:focus {
+            border-color: var(--accent);
+        }
+
+        .btn {
+            background: var(--accent);
+            color: var(--bg-deep);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+        }
+
+        /* Bit Breakdown Table */
+        .breakdown-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+        }
+
+        .breakdown-table th,
+        .breakdown-table td {
+            padding: 12px 8px;
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+
+        .breakdown-table th {
+            background: rgba(0, 0, 0, 0.3);
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .breakdown-table td {
+            font-family: var(--font-mono);
+            font-size: 0.95rem;
+        }
+
+        .bit-cell {
+            background: rgba(56, 189, 248, 0.1);
+            color: var(--accent);
+            font-weight: 700;
+        }
+
+        .pgn-cell {
+            background: rgba(129, 140, 248, 0.1);
+            color: var(--accent-secondary);
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .label-cell {
+            text-align: left !important;
+            padding-left: 16px !important;
+        }
+
+        /* Visual Bit Map */
+        .bit-map-container {
+            margin-top: 24px;
+            overflow-x: auto;
+        }
+
+        .bit-map {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-width: 600px;
+        }
+
+        .bit-row {
+            display: flex;
+            gap: 2px;
+        }
+
+        .bit-box {
+            width: 22px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            font-weight: 600;
+            border-radius: 4px;
+            color: white;
+        }
+
+        .bit-label {
+            width: 100px;
+            display: flex;
+            align-items: center;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            flex-shrink: 0;
+        }
+
+        .prio-bit {
+            background: #ef4444;
+        }
+
+        .r-bit {
+            background: #64748b;
+        }
+
+        .dp-bit {
+            background: #f59e0b;
+        }
+
+        .pf-bit {
+            background: #22c55e;
+        }
+
+        .ps-bit {
+            background: #06b6d4;
+        }
+
+        .sa-bit {
+            background: #8b5cf6;
+        }
+
+        .unused-bit {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-secondary);
+        }
+
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8rem;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+        }
+
+        /* PGN List Section */
+        .pgn-list-container {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .pgn-list-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .pgn-list-table th,
+        .pgn-list-table td {
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .pgn-list-table th {
+            position: sticky;
+            top: 0;
+            background: var(--bg-card);
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .pgn-list-table tr:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .pgn-list-table .pgn-col {
+            font-family: var(--font-mono);
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .pgn-list-table .can-id-col {
+            font-family: var(--font-mono);
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .search-box {
+            margin-bottom: 16px;
+        }
+
+        .search-box input {
+            font-size: 0.9rem;
+            padding: 10px 14px;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .tab-btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+        }
+
+        .tab-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: var(--bg-deep);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Result highlight */
+        .result-highlight {
+            animation: pulse 0.5s ease;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        /* Notes */
+        .notes {
+            margin-top: 16px;
+            padding: 12px 16px;
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            color: var(--warning);
+        }
+
+        .notes strong {
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        /* Format Toggle */
+        .format-toggle {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 12px;
+        }
+
+        .format-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 6px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .format-btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+        }
+
+        .format-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: var(--bg-deep);
+        }
+
+        /* Builder Section */
+        .builder-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .builder-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .builder-field .label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .builder-field .field-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            flex-shrink: 0;
+        }
+
+        .builder-field input {
+            font-size: 0.95rem;
+            padding: 10px 12px;
+        }
+
+        .builder-field input:invalid {
+            border-color: #ef4444;
+        }
+
+        .builder-result {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .builder-result-value {
+            font-family: var(--font-mono);
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 8px;
+            word-break: break-all;
+        }
+
+        .builder-result-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+
+        .builder-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .copy-btn {
+            background: var(--accent);
+            color: var(--bg-deep);
+            border: none;
+            padding: 8px 20px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            opacity: 0.9;
+        }
+
+        .copy-btn.copied {
+            background: var(--success);
+        }
+
+        .use-in-decoder-btn {
+            background: transparent;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            padding: 8px 20px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .use-in-decoder-btn:hover {
+            background: rgba(56, 189, 248, 0.1);
+        }
+
+        .field-hint {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .mode-switch {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            padding: 4px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            width: fit-content;
+        }
+
+        .mode-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .mode-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .mode-btn.active {
+            background: var(--accent);
+            color: var(--bg-deep);
+            font-weight: 600;
+        }
+
+        .pgn-input-group {
+            display: none;
+        }
+
+        .pgn-input-group.active {
+            display: block;
+        }
+
+        .fields-input-group {
+            display: none;
+        }
+
+        .fields-input-group.active {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .input-row {
+                grid-template-columns: 1fr;
+            }
+
+            .breakdown-table {
+                font-size: 0.8rem;
+            }
+
+            .breakdown-table th,
+            .breakdown-table td {
+                padding: 8px 4px;
+            }
+
+            .builder-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>J1939 PGN Converter</h1>
+            <a href="../index.html" class="back-link">Return to Toolbox</a>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="showTab('converter')">🔄 Decoder</button>
+            <button class="tab-btn" onclick="showTab('builder')">🔧 Builder</button>
+            <button class="tab-btn" onclick="showTab('pgnlist')">📋 PGN List</button>
+        </div>
+
+        <!-- Converter Tab -->
+        <div id="converter-tab" class="tab-content active">
+            <div class="card">
+                <div class="section-title">Input</div>
+                <div class="format-toggle">
+                    <button class="format-btn active" id="hex-btn" onclick="setFormat('hex')">HEX</button>
+                    <button class="format-btn" id="dec-btn" onclick="setFormat('dec')">DEC</button>
+                </div>
+                <div class="input-row">
+                    <div class="input-group">
+                        <span class="label" id="input-label">29-Bit CAN ID (Hex)</span>
+                        <input type="text" id="can-id-input" placeholder="e.g. 18FEDF00 or 0x18FEDF00"
+                            oninput="parseCanId()">
+                    </div>
+                    <button class="btn btn-secondary" onclick="clearAll()">Clear</button>
+                </div>
+            </div>
+
+            <div class="card" id="results-card" style="display: none;">
+                <div class="section-title">Decoded Fields</div>
+                <table class="breakdown-table">
+                    <thead>
+                        <tr>
+                            <th>Field</th>
+                            <th>Bits</th>
+                            <th>Binary</th>
+                            <th>Hex</th>
+                            <th>Decimal</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody id="breakdown-body">
+                    </tbody>
+                </table>
+
+                <div class="bit-map-container">
+                    <div class="section-title" style="margin-top: 24px;">Bit Layout (29-bit Extended ID)</div>
+                    <div class="bit-map" id="bit-map">
+                    </div>
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-color prio-bit"></div>Priority (P)
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color r-bit"></div>Reserved (R)
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color dp-bit"></div>Data Page (DP)
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color pf-bit"></div>PDU Format (PF)
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color ps-bit"></div>PDU Specific (PS)
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color sa-bit"></div>Source Address (SA)
+                        </div>
+                    </div>
+                </div>
+
+                <div class="notes" id="pgn-notes" style="display: none;">
+                    <strong>📝 PDU Format Note:</strong>
+                    <span id="notes-text"></span>
+                </div>
+            </div>
+
+            <div class="card" id="pgn-result-card" style="display: none;">
+                <div class="section-title">PGN Result</div>
+                <table class="breakdown-table">
+                    <tbody>
+                        <tr>
+                            <td style="text-align: left; width: 150px;">PGN (Decimal)</td>
+                            <td class="pgn-cell" id="pgn-decimal">—</td>
+                        </tr>
+                        <tr>
+                            <td style="text-align: left;">PGN (Hex)</td>
+                            <td class="pgn-cell" id="pgn-hex">—</td>
+                        </tr>
+                        <tr>
+                            <td style="text-align: left;">PGN Label</td>
+                            <td class="label-cell" id="pgn-label">—</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Builder Tab -->
+        <div id="builder-tab" class="tab-content">
+            <div class="card">
+                <div class="section-title">Build CAN ID from Fields</div>
+
+                <div class="mode-switch">
+                    <button class="mode-btn active" id="fields-mode-btn" onclick="setBuilderMode('fields')">By
+                        Fields</button>
+                    <button class="mode-btn" id="pgn-mode-btn" onclick="setBuilderMode('pgn')">By PGN</button>
+                </div>
+
+                <!-- Fields Input Mode -->
+                <div class="fields-input-group active" id="fields-input-group">
+                    <div class="builder-grid">
+                        <div class="builder-field">
+                            <span class="label">
+                                <span class="field-color prio-bit"></span>
+                                Priority (P)
+                            </span>
+                            <input type="number" id="build-prio" min="0" max="7" value="6" oninput="buildCanId()">
+                            <span class="field-hint">0-7 (6 = typical)</span>
+                        </div>
+                        <div class="builder-field">
+                            <span class="label">
+                                <span class="field-color dp-bit"></span>
+                                Data Page (DP)
+                            </span>
+                            <input type="number" id="build-dp" min="0" max="1" value="0" oninput="buildCanId()">
+                            <span class="field-hint">0 or 1</span>
+                        </div>
+                        <div class="builder-field">
+                            <span class="label">
+                                <span class="field-color pf-bit"></span>
+                                PDU Format (PF)
+                            </span>
+                            <input type="text" id="build-pf" value="FE" maxlength="2" oninput="buildCanId()"
+                                placeholder="00-FF">
+                            <span class="field-hint">Hex: 00-FF</span>
+                        </div>
+                        <div class="builder-field">
+                            <span class="label">
+                                <span class="field-color ps-bit"></span>
+                                PDU Specific (PS)
+                            </span>
+                            <input type="text" id="build-ps" value="DF" maxlength="2" oninput="buildCanId()"
+                                placeholder="00-FF">
+                            <span class="field-hint">Hex: 00-FF</span>
+                        </div>
+                        <div class="builder-field">
+                            <span class="label">
+                                <span class="field-color sa-bit"></span>
+                                Source Addr (SA)
+                            </span>
+                            <input type="text" id="build-sa" value="00" maxlength="2" oninput="buildCanId()"
+                                placeholder="00-FF">
+                            <span class="field-hint">Hex: 00-FF</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PGN Input Mode -->
+                <div class="pgn-input-group" id="pgn-input-group">
+                    <div class="builder-grid">
+                        <div class="builder-field">
+                            <span class="label">
+                                <span class="field-color prio-bit"></span>
+                                Priority (P)
+                            </span>
+                            <input type="number" id="build-prio-pgn" min="0" max="7" value="6"
+                                oninput="buildCanIdFromPgn()">
+                            <span class="field-hint">0-7 (6 = typical)</span>
+                        </div>
+                        <div class="builder-field">
+                            <span class="label">
+                                <span class="field-color pf-bit"></span>
+                                PGN
+                            </span>
+                            <input type="text" id="build-pgn" value="FEDF" oninput="buildCanIdFromPgn()"
+                                placeholder="Hex or Dec">
+                            <span class="field-hint">Hex (FEDF) or Dec (65247)</span>
+                        </div>
+                        <div class="builder-field">
+                            <span class="label">
+                                <span class="field-color ps-bit"></span>
+                                Dest. Addr (DA)
+                            </span>
+                            <input type="text" id="build-da" value="FF" maxlength="2" oninput="buildCanIdFromPgn()"
+                                placeholder="00-FF">
+                            <span class="field-hint">Hex: 00-FF (PDU1 only)</span>
+                        </div>
+                        <div class="builder-field">
+                            <span class="label">
+                                <span class="field-color sa-bit"></span>
+                                Source Addr (SA)
+                            </span>
+                            <input type="text" id="build-sa-pgn" value="00" maxlength="2" oninput="buildCanIdFromPgn()"
+                                placeholder="00-FF">
+                            <span class="field-hint">Hex: 00-FF</span>
+                        </div>
+                    </div>
+                    <div class="notes" id="pgn-mode-notes">
+                        <strong>💡 PGN Mode Info:</strong>
+                        <span id="pgn-mode-notes-text">Enter the PGN and addresses. DA is only used for PDU1 format (PF
+                            < 240).</span>
+                    </div>
+                </div>
+
+                <div class="builder-result">
+                    <div class="builder-result-value" id="built-can-id">0x18FEDF00</div>
+                    <div class="builder-result-label">29-Bit CAN ID (Hex) | Decimal: <span
+                            id="built-can-id-dec">419348224</span></div>
+                    <div class="builder-actions">
+                        <button class="copy-btn" id="copy-hex-btn" onclick="copyBuiltId('hex')">📋 Copy Hex</button>
+                        <button class="copy-btn" onclick="copyBuiltId('dec')">📋 Copy Dec</button>
+                        <button class="use-in-decoder-btn" onclick="useInDecoder()">→ Use in Decoder</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PGN List Tab -->
+        <div id="pgnlist-tab" class="tab-content">
+            <div class="card">
+                <div class="section-title">Common J1939 PGNs</div>
+                <div class="search-box">
+                    <input type="text" id="pgn-search" placeholder="Search by PGN, name, or acronym..."
+                        oninput="filterPgnList()">
+                </div>
+                <div class="pgn-list-container">
+                    <table class="pgn-list-table">
+                        <thead>
+                            <tr>
+                                <th>PGN</th>
+                                <th>Hex</th>
+                                <th>Acronym</th>
+                                <th>Name</th>
+                                <th>Example CAN ID</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pgn-list-body">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Common J1939 PGN Database
+        const pgnDatabase = [
+            { pgn: 0, name: "Torque/Speed Control 1", acronym: "TSC1" },
+            { pgn: 256, name: "Transmission Control 1", acronym: "TC1" },
+            { pgn: 61440, name: "Electronic Transmission Controller 1", acronym: "ETC1" },
+            { pgn: 61441, name: "Electronic Brake Controller 1", acronym: "EBC1" },
+            { pgn: 61442, name: "Electronic Transmission Controller 2", acronym: "ETC2" },
+            { pgn: 61443, name: "Electronic Engine Controller 2", acronym: "EEC2" },
+            { pgn: 61444, name: "Electronic Engine Controller 1", acronym: "EEC1" },
+            { pgn: 61445, name: "Electronic Transmission Controller 3", acronym: "ETC3" },
+            { pgn: 61449, name: "Retarder Configuration", acronym: "RC" },
+            { pgn: 61450, name: "Transmission Configuration", acronym: "TCO1" },
+            { pgn: 61452, name: "Engine Configuration 1", acronym: "EC1" },
+            { pgn: 61454, name: "Cruise Control/Vehicle Speed Setup", acronym: "CCSS" },
+            { pgn: 61455, name: "Electronic Brake Controller 2", acronym: "EBC2" },
+            { pgn: 64892, name: "Diesel Exhaust Fluid Tank 1 Information", acronym: "AT1T1I" },
+            { pgn: 64947, name: "Engine Fluid Level/Pressure 4", acronym: "EFL/P4" },
+            { pgn: 64948, name: "Electronic Engine Controller 7", acronym: "EEC7" },
+            { pgn: 64949, name: "Engine Throttle/Fuel Actuator Info", acronym: "ETAC" },
+            { pgn: 64965, name: "Torque/Speed Control 1", acronym: "TSC1 ID" },
+            { pgn: 65088, name: "Axle Temperature 2", acronym: "AT2" },
+            { pgn: 65089, name: "Axle Temperature 1", acronym: "AT1" },
+            { pgn: 65098, name: "Turbocharger Information 1", acronym: "TCI1" },
+            { pgn: 65110, name: "Tank Information 1", acronym: "TANK1" },
+            { pgn: 65129, name: "Engine Temperature 2", acronym: "ET2" },
+            { pgn: 65132, name: "Tachograph", acronym: "TCO" },
+            { pgn: 65213, name: "Fan Drive", acronym: "FD" },
+            { pgn: 65226, name: "Active Diagnostic Trouble Codes", acronym: "DM1" },
+            { pgn: 65227, name: "Previously Active Diagnostic Trouble Codes", acronym: "DM2" },
+            { pgn: 65228, name: "Diagnostic Data Clear/Reset", acronym: "DM3" },
+            { pgn: 65229, name: "Freeze Frame Parameters", acronym: "DM4" },
+            { pgn: 65230, name: "Diagnostic Readiness 1", acronym: "DM5" },
+            { pgn: 65235, name: "Diagnostic Message 10", acronym: "DM10" },
+            { pgn: 65236, name: "Diagnostic Message 11", acronym: "DM11" },
+            { pgn: 65242, name: "Software Identification", acronym: "SOFT" },
+            { pgn: 65243, name: "Idle Operation", acronym: "IO" },
+            { pgn: 65247, name: "Electronic Engine Controller 3", acronym: "EEC3" },
+            { pgn: 65248, name: "Vehicle Distance", acronym: "VD" },
+            { pgn: 65249, name: "Retarder Configuration", acronym: "RTC" },
+            { pgn: 65251, name: "Engine Configuration", acronym: "EC" },
+            { pgn: 65252, name: "Shutdown", acronym: "SHUTDOWN" },
+            { pgn: 65253, name: "Engine Hours, Revolutions", acronym: "HOURS" },
+            { pgn: 65254, name: "Time/Date", acronym: "TD" },
+            { pgn: 65255, name: "Vehicle Hours", acronym: "VH" },
+            { pgn: 65256, name: "Vehicle Direction/Speed", acronym: "VDS" },
+            { pgn: 65257, name: "Fuel Consumption (Liquid)", acronym: "LFC" },
+            { pgn: 65258, name: "Vehicle Weight", acronym: "VW" },
+            { pgn: 65259, name: "Component Identification", acronym: "CI" },
+            { pgn: 65260, name: "Vehicle Identification", acronym: "VI" },
+            { pgn: 65261, name: "Cruise Control/Vehicle Speed 2", acronym: "CCVS2" },
+            { pgn: 65262, name: "Engine Temperature 1", acronym: "ET1" },
+            { pgn: 65263, name: "Engine Fluid Level/Pressure 1", acronym: "EFL/P1" },
+            { pgn: 65264, name: "Power Takeoff Information", acronym: "PTO" },
+            { pgn: 65265, name: "Cruise Control/Vehicle Speed", acronym: "CCVS" },
+            { pgn: 65266, name: "Fuel Economy (Liquid)", acronym: "LFE" },
+            { pgn: 65267, name: "Vehicle Position", acronym: "VP" },
+            { pgn: 65269, name: "Ambient Conditions", acronym: "AMB" },
+            { pgn: 65270, name: "Inlet/Exhaust Conditions 1", acronym: "IC1" },
+            { pgn: 65271, name: "Vehicle Electrical Power", acronym: "VEP" },
+            { pgn: 65272, name: "Transmission Fluids", acronym: "TRF" },
+            { pgn: 65273, name: "Axle Information", acronym: "AI" },
+            { pgn: 65274, name: "Brakes", acronym: "B" },
+            { pgn: 65275, name: "Retarder Response", acronym: "RR" },
+            { pgn: 65276, name: "Dash Display", acronym: "DD" },
+            { pgn: 65277, name: "Alternate Fuel 1", acronym: "A1" },
+            { pgn: 65278, name: "Auxiliary Water Pump Pressure", acronym: "AWP" },
+            { pgn: 65279, name: "Water in Fuel Indicator", acronym: "WFI" },
+            { pgn: 65280, name: "Proprietary A", acronym: "PROP_A" },
+            { pgn: 65281, name: "Proprietary A", acronym: "PROP_A" },
+            { pgn: 65282, name: "Proprietary A", acronym: "PROP_A" },
+            { pgn: 65283, name: "Proprietary A", acronym: "PROP_A" },
+            { pgn: 65284, name: "Proprietary A", acronym: "PROP_A" },
+            { pgn: 65285, name: "Proprietary A", acronym: "PROP_A" },
+            { pgn: 65286, name: "Proprietary A", acronym: "PROP_A" },
+            { pgn: 65287, name: "Proprietary A", acronym: "PROP_A" },
+            { pgn: 65288, name: "Proprietary A (End)", acronym: "PROP_A" },
+            { pgn: 65520, name: "Engine Torque History", acronym: "ETH" },
+            { pgn: 65527, name: "Vehicle Electrical Power 4", acronym: "VEP4" }
+        ];
+
+        function showTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+            document.querySelector(`[onclick="showTab('${tab}')"]`).classList.add('active');
+            document.getElementById(`${tab}-tab`).classList.add('active');
+        }
+
+        let inputFormat = 'hex'; // 'hex' or 'dec'
+
+        function setFormat(format) {
+            const input = document.getElementById('can-id-input');
+            const currentValue = input.value.trim();
+            const label = document.getElementById('input-label');
+            const hexBtn = document.getElementById('hex-btn');
+            const decBtn = document.getElementById('dec-btn');
+
+            // Try to convert the current value to the new format
+            if (currentValue && inputFormat !== format) {
+                let canId;
+                if (inputFormat === 'hex') {
+                    canId = parseInt(currentValue.replace(/^0x/i, ''), 16);
+                } else {
+                    canId = parseInt(currentValue, 10);
+                }
+
+                if (!isNaN(canId) && canId >= 0 && canId <= 0x1FFFFFFF) {
+                    if (format === 'hex') {
+                        input.value = canId.toString(16).toUpperCase();
+                    } else {
+                        input.value = canId.toString(10);
+                    }
+                }
+            }
+
+            inputFormat = format;
+
+            if (format === 'hex') {
+                hexBtn.classList.add('active');
+                decBtn.classList.remove('active');
+                label.textContent = '29-Bit CAN ID (Hex)';
+                input.placeholder = 'e.g. 18FEDF00 or 0x18FEDF00';
+            } else {
+                decBtn.classList.add('active');
+                hexBtn.classList.remove('active');
+                label.textContent = '29-Bit CAN ID (Decimal)';
+                input.placeholder = 'e.g. 419348224';
+            }
+
+            parseCanId();
+        }
+
+        function parseCanId() {
+            const input = document.getElementById('can-id-input').value.trim();
+            const resultsCard = document.getElementById('results-card');
+            const pgnResultCard = document.getElementById('pgn-result-card');
+
+            if (!input) {
+                resultsCard.style.display = 'none';
+                pgnResultCard.style.display = 'none';
+                return;
+            }
+
+            // Parse based on selected format
+            let canId;
+            if (inputFormat === 'hex') {
+                canId = parseInt(input.replace(/^0x/i, ''), 16);
+            } else {
+                canId = parseInt(input, 10);
+            }
+
+            if (isNaN(canId) || canId < 0 || canId > 0x1FFFFFFF) {
+                resultsCard.style.display = 'none';
+                pgnResultCard.style.display = 'none';
+                return;
+            }
+
+            // Extract fields from 29-bit CAN ID
+            // Bit layout: P(3) R(1) DP(1) PF(8) PS(8) SA(8)
+            const sa = canId & 0xFF;                    // Bits 0-7
+            const ps = (canId >> 8) & 0xFF;             // Bits 8-15
+            const pf = (canId >> 16) & 0xFF;            // Bits 16-23
+            const dp = (canId >> 24) & 0x01;            // Bit 24
+            const r = (canId >> 25) & 0x01;             // Bit 25
+            const prio = (canId >> 26) & 0x07;          // Bits 26-28
+
+            // Calculate PGN based on PDU Format
+            // If PF < 240 (0xF0), it's PDU1 format: PGN = R.DP.PF.00
+            // If PF >= 240, it's PDU2 format: PGN = R.DP.PF.PS
+            let pgn;
+            let pduType;
+            if (pf < 240) {
+                // PDU1: PS is destination address, not part of PGN
+                pgn = (dp << 16) | (pf << 8);
+                pduType = 'PDU1';
+            } else {
+                // PDU2: PS is part of PGN (Group Extension)
+                pgn = (dp << 16) | (pf << 8) | ps;
+                pduType = 'PDU2';
+            }
+
+            // Display results
+            resultsCard.style.display = 'block';
+            pgnResultCard.style.display = 'block';
+
+            // Build breakdown table
+            const breakdownBody = document.getElementById('breakdown-body');
+            breakdownBody.innerHTML = `
+                <tr>
+                    <td>Priority (P)</td>
+                    <td class="bit-cell">26-28</td>
+                    <td class="bit-cell">${prio.toString(2).padStart(3, '0')}</td>
+                    <td class="bit-cell">${prio.toString(16).toUpperCase()}</td>
+                    <td class="bit-cell">${prio}</td>
+                    <td style="text-align:left">0=Highest, 7=Lowest</td>
+                </tr>
+                <tr>
+                    <td>Reserved (R)</td>
+                    <td class="bit-cell">25</td>
+                    <td class="bit-cell">${r}</td>
+                    <td class="bit-cell">${r}</td>
+                    <td class="bit-cell">${r}</td>
+                    <td style="text-align:left">Always 0</td>
+                </tr>
+                <tr>
+                    <td>Data Page (DP)</td>
+                    <td class="bit-cell">24</td>
+                    <td class="bit-cell">${dp}</td>
+                    <td class="bit-cell">${dp}</td>
+                    <td class="bit-cell">${dp}</td>
+                    <td style="text-align:left">0=Page 0, 1=Page 1</td>
+                </tr>
+                <tr>
+                    <td>PDU Format (PF)</td>
+                    <td class="bit-cell">16-23</td>
+                    <td class="bit-cell">${pf.toString(2).padStart(8, '0')}</td>
+                    <td class="bit-cell">${pf.toString(16).toUpperCase().padStart(2, '0')}</td>
+                    <td class="bit-cell">${pf}</td>
+                    <td style="text-align:left">${pf < 240 ? 'PDU1 (Peer-to-Peer)' : 'PDU2 (Broadcast)'}</td>
+                </tr>
+                <tr>
+                    <td>PDU Specific (PS)</td>
+                    <td class="bit-cell">8-15</td>
+                    <td class="bit-cell">${ps.toString(2).padStart(8, '0')}</td>
+                    <td class="bit-cell">${ps.toString(16).toUpperCase().padStart(2, '0')}</td>
+                    <td class="bit-cell">${ps}</td>
+                    <td style="text-align:left">${pf < 240 ? 'Destination Address' : 'Group Extension'}</td>
+                </tr>
+                <tr>
+                    <td>Source Address (SA)</td>
+                    <td class="bit-cell">0-7</td>
+                    <td class="bit-cell">${sa.toString(2).padStart(8, '0')}</td>
+                    <td class="bit-cell">${sa.toString(16).toUpperCase().padStart(2, '0')}</td>
+                    <td class="bit-cell">${sa}</td>
+                    <td style="text-align:left">Sending ECU address</td>
+                </tr>
+            `;
+
+            // Build visual bit map
+            const bitMapContainer = document.getElementById('bit-map');
+            const binaryStr = canId.toString(2).padStart(29, '0');
+
+            let bitHtml = '<div class="bit-row"><div class="bit-label">Bit Position</div>';
+            for (let i = 28; i >= 0; i--) {
+                bitHtml += `<div class="bit-box unused-bit">${i}</div>`;
+            }
+            bitHtml += '</div>';
+
+            bitHtml += '<div class="bit-row"><div class="bit-label">Value</div>';
+            for (let i = 0; i < 29; i++) {
+                let bitClass = '';
+                const bitPos = 28 - i;
+                if (bitPos >= 26) bitClass = 'prio-bit';
+                else if (bitPos === 25) bitClass = 'r-bit';
+                else if (bitPos === 24) bitClass = 'dp-bit';
+                else if (bitPos >= 16) bitClass = 'pf-bit';
+                else if (bitPos >= 8) bitClass = 'ps-bit';
+                else bitClass = 'sa-bit';
+
+                bitHtml += `<div class="bit-box ${bitClass}">${binaryStr[i]}</div>`;
+            }
+            bitHtml += '</div>';
+
+            bitHtml += '<div class="bit-row"><div class="bit-label">Field</div>';
+            const fields = [
+                { label: 'P', count: 3, class: 'prio-bit' },
+                { label: 'R', count: 1, class: 'r-bit' },
+                { label: 'DP', count: 1, class: 'dp-bit' },
+                { label: 'PF', count: 8, class: 'pf-bit' },
+                { label: 'PS', count: 8, class: 'ps-bit' },
+                { label: 'SA', count: 8, class: 'sa-bit' }
+            ];
+            fields.forEach(f => {
+                for (let i = 0; i < f.count; i++) {
+                    bitHtml += `<div class="bit-box ${f.class}">${i === Math.floor(f.count / 2) ? f.label : ''}</div>`;
+                }
+            });
+            bitHtml += '</div>';
+
+            bitMapContainer.innerHTML = bitHtml;
+
+            // PGN result
+            document.getElementById('pgn-decimal').textContent = pgn;
+            document.getElementById('pgn-hex').textContent = '0x' + pgn.toString(16).toUpperCase().padStart(4, '0');
+
+            // Look up PGN label
+            const pgnInfo = pgnDatabase.find(p => p.pgn === pgn);
+            if (pgnInfo) {
+                document.getElementById('pgn-label').innerHTML =
+                    `<strong>${pgnInfo.acronym}</strong> — ${pgnInfo.name}`;
+            } else {
+                document.getElementById('pgn-label').textContent = 'Unknown / Proprietary PGN';
+            }
+
+            // Show notes
+            const notesDiv = document.getElementById('pgn-notes');
+            const notesText = document.getElementById('notes-text');
+            if (pf < 240) {
+                notesDiv.style.display = 'block';
+                notesText.textContent = `PF < 240 indicates PDU1 format (peer-to-peer addressing). PS field (0x${ps.toString(16).toUpperCase().padStart(2, '0')}) is the Destination Address, not part of the PGN.`;
+            } else {
+                notesDiv.style.display = 'block';
+                notesText.textContent = `PF ≥ 240 indicates PDU2 format (broadcast). PS field (0x${ps.toString(16).toUpperCase().padStart(2, '0')}) is the Group Extension, included in the PGN calculation.`;
+            }
+
+            // Add animation
+            resultsCard.classList.remove('result-highlight');
+            pgnResultCard.classList.remove('result-highlight');
+            void resultsCard.offsetWidth; // Trigger reflow
+            resultsCard.classList.add('result-highlight');
+            pgnResultCard.classList.add('result-highlight');
+        }
+
+        function clearAll() {
+            document.getElementById('can-id-input').value = '';
+            document.getElementById('results-card').style.display = 'none';
+            document.getElementById('pgn-result-card').style.display = 'none';
+        }
+
+        function populatePgnList() {
+            const tbody = document.getElementById('pgn-list-body');
+            tbody.innerHTML = pgnDatabase.map(p => {
+                // Generate example CAN ID (Priority 6, SA 0x00)
+                const exampleCanId = (6 << 26) | (p.pgn << 8);
+                return `
+                    <tr onclick="usePgn(${exampleCanId})">
+                        <td class="pgn-col">${p.pgn}</td>
+                        <td class="pgn-col">0x${p.pgn.toString(16).toUpperCase().padStart(4, '0')}</td>
+                        <td>${p.acronym}</td>
+                        <td>${p.name}</td>
+                        <td class="can-id-col">0x${exampleCanId.toString(16).toUpperCase().padStart(8, '0')}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function filterPgnList() {
+            const search = document.getElementById('pgn-search').value.toLowerCase();
+            const rows = document.querySelectorAll('#pgn-list-body tr');
+
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(search) ? '' : 'none';
+            });
+        }
+
+        function usePgn(canId) {
+            document.getElementById('can-id-input').value = '0x' + canId.toString(16).toUpperCase().padStart(8, '0');
+            showTab('converter');
+            parseCanId();
+        }
+
+        // Builder Mode
+        let builderMode = 'fields'; // 'fields' or 'pgn'
+        let lastBuiltCanId = 0x18FEDF00;
+
+        function setBuilderMode(mode) {
+            builderMode = mode;
+            const fieldsModeBtn = document.getElementById('fields-mode-btn');
+            const pgnModeBtn = document.getElementById('pgn-mode-btn');
+            const fieldsGroup = document.getElementById('fields-input-group');
+            const pgnGroup = document.getElementById('pgn-input-group');
+
+            if (mode === 'fields') {
+                fieldsModeBtn.classList.add('active');
+                pgnModeBtn.classList.remove('active');
+                fieldsGroup.classList.add('active');
+                pgnGroup.classList.remove('active');
+                buildCanId();
+            } else {
+                pgnModeBtn.classList.add('active');
+                fieldsModeBtn.classList.remove('active');
+                pgnGroup.classList.add('active');
+                fieldsGroup.classList.remove('active');
+                buildCanIdFromPgn();
+            }
+        }
+
+        function buildCanId() {
+            const prio = parseInt(document.getElementById('build-prio').value) || 0;
+            const dp = parseInt(document.getElementById('build-dp').value) || 0;
+            const pf = parseInt(document.getElementById('build-pf').value, 16) || 0;
+            const ps = parseInt(document.getElementById('build-ps').value, 16) || 0;
+            const sa = parseInt(document.getElementById('build-sa').value, 16) || 0;
+
+            // Clamp values to valid ranges
+            const clampedPrio = Math.max(0, Math.min(7, prio));
+            const clampedDp = Math.max(0, Math.min(1, dp));
+            const clampedPf = Math.max(0, Math.min(255, pf));
+            const clampedPs = Math.max(0, Math.min(255, ps));
+            const clampedSa = Math.max(0, Math.min(255, sa));
+
+            // Build 29-bit CAN ID: P(3) R(1) DP(1) PF(8) PS(8) SA(8)
+            // Reserved bit is always 0
+            const canId = (clampedPrio << 26) | (0 << 25) | (clampedDp << 24) | (clampedPf << 16) | (clampedPs << 8) | clampedSa;
+
+            updateBuilderResult(canId);
+        }
+
+        function buildCanIdFromPgn() {
+            const prio = parseInt(document.getElementById('build-prio-pgn').value) || 0;
+            const pgnInput = document.getElementById('build-pgn').value.trim();
+            const da = parseInt(document.getElementById('build-da').value, 16) || 0;
+            const sa = parseInt(document.getElementById('build-sa-pgn').value, 16) || 0;
+
+            // Parse PGN - try hex first if it looks like hex, otherwise try decimal
+            let pgn;
+            if (/^[0-9a-fA-F]+$/.test(pgnInput) && pgnInput.length <= 5) {
+                // Could be hex - check if it has letters or is short
+                if (/[a-fA-F]/.test(pgnInput) || parseInt(pgnInput, 10) > 131071) {
+                    pgn = parseInt(pgnInput, 16);
+                } else {
+                    // Ambiguous - try as decimal first for common PGNs
+                    pgn = parseInt(pgnInput, 10);
+                }
+            } else if (pgnInput.toLowerCase().startsWith('0x')) {
+                pgn = parseInt(pgnInput.slice(2), 16);
+            } else {
+                pgn = parseInt(pgnInput, 10);
+            }
+
+            if (isNaN(pgn) || pgn < 0 || pgn > 0x3FFFF) {
+                return;
+            }
+
+            // Extract DP, PF, PS from PGN
+            const dp = (pgn >> 16) & 0x01;
+            const pf = (pgn >> 8) & 0xFF;
+            const pgnPs = pgn & 0xFF;
+
+            // Clamp values
+            const clampedPrio = Math.max(0, Math.min(7, prio));
+            const clampedDa = Math.max(0, Math.min(255, da));
+            const clampedSa = Math.max(0, Math.min(255, sa));
+
+            // Determine PS based on PDU type
+            let ps;
+            const notesText = document.getElementById('pgn-mode-notes-text');
+            if (pf < 240) {
+                // PDU1: PS is destination address
+                ps = clampedDa;
+                notesText.textContent = `PDU1 format detected (PF=${pf} < 240). Using DA (0x${clampedDa.toString(16).toUpperCase().padStart(2, '0')}) as PS field.`;
+            } else {
+                // PDU2: PS comes from PGN
+                ps = pgnPs;
+                notesText.textContent = `PDU2 format detected (PF=${pf} ≥ 240). PS field (0x${pgnPs.toString(16).toUpperCase().padStart(2, '0')}) is derived from PGN. DA field is ignored.`;
+            }
+
+            // Build CAN ID
+            const canId = (clampedPrio << 26) | (0 << 25) | (dp << 24) | (pf << 16) | (ps << 8) | clampedSa;
+
+            updateBuilderResult(canId);
+        }
+
+        function updateBuilderResult(canId) {
+            lastBuiltCanId = canId;
+            document.getElementById('built-can-id').textContent = '0x' + canId.toString(16).toUpperCase().padStart(8, '0');
+            document.getElementById('built-can-id-dec').textContent = canId.toString(10);
+        }
+
+        function copyBuiltId(format) {
+            const value = format === 'hex'
+                ? '0x' + lastBuiltCanId.toString(16).toUpperCase().padStart(8, '0')
+                : lastBuiltCanId.toString(10);
+
+            navigator.clipboard.writeText(value).then(() => {
+                // Visual feedback
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = '✓ Copied!';
+                btn.classList.add('copied');
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.classList.remove('copied');
+                }, 1500);
+            });
+        }
+
+        function useInDecoder() {
+            document.getElementById('can-id-input').value = '0x' + lastBuiltCanId.toString(16).toUpperCase().padStart(8, '0');
+            setFormat('hex');
+            showTab('converter');
+            parseCanId();
+        }
+
+        // Initialize
+        populatePgnList();
+        buildCanId(); // Initialize builder with default values
+    </script>
+</body>
+
+</html>
