@@ -1,0 +1,1429 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FMEA Tool | AIAG-VDA 2019</title>
+    <style>
+        :root {
+            --bg-deep: #0f172a;
+            --bg-card: #1e293b;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --border: rgba(255, 255, 255, 0.1);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent: #38bdf8;
+            --accent-secondary: #818cf8;
+
+            /* Action Priority Colors */
+            --ap-high: #ef4444;
+            --ap-high-bg: rgba(239, 68, 68, 0.15);
+            --ap-medium: #f59e0b;
+            --ap-medium-bg: rgba(245, 158, 11, 0.15);
+            --ap-low: #22c55e;
+            --ap-low-bg: rgba(34, 197, 94, 0.15);
+
+            --font-mono: "ui-monospace", monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-deep);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        h1 {
+            font-size: 1.6rem;
+            margin: 0;
+            background: linear-gradient(to right, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .back-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.85rem;
+            border: 1px solid var(--border);
+            padding: 6px 12px;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .back-link:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* Mode Toggle */
+        .mode-toggle {
+            display: flex;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .mode-btn {
+            padding: 10px 20px;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .mode-btn.active {
+            background: var(--accent);
+            color: var(--bg-deep);
+        }
+
+        .mode-btn:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+        }
+
+        /* Controls Bar */
+        .controls-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 16px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .filter-chips {
+            display: flex;
+            gap: 6px;
+        }
+
+        .filter-chip {
+            padding: 6px 14px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .filter-chip:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+        }
+
+        .filter-chip.active {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .filter-chip .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .filter-chip .dot.high {
+            background: var(--ap-high);
+        }
+
+        .filter-chip .dot.medium {
+            background: var(--ap-medium);
+        }
+
+        .filter-chip .dot.low {
+            background: var(--ap-low);
+        }
+
+        .btn {
+            background: var(--accent);
+            color: var(--bg-deep);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .spacer {
+            flex: 1;
+        }
+
+        /* Worksheet Table */
+        .worksheet-container {
+            overflow-x: auto;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            /* Reserve space for sticky header scroll */
+            scroll-padding-top: 60px;
+        }
+
+        .worksheet {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1200px;
+        }
+
+        .worksheet th,
+        .worksheet td {
+            padding: 12px 10px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+            vertical-align: top;
+        }
+
+        .worksheet th {
+            background: rgba(0, 0, 0, 0.3);
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .worksheet tbody tr {
+            transition: background 0.2s;
+        }
+
+        .worksheet tbody tr:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .worksheet tbody tr.priority-high {
+            background: var(--ap-high-bg);
+        }
+
+        .worksheet tbody tr.priority-medium {
+            background: var(--ap-medium-bg);
+        }
+
+        .worksheet tbody tr.priority-low {
+            background: var(--ap-low-bg);
+        }
+
+        .worksheet tbody tr.hidden {
+            display: none;
+        }
+
+        /* Editable Cells */
+        .editable {
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            padding: 6px 8px;
+            border-radius: 4px;
+            width: 100%;
+            min-height: 32px;
+            resize: vertical;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        .editable:hover {
+            border-color: var(--border);
+        }
+
+        .editable:focus {
+            outline: none;
+            border-color: var(--accent);
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        textarea.editable {
+            min-height: 60px;
+        }
+
+        /* Rating Inputs */
+        .rating-cell {
+            width: 60px;
+            text-align: center;
+        }
+
+        .rating-input {
+            width: 50px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 8px;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 1rem;
+            font-weight: 700;
+            font-family: var(--font-mono);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .rating-input:hover {
+            border-color: var(--accent);
+        }
+
+        .rating-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        /* AP Badge */
+        .ap-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        .ap-badge.high {
+            background: var(--ap-high);
+            color: white;
+        }
+
+        .ap-badge.medium {
+            background: var(--ap-medium);
+            color: var(--bg-deep);
+        }
+
+        .ap-badge.low {
+            background: var(--ap-low);
+            color: var(--bg-deep);
+        }
+
+        /* Status Select */
+        .status-select {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+
+        .status-select:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        /* Row Actions */
+        .row-actions {
+            display: flex;
+            gap: 4px;
+        }
+
+        .row-btn {
+            width: 28px;
+            height: 28px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .row-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+        }
+
+        .row-btn.delete:hover {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--ap-high);
+        }
+
+        /* Tooltip (Fixed Position) */
+        .tooltip {
+            position: fixed;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 0.8rem;
+            color: var(--text-primary);
+            width: 280px;
+            z-index: 9999;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.15s;
+            display: none;
+        }
+
+        .tooltip.visible {
+            opacity: 1;
+            display: block;
+        }
+
+        .tooltip-title {
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 6px;
+        }
+
+        .tooltip-text {
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        /* Footer */
+        footer {
+            margin-top: 32px;
+            padding: 16px;
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            border-top: 1px solid var(--border);
+        }
+
+        footer a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .controls-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .control-group {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .filter-chips {
+                flex-wrap: wrap;
+            }
+
+            .spacer {
+                display: none;
+            }
+
+            header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .header-left {
+                justify-content: space-between;
+            }
+        }
+
+        /* Confirmation Modal */
+        .confirm-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .confirm-modal.active {
+            display: flex;
+        }
+
+        .confirm-dialog {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .confirm-message {
+            font-size: 1rem;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .confirm-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .confirm-buttons .btn {
+            min-width: 100px;
+        }
+
+        .btn-danger {
+            background: var(--ap-high);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        /* Reference Section */
+        .reference-section {
+            margin-top: 32px;
+            border-top: 1px solid var(--border);
+        }
+
+        .reference-header {
+            width: 100%;
+            background: transparent;
+            border: none;
+            padding: 16px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .reference-header:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .ref-toggle-icon {
+            transition: transform 0.3s;
+        }
+
+        .reference-header.active .ref-toggle-icon {
+            transform: rotate(180deg);
+        }
+
+        .reference-content {
+            display: none;
+            padding: 0 16px 24px 16px;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        .reference-content.visible {
+            display: block;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .ref-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+        }
+
+        .ref-col h3 {
+            font-size: 1rem;
+            color: var(--accent);
+            margin: 0 0 12px 0;
+            text-align: center;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 8px;
+        }
+
+        .ref-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.75rem;
+        }
+
+        .ref-table th,
+        .ref-table td {
+            padding: 6px 8px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-secondary);
+        }
+
+        .ref-table th {
+            text-align: left;
+            color: var(--text-primary);
+        }
+
+        .ref-table tr:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .ref-footer-note {
+            margin-top: 24px;
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            opacity: 0.7;
+        }
+
+        .ref-footer-note a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <div class="header-left">
+                <h1>FMEA Tool</h1>
+                <a href="../index.html" class="back-link">← Toolbox</a>
+            </div>
+            <div class="mode-toggle">
+                <button class="mode-btn active" data-mode="DFMEA">DFMEA</button>
+                <button class="mode-btn" data-mode="PFMEA">PFMEA</button>
+            </div>
+        </header>
+
+        <div class="controls-bar">
+            <div class="control-group">
+                <span class="control-label">Filter by AP:</span>
+                <div class="filter-chips">
+                    <button class="filter-chip active" data-filter="all">All</button>
+                    <button class="filter-chip" data-filter="high">
+                        <span class="dot high"></span>High
+                    </button>
+                    <button class="filter-chip" data-filter="medium">
+                        <span class="dot medium"></span>Medium
+                    </button>
+                    <button class="filter-chip" data-filter="low">
+                        <span class="dot low"></span>Low
+                    </button>
+                </div>
+            </div>
+
+            <div class="spacer"></div>
+
+            <div class="control-group">
+                <button class="btn" id="add-row-btn">+ Add Row</button>
+                <button class="btn btn-secondary" id="copy-btn">📋 Copy</button>
+                <button class="btn btn-secondary" id="export-btn">⬇️ Export CSV</button>
+                <button class="btn btn-secondary" id="clear-btn">🗑️ Clear All</button>
+            </div>
+        </div>
+
+        <div class="worksheet-container">
+            <table class="worksheet" id="worksheet">
+                <thead>
+                    <tr>
+                        <th style="width: 30px;">#</th>
+                        <th style="width: 140px;">Item / Function</th>
+                        <th style="width: 160px;">Potential Failure Mode</th>
+                        <th style="width: 160px;">Potential Effects</th>
+                        <th class="rating-cell" style="width: 50px;">S</th>
+                        <th style="width: 160px;">Potential Causes</th>
+                        <th class="rating-cell" style="width: 50px;">O</th>
+                        <th style="width: 160px;">Current Controls</th>
+                        <th class="rating-cell" style="width: 50px;">D</th>
+                        <th style="width: 50px;">AP</th>
+                        <th style="width: 160px;">Recommended Actions</th>
+                        <th style="width: 100px;">Status</th>
+                        <th style="width: 60px;"></th>
+                    </tr>
+                </thead>
+                <tbody id="worksheet-body">
+                    <!-- Rows generated by JS -->
+                </tbody>
+            </table>
+        </div>
+
+        <div class="empty-state" id="empty-state" style="display: none;">
+            <div class="empty-state-icon">📋</div>
+            <div>No failure modes defined. Click <strong>+ Add Row</strong> to get started.</div>
+        </div>
+
+        <div class="reference-section">
+            <button class="reference-header" id="ref-toggle">
+                <span>FMEA Rating Reference (AIAG-VDA 2019)</span>
+                <span class="ref-toggle-icon">▼</span>
+            </button>
+            <div class="reference-content" id="ref-content">
+                <div class="ref-grid" id="ref-grid">
+                    <!-- Dynamic tables generated by JS -->
+                </div>
+                <div class="ref-footer-note">
+                    Action Priority replaces RPN. Data saved locally in browser. |
+                    <a href="https://www.aiag.org/quality/automotive-core-tools/fmea" target="_blank">Learn more</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div class="confirm-modal" id="confirm-modal">
+        <div class="confirm-dialog">
+            <div class="confirm-message" id="confirm-message">Are you sure?</div>
+            <div class="confirm-buttons">
+                <button class="btn btn-danger" id="confirm-yes">Yes, Delete</button>
+                <button class="btn btn-secondary" id="confirm-no">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dynamic Tooltip Element -->
+    <div id="dynamic-tooltip" class="tooltip">
+        <div class="tooltip-title" id="tooltip-title"></div>
+        <div class="tooltip-text" id="tooltip-desc"></div>
+    </div>
+
+    <script>
+        // ============================================
+        // AIAG-VDA 2019 Action Priority Lookup Tables
+        // ============================================
+
+        // AP lookup table based on AIAG-VDA 2019 Handbook
+        // Returns 'H' (High), 'M' (Medium), or 'L' (Low)
+        function calculateAP(severity, occurrence, detection) {
+            const s = parseInt(severity) || 1;
+            const o = parseInt(occurrence) || 1;
+            const d = parseInt(detection) || 1;
+
+            // High Priority combinations (must take action)
+            if (s >= 9) {
+                if (o >= 4) return 'H';
+                if (o >= 2 && d >= 5) return 'H';
+                if (d >= 6) return 'H';
+            }
+            if (s >= 7) {
+                if (o >= 5) return 'H';
+                if (o >= 4 && d >= 5) return 'H';
+                if (o >= 3 && d >= 7) return 'H';
+                if (o >= 2 && d >= 8) return 'H';
+            }
+            if (s >= 5) {
+                if (o >= 6 && d >= 4) return 'H';
+                if (o >= 5 && d >= 6) return 'H';
+                if (o >= 4 && d >= 7) return 'H';
+                if (o >= 3 && d >= 8) return 'H';
+            }
+            if (s >= 4) {
+                if (o >= 6 && d >= 6) return 'H';
+                if (o >= 5 && d >= 7) return 'H';
+                if (o >= 4 && d >= 8) return 'H';
+            }
+
+            // Medium Priority combinations (should take action)
+            if (s >= 9) {
+                if (o >= 1) return 'M';
+            }
+            if (s >= 7) {
+                if (o >= 3) return 'M';
+                if (o >= 2 && d >= 3) return 'M';
+                if (d >= 5) return 'M';
+            }
+            if (s >= 5) {
+                if (o >= 5) return 'M';
+                if (o >= 4 && d >= 4) return 'M';
+                if (o >= 3 && d >= 5) return 'M';
+                if (o >= 2 && d >= 7) return 'M';
+            }
+            if (s >= 4) {
+                if (o >= 5 && d >= 4) return 'M';
+                if (o >= 4 && d >= 5) return 'M';
+                if (o >= 3 && d >= 7) return 'M';
+            }
+            if (s >= 3) {
+                if (o >= 6 && d >= 5) return 'M';
+                if (o >= 5 && d >= 6) return 'M';
+                if (o >= 4 && d >= 8) return 'M';
+            }
+            if (s >= 2) {
+                if (o >= 6 && d >= 7) return 'M';
+                if (o >= 5 && d >= 8) return 'M';
+            }
+
+            // Low Priority (may take action if resources allow)
+            return 'L';
+        }
+
+        // ============================================
+        // Tooltip Descriptions for S, O, D Ratings
+        // ============================================
+
+        const tooltips = {
+            DFMEA: {
+                severity: {
+                    10: { title: 'Hazardous without Warning', text: 'Failure may endanger operator or machine without warning. Non-compliance with regulations.' },
+                    9: { title: 'Hazardous with Warning', text: 'Failure may endanger operator or machine with warning. Non-compliance with regulations.' },
+                    8: { title: 'Very High', text: 'Vehicle/item inoperable with loss of primary function.' },
+                    7: { title: 'High', text: 'Vehicle/item operable but at reduced performance. Customer dissatisfied.' },
+                    6: { title: 'Moderate', text: 'Vehicle/item operable but comfort/convenience features inoperable. Customer uncomfortable.' },
+                    5: { title: 'Low', text: 'Vehicle/item operable but comfort/convenience at reduced performance. Customer somewhat dissatisfied.' },
+                    4: { title: 'Very Low', text: 'Fit, finish, or squeak/rattle item does not conform. Defect noticed by most customers.' },
+                    3: { title: 'Minor', text: 'Fit, finish, or squeak/rattle item does not conform. Defect noticed by average customers.' },
+                    2: { title: 'Very Minor', text: 'Fit, finish, or squeak/rattle item does not conform. Defect noticed by discriminating customers.' },
+                    1: { title: 'None', text: 'No discernible effect.' }
+                },
+                occurrence: {
+                    10: { title: 'Very High', text: 'New technology/design with no history. ≥100 per 1000 vehicles/items.' },
+                    9: { title: 'High', text: 'Failure likely based on new design similar to previous failed designs. 50 per 1000.' },
+                    8: { title: 'High', text: 'Failure likely based on problematic previous similar design. 20 per 1000.' },
+                    7: { title: 'Moderate', text: 'Failure likely based on previous similar design with occasional failures. 10 per 1000.' },
+                    6: { title: 'Moderate', text: 'Occasional failures based on previous similar design. 2 per 1000.' },
+                    5: { title: 'Moderate', text: 'Isolated failures based on similar design or simulation. 0.5 per 1000.' },
+                    4: { title: 'Low', text: 'Similar design has had few failures. 0.1 per 1000.' },
+                    3: { title: 'Low', text: 'Similar design had only isolated failures. 0.01 per 1000.' },
+                    2: { title: 'Very Low', text: 'No observed failures on similar design with high volume. ≤0.001 per 1000.' },
+                    1: { title: 'Remote', text: 'Failure eliminated through preventive control. Failure cannot occur.' }
+                },
+                detection: {
+                    10: { title: 'Almost Impossible', text: 'No current design control; cannot detect or is not analyzed.' },
+                    9: { title: 'Very Remote', text: 'Very remote likelihood current design control will detect.' },
+                    8: { title: 'Remote', text: 'Remote likelihood current design control will detect.' },
+                    7: { title: 'Very Low', text: 'Very low likelihood current design control will detect.' },
+                    6: { title: 'Low', text: 'Low likelihood current design control will detect.' },
+                    5: { title: 'Moderate', text: 'Moderate likelihood current design control will detect.' },
+                    4: { title: 'Moderately High', text: 'Moderately high likelihood current design control will detect.' },
+                    3: { title: 'High', text: 'High likelihood current design control will detect.' },
+                    2: { title: 'Very High', text: 'Very high likelihood current design control will detect.' },
+                    1: { title: 'Almost Certain', text: 'Design control will almost certainly detect; proven detection methods.' }
+                }
+            },
+            PFMEA: {
+                severity: {
+                    10: { title: 'Hazardous without Warning', text: 'May endanger operator. Non-compliance with regulations. No warning.' },
+                    9: { title: 'Hazardous with Warning', text: 'May endanger operator. Non-compliance with regulations. Warning given.' },
+                    8: { title: 'Very High', text: 'Major disruption to production line. 100% of product may be scrapped.' },
+                    7: { title: 'High', text: 'Minor disruption to production line. Product may need to be sorted and portion scrapped.' },
+                    6: { title: 'Moderate', text: '100% of product may need to be reworked offline.' },
+                    5: { title: 'Low', text: 'Portion of product may need to be reworked offline.' },
+                    4: { title: 'Very Low', text: '100% of product may need to be reworked in-station before being processed.' },
+                    3: { title: 'Minor', text: 'Portion of product may need to be reworked in-station before being processed.' },
+                    2: { title: 'Very Minor', text: 'Slight inconvenience to process, operation, or operator.' },
+                    1: { title: 'None', text: 'No discernible effect.' }
+                },
+                occurrence: {
+                    10: { title: 'Very High', text: 'Occurrence very high. New or modified process without history. ≥100 per 1000.' },
+                    9: { title: 'High', text: 'Failure is likely. Similar process has experienced frequent failures. 50 per 1000.' },
+                    8: { title: 'High', text: 'Failure is likely. Similar process has experienced occasional failures. 20 per 1000.' },
+                    7: { title: 'Moderate', text: 'Occasional failures. Similar process experienced occasional failures. 10 per 1000.' },
+                    6: { title: 'Moderate', text: 'Occasional failures. Similar process experienced isolated failures. 2 per 1000.' },
+                    5: { title: 'Moderate', text: 'Low failure. Similar process experienced few failures. 0.5 per 1000.' },
+                    4: { title: 'Low', text: 'Low failure. Similar process experienced isolated failures. 0.1 per 1000.' },
+                    3: { title: 'Low', text: 'Very low failure. Process is in statistical control. 0.01 per 1000.' },
+                    2: { title: 'Very Low', text: 'Failure unlikely. Similar process with capable long run. ≤0.001 per 1000.' },
+                    1: { title: 'Remote', text: 'Failure eliminated through preventive control.' }
+                },
+                detection: {
+                    10: { title: 'Almost Impossible', text: 'No current process control; cannot detect or not analyzed.' },
+                    9: { title: 'Very Remote', text: 'Failure mode or cause not easily detected (random audits).' },
+                    8: { title: 'Remote', text: 'Detection after further processing by operator through visual/tactile means.' },
+                    7: { title: 'Very Low', text: 'Detection at station by operator using multiple gauging or visual/tactile inspection.' },
+                    6: { title: 'Low', text: 'Detection post-processing by operator through use of variable gauging.' },
+                    5: { title: 'Moderate', text: 'Detection at station by operator through use of variable gauging.' },
+                    4: { title: 'Moderately High', text: 'Detection post-processing by automated controls that will detect.' },
+                    3: { title: 'High', text: 'Detection at station by automated controls that will detect and prevent.' },
+                    2: { title: 'Very High', text: 'Detection at station by automated controls that will detect and lock station.' },
+                    1: { title: 'Almost Certain', text: 'Detection not applicable; error prevention. Failure cause or mode cannot occur.' }
+                }
+            }
+        };
+
+        // ============================================
+        // State Management
+        // ============================================
+
+        const STORAGE_KEY = 'fmea_tool_data';
+        let currentMode = 'DFMEA';
+        let currentFilter = 'all';
+        let rows = [];
+        let pendingConfirmAction = null;
+
+        // Custom confirm dialog (replaces browser confirm() which doesn't work on file:// URLs)
+        function showConfirm(message, yesText, onConfirm) {
+            const modal = document.getElementById('confirm-modal');
+            const msgEl = document.getElementById('confirm-message');
+            const yesBtn = document.getElementById('confirm-yes');
+
+            msgEl.textContent = message;
+            yesBtn.textContent = yesText;
+            pendingConfirmAction = onConfirm;
+            modal.classList.add('active');
+        }
+
+        function hideConfirm() {
+            const modal = document.getElementById('confirm-modal');
+            modal.classList.remove('active');
+            pendingConfirmAction = null;
+        }
+
+        function generateId() {
+            return 'row_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        }
+
+        function createEmptyRow() {
+            return {
+                id: generateId(),
+                item: '',
+                failureMode: '',
+                effects: '',
+                severity: 5,
+                causes: '',
+                occurrence: 5,
+                controls: '',
+                detection: 5,
+                actions: '',
+                status: 'Open'
+            };
+        }
+
+        function saveToLocalStorage() {
+            const data = {
+                mode: currentMode,
+                rows: rows
+            };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        }
+
+        function loadFromLocalStorage() {
+            try {
+                const data = JSON.parse(localStorage.getItem(STORAGE_KEY));
+                if (data) {
+                    currentMode = data.mode || 'DFMEA';
+                    rows = data.rows || [];
+                }
+            } catch (e) {
+                console.error('Failed to load data:', e);
+            }
+        }
+
+        // ============================================
+        // Rendering
+        // ============================================
+
+        function getTooltipHTML(type, value, mode) {
+            const tip = tooltips[mode][type][value];
+            if (!tip) return '';
+            return `
+                <div class="tooltip">
+                    <div class="tooltip-title">${value} — ${tip.title}</div>
+                    <div class="tooltip-text">${tip.text}</div>
+                </div>
+            `;
+        }
+
+        function renderRow(row, index) {
+            const ap = calculateAP(row.severity, row.occurrence, row.detection);
+            const apClass = ap === 'H' ? 'high' : ap === 'M' ? 'medium' : 'low';
+
+            // Determine visibility based on filter
+            const hidden = currentFilter !== 'all' && currentFilter !== apClass;
+
+            return `
+                <tr data-id="${row.id}" class="priority-${apClass} ${hidden ? 'hidden' : ''}">
+                    <td style="color: var(--text-secondary); font-size: 0.8rem;">${index + 1}</td>
+                    <td>
+                        <textarea class="editable" data-field="item" placeholder="Function/Requirement">${row.item}</textarea>
+                    </td>
+                    <td>
+                        <textarea class="editable" data-field="failureMode" placeholder="How could it fail?">${row.failureMode}</textarea>
+                    </td>
+                    <td>
+                        <textarea class="editable" data-field="effects" placeholder="What happens if it fails?">${row.effects}</textarea>
+                    </td>
+                    <td class="rating-cell">
+                        <input type="number" class="rating-input" data-field="severity" min="1" max="10" value="${row.severity}">
+                    </td>
+                    <td>
+                        <textarea class="editable" data-field="causes" placeholder="Why could it fail?">${row.causes}</textarea>
+                    </td>
+                    <td class="rating-cell">
+                        <input type="number" class="rating-input" data-field="occurrence" min="1" max="10" value="${row.occurrence}">
+                    </td>
+                    <td>
+                        <textarea class="editable" data-field="controls" placeholder="Prevention/Detection controls">${row.controls}</textarea>
+                    </td>
+                    <td class="rating-cell">
+                        <input type="number" class="rating-input" data-field="detection" min="1" max="10" value="${row.detection}">
+                    </td>
+                    <td>
+                        <span class="ap-badge ${apClass}">${ap}</span>
+                    </td>
+                    <td>
+                        <textarea class="editable" data-field="actions" placeholder="Recommended actions">${row.actions}</textarea>
+                    </td>
+                    <td>
+                        <select class="status-select" data-field="status">
+                            <option value="Open" ${row.status === 'Open' ? 'selected' : ''}>Open</option>
+                            <option value="In Progress" ${row.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
+                            <option value="Closed" ${row.status === 'Closed' ? 'selected' : ''}>Closed</option>
+                        </select>
+                    </td>
+                    <td>
+                        <div class="row-actions">
+                            <button class="row-btn duplicate" title="Duplicate row">📄</button>
+                            <button class="row-btn delete" title="Delete row">✕</button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+
+        function render() {
+            const tbody = document.getElementById('worksheet-body');
+            const emptyState = document.getElementById('empty-state');
+            const worksheetContainer = document.querySelector('.worksheet-container');
+
+            if (rows.length === 0) {
+                worksheetContainer.style.display = 'none';
+                emptyState.style.display = 'block';
+            } else {
+                worksheetContainer.style.display = 'block';
+                emptyState.style.display = 'none';
+                tbody.innerHTML = rows.map((row, idx) => renderRow(row, idx)).join('');
+            }
+
+            // Update mode toggle
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.mode === currentMode);
+            });
+
+            // Update filter chips
+            document.querySelectorAll('.filter-chip').forEach(chip => {
+                chip.classList.toggle('active', chip.dataset.filter === currentFilter);
+            });
+        }
+
+        // ============================================
+        // Event Handlers
+        // ============================================
+
+        function handleCellChange(e) {
+            const tr = e.target.closest('tr');
+            if (!tr) return;
+
+            const rowId = tr.dataset.id;
+            const field = e.target.dataset.field;
+            let value = e.target.value;
+
+            // Clamp rating values
+            if (['severity', 'occurrence', 'detection'].includes(field)) {
+                value = Math.max(1, Math.min(10, parseInt(value) || 1));
+                e.target.value = value;
+            }
+
+            // Update data
+            const row = rows.find(r => r.id === rowId);
+            if (row) {
+                row[field] = value;
+                saveToLocalStorage();
+
+                // Re-render to update AP and colors
+                if (['severity', 'occurrence', 'detection'].includes(field)) {
+                    render();
+                }
+            }
+        }
+
+        function handleRowAction(e) {
+            const btn = e.target.closest('.row-btn');
+            if (!btn) return;
+
+            const tr = btn.closest('tr');
+            const rowId = tr.dataset.id;
+            const rowIndex = rows.findIndex(r => r.id === rowId);
+
+            if (btn.classList.contains('delete')) {
+                showConfirm('Delete this row?', 'Yes, Delete', () => {
+                    rows.splice(rowIndex, 1);
+                    saveToLocalStorage();
+                    render();
+                });
+            } else if (btn.classList.contains('duplicate')) {
+                const original = rows[rowIndex];
+                const copy = { ...original, id: generateId() };
+                rows.splice(rowIndex + 1, 0, copy);
+                saveToLocalStorage();
+                render();
+            }
+        }
+
+        function addRow() {
+            rows.push(createEmptyRow());
+            saveToLocalStorage();
+            render();
+
+            // Wait for render, then scroll new row into view
+            setTimeout(() => {
+                const tbody = document.getElementById('worksheet-body');
+                const newRow = tbody.lastElementChild;
+                if (newRow) {
+                    newRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            }, 50);
+        }
+
+        function setMode(mode) {
+            currentMode = mode;
+            saveToLocalStorage();
+            render();
+            renderReferenceTables();
+        }
+
+        function toggleReference() {
+            const content = document.getElementById('ref-content');
+            const header = document.getElementById('ref-toggle');
+            content.classList.toggle('visible');
+            header.classList.toggle('active');
+        }
+
+        function renderReferenceTables() {
+            const grid = document.getElementById('ref-grid');
+            const data = tooltips[currentMode];
+            const titles = { severity: 'Severity (S)', occurrence: 'Occurrence (O)', detection: 'Detection (D)' };
+
+            grid.innerHTML = ['severity', 'occurrence', 'detection'].map(type => {
+                const rows = Object.entries(data[type])
+                    .sort((a, b) => b[0] - a[0]) // Sort 10 to 1
+                    .map(([val, info]) => `
+                        <tr>
+                            <td style="width: 30px; font-weight: bold; text-align: center; color: var(--accent);">${val}</td>
+                            <td>
+                                <div style="font-weight: 600; margin-bottom: 2px;">${info.title}</div>
+                                <div style="opacity: 0.8;">${info.text}</div>
+                            </td>
+                        </tr>
+                    `).join('');
+
+                return `
+                    <div class="ref-col">
+                        <h3>${titles[type]}</h3>
+                        <table class="ref-table">
+                            ${rows}
+                        </table>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function setFilter(filter) {
+            currentFilter = filter;
+            render();
+        }
+
+        function clearAll() {
+            showConfirm('Clear all data? This cannot be undone.', 'Yes, Clear All', () => {
+                rows = [];
+                saveToLocalStorage();
+                render();
+            });
+        }
+
+        function exportCSV() {
+            const headers = [
+                '#', 'Item/Function', 'Failure Mode', 'Effects', 'S',
+                'Causes', 'O', 'Controls', 'D', 'AP', 'Actions', 'Status'
+            ];
+
+            const csvRows = [headers.join(',')];
+
+            rows.forEach((row, idx) => {
+                const ap = calculateAP(row.severity, row.occurrence, row.detection);
+                const values = [
+                    idx + 1,
+                    `"${(row.item || '').replace(/"/g, '""')}"`,
+                    `"${(row.failureMode || '').replace(/"/g, '""')}"`,
+                    `"${(row.effects || '').replace(/"/g, '""')}"`,
+                    row.severity,
+                    `"${(row.causes || '').replace(/"/g, '""')}"`,
+                    row.occurrence,
+                    `"${(row.controls || '').replace(/"/g, '""')}"`,
+                    row.detection,
+                    ap,
+                    `"${(row.actions || '').replace(/"/g, '""')}"`,
+                    row.status
+                ];
+                csvRows.push(values.join(','));
+            });
+
+            const csv = csvRows.join('\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `FMEA_${currentMode}_${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function copyToClipboard() {
+            const headers = [
+                '#', 'Item/Function', 'Failure Mode', 'Effects', 'S',
+                'Causes', 'O', 'Controls', 'D', 'AP', 'Actions', 'Status'
+            ];
+
+            const lines = [headers.join('\t')];
+
+            rows.forEach((row, idx) => {
+                const ap = calculateAP(row.severity, row.occurrence, row.detection);
+                const values = [
+                    idx + 1,
+                    row.item || '',
+                    row.failureMode || '',
+                    row.effects || '',
+                    row.severity,
+                    row.causes || '',
+                    row.occurrence,
+                    row.controls || '',
+                    row.detection,
+                    ap,
+                    row.actions || '',
+                    row.status
+                ];
+                lines.push(values.join('\t'));
+            });
+
+            const text = lines.join('\n');
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = document.getElementById('copy-btn');
+                const original = btn.innerHTML;
+                btn.innerHTML = '✓ Copied!';
+                setTimeout(() => btn.innerHTML = original, 2000);
+            });
+        }
+
+        // ============================================
+        // Initialization
+        // ============================================
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadFromLocalStorage();
+
+            // Add initial row if empty
+            if (rows.length === 0) {
+                rows.push(createEmptyRow());
+                saveToLocalStorage();
+            }
+
+            render();
+
+            // Event delegation for worksheet
+            const tbody = document.getElementById('worksheet-body');
+            tbody.addEventListener('input', handleCellChange);
+            tbody.addEventListener('change', handleCellChange);
+            tbody.addEventListener('click', handleRowAction);
+
+            // Mode toggle
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.addEventListener('click', () => setMode(btn.dataset.mode));
+            });
+
+            // Filter chips
+            document.querySelectorAll('.filter-chip').forEach(chip => {
+                chip.addEventListener('click', () => setFilter(chip.dataset.filter));
+            });
+
+            // Control buttons
+            document.getElementById('add-row-btn').addEventListener('click', addRow);
+            document.getElementById('copy-btn').addEventListener('click', copyToClipboard);
+            document.getElementById('export-btn').addEventListener('click', exportCSV);
+            document.getElementById('clear-btn').addEventListener('click', clearAll);
+
+            // Confirmation modal handlers
+            document.getElementById('confirm-yes').addEventListener('click', () => {
+                if (pendingConfirmAction) {
+                    pendingConfirmAction();
+                }
+                hideConfirm();
+            });
+            document.getElementById('confirm-no').addEventListener('click', hideConfirm);
+            document.getElementById('confirm-modal').addEventListener('click', (e) => {
+                if (e.target.id === 'confirm-modal') hideConfirm();
+            });
+
+            // Reference toggle
+            document.getElementById('ref-toggle').addEventListener('click', toggleReference);
+
+            // Initial render of reference tables
+            renderReferenceTables();
+
+            // ============================================
+            // Dynamic Tooltip Logic
+            // ============================================
+            const tooltipEl = document.getElementById('dynamic-tooltip');
+            const tooltipTitle = document.getElementById('tooltip-title');
+            const tooltipDesc = document.getElementById('tooltip-desc');
+            let activeTooltip = null;
+
+            function showTooltip(input, type) {
+                const value = parseInt(input.value) || 1;
+                const tip = tooltips[currentMode][type][value];
+                if (!tip) return;
+
+                tooltipTitle.textContent = `${value} — ${tip.title}`;
+                tooltipDesc.textContent = tip.text;
+                tooltipEl.classList.add('visible');
+
+                updateTooltipPosition(input);
+                activeTooltip = input;
+            }
+
+            function hideTooltip() {
+                tooltipEl.classList.remove('visible');
+                activeTooltip = null;
+            }
+
+            function updateTooltipPosition(input) {
+                if (!input) return;
+
+                const rect = input.getBoundingClientRect();
+                const tooltipRect = tooltipEl.getBoundingClientRect();
+                const viewportHeight = window.innerHeight;
+
+                // Default: Show below
+                let top = rect.bottom + 8;
+                let left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
+
+                // If not enough space below, show above
+                if (top + tooltipRect.height > viewportHeight - 10) {
+                    top = rect.top - tooltipRect.height - 8;
+                }
+
+                // Keep horizontal within viewport
+                left = Math.max(10, Math.min(left, window.innerWidth - tooltipRect.width - 10));
+
+                tooltipEl.style.top = `${top}px`;
+                tooltipEl.style.left = `${left}px`;
+            }
+
+            // Global delegation for tooltips
+            document.body.addEventListener('mouseover', (e) => {
+                if (e.target.classList.contains('rating-input')) {
+                    showTooltip(e.target, e.target.dataset.field);
+                }
+            });
+
+            document.body.addEventListener('mouseout', (e) => {
+                if (e.target.classList.contains('rating-input')) {
+                    hideTooltip();
+                }
+            });
+
+            document.body.addEventListener('focusin', (e) => {
+                if (e.target.classList.contains('rating-input')) {
+                    showTooltip(e.target, e.target.dataset.field);
+                }
+            });
+
+            document.body.addEventListener('focusout', (e) => {
+                if (e.target.classList.contains('rating-input')) {
+                    hideTooltip();
+                }
+            });
+
+            // Update position on scroll
+            window.addEventListener('scroll', () => {
+                if (activeTooltip) updateTooltipPosition(activeTooltip);
+            }, { passive: true });
+        });
+    </script>
+</body>
+
+</html>
