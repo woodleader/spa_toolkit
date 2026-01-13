@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camera Pixel Estimator</title>
+    <style>
+        :root {
+            --bg-deep: #0f172a;
+            --bg-card: #1e293b;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --border: rgba(255, 255, 255, 0.1);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent: #38bdf8;
+            --accent-secondary: #818cf8;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-deep);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1600px;
+            width: 95%;
+            margin: 0 auto;
+            padding: 40px 0;
+            display: grid;
+            grid-template-columns: 1fr 420px;
+            gap: 30px;
+        }
+
+        header {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            margin: 0;
+            background: linear-gradient(to right, var(--accent), var(--accent-secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .back-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            border: 1px solid var(--border);
+            padding: 6px 12px;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .back-link:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            overflow: hidden;
+        }
+
+        .section-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .visualization-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .canvas-wrapper {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 16px;
+            position: relative;
+        }
+
+        .canvas-title {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        canvas {
+            width: 100%;
+            height: auto;
+            display: block;
+            border-radius: 8px;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .input-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .label {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .label-value {
+            color: var(--accent);
+            font-family: monospace;
+            font-weight: 600;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: var(--accent);
+            background: transparent;
+        }
+
+        input[type="number"],
+        select {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 10px 14px;
+            border-radius: 8px;
+            outline: none;
+            font-size: 0.85rem;
+            width: 100%;
+        }
+
+        input[type="number"]:focus,
+        select:focus {
+            border-color: var(--accent);
+        }
+
+        .dimension-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .preset-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .preset-btn {
+            background: rgba(56, 189, 248, 0.1);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 8px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.8rem;
+        }
+
+        .preset-btn:hover {
+            background: rgba(56, 189, 248, 0.2);
+            border-color: var(--accent);
+        }
+
+        .preset-btn.active {
+            background: var(--accent);
+            color: var(--bg-deep);
+            border-color: var(--accent);
+        }
+
+        /* Mode Toggle */
+        .mode-toggle {
+            display: flex;
+            gap: 0;
+            margin-bottom: 16px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .mode-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            padding: 10px 12px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.2s;
+        }
+
+        .mode-btn:first-child {
+            border-right: 1px solid var(--border);
+        }
+
+        .mode-btn:hover {
+            background: rgba(56, 189, 248, 0.1);
+        }
+
+        .mode-btn.active {
+            background: var(--accent);
+            color: var(--bg-deep);
+        }
+
+        .mode-section {
+            display: none;
+        }
+
+        .mode-section.active {
+            display: block;
+        }
+
+        /* Toggle Switch */
+        .toggle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+        }
+
+        .toggle-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 48px;
+            height: 26px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.1);
+            transition: 0.3s;
+            border-radius: 26px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: var(--text-secondary);
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        .toggle-switch input:checked+.toggle-slider {
+            background-color: var(--accent);
+        }
+
+        .toggle-switch input:checked+.toggle-slider:before {
+            transform: translateX(22px);
+            background-color: var(--bg-deep);
+        }
+
+        .shutter-info {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        /* Results Panel */
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .result-item {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 14px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .result-item.wide {
+            grid-column: span 2;
+        }
+
+        .result-label {
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .result-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            font-family: monospace;
+        }
+
+        .result-value.pass {
+            color: var(--success);
+        }
+
+        .result-value.warn {
+            color: var(--warning);
+        }
+
+        .result-value.fail {
+            color: var(--danger);
+        }
+
+        .result-unit {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-left: 4px;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .status-badge.pass {
+            background: rgba(34, 197, 94, 0.2);
+            color: var(--success);
+        }
+
+        .status-badge.warn {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning);
+        }
+
+        .status-badge.fail {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+        }
+
+        .motion-blur-badge {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning);
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            margin-left: 8px;
+        }
+
+        details {
+            border-top: 1px solid var(--border);
+            padding-top: 16px;
+            margin-top: 16px;
+        }
+
+        summary {
+            cursor: pointer;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            user-select: none;
+            padding: 4px 0;
+        }
+
+        .threshold-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .threshold-row input {
+            width: 80px;
+        }
+
+        @media (max-width: 1200px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>Camera Pixel Estimator</h1>
+            <a href="../index.html" class="back-link">← Return to Toolbox</a>
+        </header>
+
+        <main class="visualization-container">
+            <div class="card">
+                <div class="canvas-wrapper">
+                    <div class="canvas-title">Ground Plane FOV (Top-Down View)</div>
+                    <canvas id="topCanvas" width="800" height="600"></canvas>
+                </div>
+            </div>
+            <div class="card">
+                <div class="canvas-wrapper">
+                    <div class="canvas-title">Camera View (Image Plane)</div>
+                    <canvas id="imageCanvas" width="800" height="450"></canvas>
+                </div>
+            </div>
+        </main>
+
+        <aside class="controls">
+            <!-- Detection Results - shown first for visibility -->
+            <div class="card">
+                <div class="section-title">Detection Results</div>
+                <div class="results-grid">
+                    <div class="result-item">
+                        <div class="result-label">Pixel Height</div>
+                        <div class="result-value" id="pixelHeight">--</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">Pixel Width</div>
+                        <div class="result-value" id="pixelWidth">--</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">PPM</div>
+                        <div class="result-value" id="ppmValue">--</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">Eff. Resolution</div>
+                        <div class="result-value" id="effectiveRes">--</div>
+                    </div>
+                    <div class="result-item" id="blurItem" style="display: none;">
+                        <div class="result-label">Motion Blur</div>
+                        <div class="result-value" id="blurValue">--</div>
+                    </div>
+                    <div class="result-item wide">
+                        <div class="result-label">AI Detection Suitability</div>
+                        <div class="status-badge pass" id="suitabilityBadge">✅ Suitable</div>
+                    </div>
+                </div>
+                <details>
+                    <summary>⚙️ Detection Threshold</summary>
+                    <div class="threshold-row">
+                        <span class="label">Min Pixel Height:</span>
+                        <input type="number" id="threshold" value="50" min="10" max="200" onchange="update()">
+                        <span class="result-unit">px</span>
+                    </div>
+                </details>
+            </div>
+
+            <div class="card">
+                <div class="section-title">Sensor Configuration</div>
+
+                <!-- Sensor Preset -->
+                <div class="input-group">
+                    <label class="label">Sensor Preset</label>
+                    <select id="sensorPreset" onchange="applySensorPreset()">
+                        <option value="custom">Custom</option>
+                        <option value="imx219">IMX219 (RPi Cam v2)</option>
+                        <option value="imx477">IMX477 (RPi HQ Cam)</option>
+                        <option value="imx335">IMX335 (5MP CMOS)</option>
+                        <option value="imx290">IMX290 (Starlight)</option>
+                        <option value="ar0234">AR0234 (Automotive)</option>
+                    </select>
+                </div>
+
+                <!-- Mode Toggle -->
+                <div class="mode-toggle" style="margin-top: 16px;">
+                    <button class="mode-btn active" id="modeOptical" onclick="setInputMode('optical')">📐
+                        Optical</button>
+                    <button class="mode-btn" id="modeAngular" onclick="setInputMode('angular')">📏 Angular</button>
+                </div>
+
+                <!-- Mode A: Optical -->
+                <div class="mode-section active" id="opticalSection">
+                    <div class="input-group">
+                        <label class="label">Focal Length <span class="label-value" id="focalValue">6mm</span></label>
+                        <input type="range" id="focalLength" min="2" max="25" step="0.5" value="6" oninput="update()">
+                    </div>
+
+                    <div class="input-group">
+                        <label class="label">Sensor Size <span class="label-value"
+                                id="sensorValue">6.17×4.55mm</span></label>
+                        <div class="dimension-grid">
+                            <input type="number" id="sensorWidth" value="6.17" min="1" max="36" step="0.01"
+                                onchange="update()" placeholder="Width">
+                            <input type="number" id="sensorHeight" value="4.55" min="1" max="24" step="0.01"
+                                onchange="update()" placeholder="Height">
+                        </div>
+                    </div>
+
+                    <div class="input-group" style="margin-top: 8px;">
+                        <label class="label" style="color: var(--accent);">Calculated HFOV/VFOV <span
+                                class="label-value" id="calcFovValue">--</span></label>
+                    </div>
+                </div>
+
+                <!-- Mode B: Angular -->
+                <div class="mode-section" id="angularSection">
+                    <div class="input-group">
+                        <label class="label">Horizontal FOV <span class="label-value" id="hfovValue">60°</span></label>
+                        <input type="range" id="hfovInput" min="10" max="180" step="1" value="60" oninput="update()">
+                    </div>
+
+                    <div class="input-group">
+                        <label class="label">Vertical FOV <span class="label-value" id="vfovValue">45°</span></label>
+                        <input type="range" id="vfovInput" min="10" max="120" step="1" value="45" oninput="update()">
+                    </div>
+                </div>
+
+                <!-- Resolution -->
+                <div class="input-group" style="margin-top: 12px;">
+                    <label class="label">Resolution (px)</label>
+                    <div class="dimension-grid">
+                        <input type="number" id="resWidth" value="1920" min="640" max="4096" step="1"
+                            onchange="update()">
+                        <input type="number" id="resHeight" value="1080" min="480" max="2160" step="1"
+                            onchange="update()">
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="section-title">Camera Mounting</div>
+
+                <div class="input-group">
+                    <label class="label">Camera Height <span class="label-value" id="heightValue">3.0m</span></label>
+                    <input type="range" id="camHeight" min="0.5" max="10" step="0.1" value="3" oninput="update()">
+                </div>
+
+                <div class="input-group">
+                    <label class="label">Camera Tilt (down) <span class="label-value" id="tiltValue">45°</span></label>
+                    <input type="range" id="camTilt" min="0" max="90" step="1" value="45" oninput="update()">
+                </div>
+
+                <div class="input-group">
+                    <label class="label">Person Distance <span class="label-value"
+                            id="distanceValue">10.0m</span></label>
+                    <input type="range" id="personDistance" min="1" max="100" step="0.5" value="10" oninput="update()">
+                </div>
+
+                <div class="input-group">
+                    <label class="label">Horizontal Position <span class="label-value" id="horizValue">Center
+                            (0%)</span></label>
+                    <input type="range" id="horizOffset" min="0" max="100" step="1" value="0" oninput="update()">
+                </div>
+
+                <div class="input-group">
+                    <label class="label">Distortion (k) <span class="label-value" id="distortValue">0.10</span></label>
+                    <input type="range" id="distortionK" min="0" max="0.5" step="0.01" value="0.1" oninput="update()">
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="section-title">Target Person</div>
+                <div class="preset-buttons">
+                    <button class="preset-btn" id="presetChild" onclick="setPreset('child')">Child (1.1m)</button>
+                    <button class="preset-btn active" id="presetAdult" onclick="setPreset('adult')">Adult
+                        (1.75m)</button>
+                    <button class="preset-btn" id="presetCustom" onclick="setPreset('custom')">Custom</button>
+                </div>
+                <div class="input-group" style="margin-top: 12px;">
+                    <label class="label">Custom Height <span class="label-value"
+                            id="personHeightValue">1.75m</span></label>
+                    <input type="range" id="personHeight" min="0.5" max="2.5" step="0.05" value="1.75"
+                        oninput="setPreset('custom'); update()">
+                </div>
+
+                <!-- Motion Blur Toggle -->
+                <div class="toggle-row"
+                    style="margin-top: 16px; border-top: 1px solid var(--border); padding-top: 16px;">
+                    <div>
+                        <span class="toggle-label">Motion Blur Simulation</span>
+                        <div class="shutter-info" id="shutterInfo">Shutter: 1/60s (walking person ~1.4m/s)</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="motionBlurToggle" onchange="update()">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="input-group" id="shutterRow" style="display: none; margin-top: 8px;">
+                    <label class="label">Shutter Speed <span class="label-value" id="shutterValue">1/60s</span></label>
+                    <input type="range" id="shutterSpeed" min="30" max="1000" step="10" value="60" oninput="update()">
+                </div>
+            </div>
+
+
+        </aside>
+    </div>
+
+    <script>
+        // Sensor presets: name → { width, height, resW, resH }
+        const sensorPresets = {
+            imx219: { width: 3.68, height: 2.76, resW: 3280, resH: 2464, name: 'IMX219' },
+            imx477: { width: 6.287, height: 4.712, resW: 4056, resH: 3040, name: 'IMX477' },
+            imx335: { width: 5.14, height: 3.86, resW: 2592, resH: 1944, name: 'IMX335' },
+            imx290: { width: 5.6, height: 3.15, resW: 1920, resH: 1080, name: 'IMX290' },
+            ar0234: { width: 5.856, height: 3.276, resW: 1920, resH: 1200, name: 'AR0234' }
+        };
+
+        // State
+        let activePreset = 'adult';
+        let inputMode = 'optical';
+        const presetHeights = { child: 1.1, adult: 1.75 };
+
+        function setInputMode(mode) {
+            inputMode = mode;
+            document.getElementById('modeOptical').classList.toggle('active', mode === 'optical');
+            document.getElementById('modeAngular').classList.toggle('active', mode === 'angular');
+            document.getElementById('opticalSection').classList.toggle('active', mode === 'optical');
+            document.getElementById('angularSection').classList.toggle('active', mode === 'angular');
+            update();
+        }
+
+        function applySensorPreset() {
+            const preset = document.getElementById('sensorPreset').value;
+            if (preset === 'custom') return;
+
+            const p = sensorPresets[preset];
+            if (!p) return;
+
+            document.getElementById('sensorWidth').value = p.width;
+            document.getElementById('sensorHeight').value = p.height;
+            document.getElementById('resWidth').value = p.resW;
+            document.getElementById('resHeight').value = p.resH;
+            update();
+        }
+
+        function setPreset(preset) {
+            activePreset = preset;
+            document.querySelectorAll('.preset-btn').forEach(btn => btn.classList.remove('active'));
+
+            if (preset === 'child') {
+                document.getElementById('presetChild').classList.add('active');
+                document.getElementById('personHeight').value = 1.1;
+            } else if (preset === 'adult') {
+                document.getElementById('presetAdult').classList.add('active');
+                document.getElementById('personHeight').value = 1.75;
+            } else {
+                document.getElementById('presetCustom').classList.add('active');
+            }
+            update();
+        }
+
+        function getParams() {
+            const sensorWidth = parseFloat(document.getElementById('sensorWidth').value);
+            const sensorHeight = parseFloat(document.getElementById('sensorHeight').value);
+            const resWidth = parseInt(document.getElementById('resWidth').value);
+            const resHeight = parseInt(document.getElementById('resHeight').value);
+            const camHeight = parseFloat(document.getElementById('camHeight').value);
+            const camTilt = parseFloat(document.getElementById('camTilt').value) * Math.PI / 180;
+            const personDistance = parseFloat(document.getElementById('personDistance').value);
+            const horizOffset = parseFloat(document.getElementById('horizOffset').value) / 100;
+            const distortionK = parseFloat(document.getElementById('distortionK').value);
+            const personHeight = parseFloat(document.getElementById('personHeight').value);
+            const threshold = parseInt(document.getElementById('threshold').value);
+            const motionBlur = document.getElementById('motionBlurToggle').checked;
+            const shutterSpeed = parseInt(document.getElementById('shutterSpeed').value);
+
+            let hFov, vFov, focalLength;
+
+            if (inputMode === 'optical') {
+                focalLength = parseFloat(document.getElementById('focalLength').value);
+                hFov = 2 * Math.atan(sensorWidth / (2 * focalLength));
+                vFov = 2 * Math.atan(sensorHeight / (2 * focalLength));
+            } else {
+                hFov = parseFloat(document.getElementById('hfovInput').value) * Math.PI / 180;
+                vFov = parseFloat(document.getElementById('vfovInput').value) * Math.PI / 180;
+                // Calculate effective focal length for projection
+                focalLength = sensorWidth / (2 * Math.tan(hFov / 2));
+            }
+
+            return {
+                focalLength, sensorWidth, sensorHeight,
+                resWidth, resHeight, camHeight, camTilt,
+                personDistance, horizOffset, distortionK,
+                personHeight, threshold, hFov, vFov,
+                motionBlur, shutterSpeed
+            };
+        }
+
+        // Project 3D world point to undistorted image coordinates
+        // Camera is at (0, 0, camHeight), looking forward (+Y), tilted down by camTilt
+        // World: +X = right, +Y = forward (distance), +Z = up
+        // Image: +X = right, +Y = down (standard image coords)
+        function projectToImage(worldX, worldY, worldZ, params) {
+            const { camHeight, camTilt, focalLength, sensorWidth, sensorHeight, resWidth, resHeight } = params;
+
+            // Vector from camera to world point
+            const relX = worldX;               // lateral offset
+            const relY = worldY;               // forward distance (positive = in front)
+            const relZ = worldZ - camHeight;   // vertical offset (negative = below camera)
+
+            // Camera tilts down: optical axis goes from (0,1,0) toward (0,cos,-sin)
+            // We need to rotate the relative vector into camera coordinates
+            // Rotation by angle θ around X-axis: new_y = y*cos(θ) + z*sin(θ), new_z = -y*sin(θ) + z*cos(θ)
+            // But we're rotating the coordinate system, not the point, so signs flip:
+            // camY (depth along optical axis) = relY * cos(tilt) - relZ * sin(tilt)
+            // camZ (vertical in camera frame) = relY * sin(tilt) + relZ * cos(tilt)
+            const cosTilt = Math.cos(camTilt);
+            const sinTilt = Math.sin(camTilt);
+
+            const camX = relX;
+            const camY = relY * cosTilt - relZ * sinTilt;  // depth: increases when looking toward ground point
+            const camZ = relY * sinTilt + relZ * cosTilt;  // vertical in camera frame
+
+            // Check if point is in front of camera (positive depth)
+            if (camY <= 0.1) return null;
+
+            // Pinhole projection: normalize by depth
+            const normX = camX / camY;
+            const normZ = camZ / camY;
+
+            // Convert to pixel coordinates (sensor center = 0,0)
+            // In image space, +Y is down, so objects below optical axis (negative camZ) appear in lower part of image
+            const pxPerMmX = resWidth / sensorWidth;
+            const pxPerMmZ = resHeight / sensorHeight;
+
+            const imgX = normX * focalLength * pxPerMmX;
+            const imgY = -normZ * focalLength * pxPerMmZ;  // negate because image Y is down, camZ is up
+
+            return { x: imgX, y: imgY };
+        }
+
+        // Apply barrel distortion (Division Model)
+        function applyDistortion(imgX, imgY, params) {
+            const { resWidth, resHeight, distortionK } = params;
+
+            const halfDiag = Math.sqrt((resWidth / 2) ** 2 + (resHeight / 2) ** 2);
+            const r = Math.sqrt(imgX ** 2 + imgY ** 2);
+            const rNorm = r / halfDiag;
+
+            const factor = 1 + distortionK * rNorm * rNorm;
+            return {
+                x: imgX / factor,
+                y: imgY / factor
+            };
+        }
+
+        // Calculate ground FOV trapezoid
+        function getGroundFov(params) {
+            const { camHeight, camTilt, hFov, vFov } = params;
+
+            const nearAngle = camTilt + vFov / 2;
+            const farAngle = camTilt - vFov / 2;
+
+            let nearDist, farDist;
+
+            if (nearAngle >= Math.PI / 2) {
+                nearDist = 0;
+            } else {
+                nearDist = camHeight * Math.tan(Math.PI / 2 - nearAngle);
+            }
+
+            if (farAngle <= 0) {
+                farDist = 200;
+            } else {
+                farDist = camHeight * Math.tan(Math.PI / 2 - farAngle);
+                farDist = Math.min(farDist, 200);
+            }
+
+            const nearWidth = nearDist > 0 ? 2 * nearDist * Math.tan(hFov / 2) : 2 * camHeight * Math.tan(hFov / 2);
+            const farWidth = 2 * farDist * Math.tan(hFov / 2);
+
+            return {
+                nearDist: Math.max(0, nearDist),
+                farDist,
+                nearWidth,
+                farWidth,
+                blindSpotDist: nearDist
+            };
+        }
+
+        function update() {
+            const params = getParams();
+
+            // Update labels
+            document.getElementById('focalValue').textContent = params.focalLength.toFixed(1) + 'mm';
+            document.getElementById('sensorValue').textContent =
+                params.sensorWidth.toFixed(2) + '×' + params.sensorHeight.toFixed(2) + 'mm';
+            document.getElementById('heightValue').textContent = params.camHeight.toFixed(1) + 'm';
+            document.getElementById('tiltValue').textContent = Math.round(params.camTilt * 180 / Math.PI) + '°';
+            document.getElementById('distanceValue').textContent = params.personDistance.toFixed(1) + 'm';
+            document.getElementById('horizValue').textContent = params.horizOffset === 0 ? 'Center (0%)' :
+                (params.horizOffset * 100).toFixed(0) + '%';
+            document.getElementById('distortValue').textContent = params.distortionK.toFixed(2);
+            document.getElementById('personHeightValue').textContent = params.personHeight.toFixed(2) + 'm';
+
+            // Update FOV displays
+            const hFovDeg = (params.hFov * 180 / Math.PI).toFixed(1);
+            const vFovDeg = (params.vFov * 180 / Math.PI).toFixed(1);
+            document.getElementById('calcFovValue').textContent = hFovDeg + '° × ' + vFovDeg + '°';
+            document.getElementById('hfovValue').textContent = hFovDeg + '°';
+            document.getElementById('vfovValue').textContent = vFovDeg + '°';
+
+            // Motion blur UI toggle
+            const blurEnabled = params.motionBlur;
+            document.getElementById('shutterRow').style.display = blurEnabled ? 'block' : 'none';
+            document.getElementById('blurItem').style.display = blurEnabled ? 'block' : 'none';
+            document.getElementById('shutterValue').textContent = '1/' + params.shutterSpeed + 's';
+            document.getElementById('shutterInfo').textContent =
+                `Shutter: 1/${params.shutterSpeed}s (walking ~1.4m/s)`;
+
+            // Calculate person position
+            const personWidth = params.personHeight * 0.4;
+            const horizOffsetDistance = params.horizOffset * params.personDistance * Math.tan(params.hFov / 2);
+
+            // Project person's feet and head
+            const feetWorld = { x: horizOffsetDistance, y: params.personDistance, z: 0 };
+            const headWorld = { x: horizOffsetDistance, y: params.personDistance, z: params.personHeight };
+            const leftWorld = { x: horizOffsetDistance - personWidth / 2, y: params.personDistance, z: params.personHeight / 2 };
+            const rightWorld = { x: horizOffsetDistance + personWidth / 2, y: params.personDistance, z: params.personHeight / 2 };
+
+            const feetImg = projectToImage(feetWorld.x, feetWorld.y, feetWorld.z, params);
+            const headImg = projectToImage(headWorld.x, headWorld.y, headWorld.z, params);
+            const leftImg = projectToImage(leftWorld.x, leftWorld.y, leftWorld.z, params);
+            const rightImg = projectToImage(rightWorld.x, rightWorld.y, rightWorld.z, params);
+
+            let pixelHeight = 0, pixelWidth = 0;
+            let distortedFeet, distortedHead, distortedLeft, distortedRight;
+
+            if (feetImg && headImg && leftImg && rightImg) {
+                distortedFeet = applyDistortion(feetImg.x, feetImg.y, params);
+                distortedHead = applyDistortion(headImg.x, headImg.y, params);
+                distortedLeft = applyDistortion(leftImg.x, leftImg.y, params);
+                distortedRight = applyDistortion(rightImg.x, rightImg.y, params);
+
+                pixelHeight = Math.abs(distortedFeet.y - distortedHead.y);
+                pixelWidth = Math.abs(distortedRight.x - distortedLeft.x);
+            }
+
+            // Calculate motion blur (in pixels)
+            let blurPixels = 0;
+            if (blurEnabled) {
+                const walkingSpeed = 1.4; // m/s
+                const exposureTime = 1 / params.shutterSpeed;
+                const motionDistance = walkingSpeed * exposureTime; // meters moved during exposure
+                const ppm = pixelHeight / params.personHeight;
+                blurPixels = motionDistance * ppm;
+            }
+
+            // Calculate PPM (Pixels Per Meter)
+            const ppm = pixelHeight / params.personHeight;
+            const effectiveRes = pixelWidth * pixelHeight;
+
+            // Update results
+            const heightEl = document.getElementById('pixelHeight');
+            const widthEl = document.getElementById('pixelWidth');
+            heightEl.innerHTML = pixelHeight.toFixed(0) + '<span class="result-unit">px</span>';
+            widthEl.innerHTML = pixelWidth.toFixed(0) + '<span class="result-unit">px</span>';
+            document.getElementById('ppmValue').innerHTML = ppm.toFixed(1) + '<span class="result-unit">px/m</span>';
+            document.getElementById('effectiveRes').innerHTML = effectiveRes.toFixed(0) + '<span class="result-unit">px²</span>';
+
+            if (blurEnabled) {
+                const blurEl = document.getElementById('blurValue');
+                blurEl.innerHTML = blurPixels.toFixed(1) + '<span class="result-unit">px</span>';
+                blurEl.className = 'result-value ' + (blurPixels > 5 ? 'warn' : 'pass');
+            }
+
+            // Determine suitability
+            const badge = document.getElementById('suitabilityBadge');
+            const isBlurry = blurEnabled && blurPixels > 5;
+
+            if (pixelHeight >= params.threshold && pixelWidth >= params.threshold * 0.3 && !isBlurry) {
+                badge.className = 'status-badge pass';
+                badge.textContent = '✅ Suitable for Detection';
+                heightEl.className = 'result-value pass';
+            } else if (pixelHeight >= params.threshold * 0.6) {
+                badge.className = 'status-badge warn';
+                badge.textContent = isBlurry ? '⚠️ Motion Blur Risk' : '⚠️ Marginal (Low Resolution)';
+                heightEl.className = 'result-value warn';
+            } else {
+                badge.className = 'status-badge fail';
+                badge.textContent = '❌ Insufficient Resolution';
+                heightEl.className = 'result-value fail';
+            }
+
+            // Render canvases
+            renderTopView(params, horizOffsetDistance);
+            renderImageView(params, distortedFeet, distortedHead, distortedLeft, distortedRight, blurPixels);
+        }
+
+        function renderTopView(params, horizOffset) {
+            const canvas = document.getElementById('topCanvas');
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width;
+            const h = canvas.height;
+
+            ctx.clearRect(0, 0, w, h);
+
+            const fov = getGroundFov(params);
+            const maxDist = Math.min(fov.farDist, 100);
+            const scale = (h - 80) / maxDist;
+            const centerX = w / 2;
+            const cameraY = h - 40;
+
+            // Draw grid
+            ctx.strokeStyle = 'rgba(148, 163, 184, 0.2)';
+            ctx.lineWidth = 1;
+            for (let d = 0; d <= maxDist; d += 10) {
+                const y = cameraY - d * scale;
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(w, y);
+                ctx.stroke();
+
+                ctx.fillStyle = 'rgba(148, 163, 184, 0.5)';
+                ctx.font = '10px monospace';
+                ctx.textAlign = 'left';
+                ctx.fillText(d + 'm', 5, y - 2);
+            }
+
+            // FOV trapezoid
+            const nearY = cameraY - fov.nearDist * scale;
+            const farY = cameraY - fov.farDist * scale;
+            const nearHalfW = (fov.nearWidth / 2) * scale;
+            const farHalfW = (fov.farWidth / 2) * scale;
+
+            // Blind spot
+            if (fov.blindSpotDist > 0) {
+                ctx.fillStyle = 'rgba(239, 68, 68, 0.2)';
+                ctx.beginPath();
+                ctx.moveTo(centerX - nearHalfW, nearY);
+                ctx.lineTo(centerX + nearHalfW, nearY);
+                ctx.lineTo(centerX, cameraY);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.fillStyle = 'rgba(239, 68, 68, 0.6)';
+                ctx.font = '11px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('BLIND SPOT', centerX, (nearY + cameraY) / 2 + 4);
+            }
+
+            // Visible FOV
+            ctx.fillStyle = 'rgba(56, 189, 248, 0.15)';
+            ctx.beginPath();
+            ctx.moveTo(centerX - nearHalfW, nearY);
+            ctx.lineTo(centerX - farHalfW, farY);
+            ctx.lineTo(centerX + farHalfW, farY);
+            ctx.lineTo(centerX + nearHalfW, nearY);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.strokeStyle = 'rgba(56, 189, 248, 0.6)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Person position
+            const personY = cameraY - params.personDistance * scale;
+            const personX = centerX + horizOffset * scale;
+
+            ctx.fillStyle = '#22c55e';
+            ctx.beginPath();
+            ctx.arc(personX, personY, 8, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#f8fafc';
+            ctx.font = 'bold 10px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('👤', personX, personY + 4);
+
+            // Camera
+            ctx.fillStyle = '#38bdf8';
+            ctx.beginPath();
+            ctx.arc(centerX, cameraY, 10, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#f8fafc';
+            ctx.font = 'bold 11px sans-serif';
+            ctx.fillText('📷', centerX, cameraY + 4);
+
+            ctx.fillStyle = '#f8fafc';
+            ctx.font = '12px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(`Person at ${params.personDistance.toFixed(1)}m`, personX, personY - 15);
+        }
+
+        function renderImageView(params, dFeet, dHead, dLeft, dRight, blurPixels) {
+            const canvas = document.getElementById('imageCanvas');
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width;
+            const h = canvas.height;
+
+            ctx.clearRect(0, 0, w, h);
+
+            // Calculate horizon position based on tilt
+            // Horizon is where ground meets sky at infinity
+            // When looking straight ahead (tilt=0), horizon is at image center
+            // When tilting down (positive tilt), horizon moves UP in the image (smaller Y)
+            const { camTilt, focalLength, sensorHeight, resHeight, vFov } = params;
+
+            // The horizon appears at angle (camTilt) above the optical axis center in the image
+            // (because when you tilt down, things that were at eye level move up in view)
+            const pxPerMm = resHeight / sensorHeight;
+
+            // Calculate how many pixels below center the horizon would be if looking straight
+            // But since we're tilting DOWN, horizon moves UP by this amount
+            let horizonYOffset = Math.tan(camTilt) * focalLength * pxPerMm;
+
+            // Apply distortion (horizon is at center X=0)
+            const horizonDistorted = applyDistortion(0, -horizonYOffset, params);
+
+            // Convert to canvas coordinates
+            // Canvas center is h/2, positive camTilt should move horizon toward top (smaller Y)
+            const scaleY = h / resHeight;
+            let horizonY = h / 2 + horizonDistorted.y * scaleY;
+
+            // Clamp to reasonable range (horizon can go off-screen when looking sharply down)
+            horizonY = Math.max(-h * 0.5, Math.min(h * 1.5, horizonY));
+
+            // Background - sky
+            const skyGrad = ctx.createLinearGradient(0, 0, 0, Math.max(0, horizonY));
+            skyGrad.addColorStop(0, '#1e3a5f');
+            skyGrad.addColorStop(1, '#2d4a6f');
+            ctx.fillStyle = skyGrad;
+            ctx.fillRect(0, 0, w, Math.max(0, horizonY));
+
+            // Background - ground
+            const groundGrad = ctx.createLinearGradient(0, Math.max(0, horizonY), 0, h);
+            groundGrad.addColorStop(0, '#3d5a4a');
+            groundGrad.addColorStop(1, '#2a3d32');
+            ctx.fillStyle = groundGrad;
+            ctx.fillRect(0, Math.max(0, horizonY), w, h - Math.max(0, horizonY));
+
+            // Draw horizon line if visible
+            if (horizonY > 0 && horizonY < h) {
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([10, 5]);
+                ctx.beginPath();
+                ctx.moveTo(0, horizonY);
+                ctx.lineTo(w, horizonY);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
+            // Distortion grid
+            ctx.strokeStyle = 'rgba(148, 163, 184, 0.15)';
+            ctx.lineWidth = 1;
+            const gridSize = 40;
+
+            for (let gx = -w / 2; gx <= w / 2; gx += gridSize) {
+                ctx.beginPath();
+                for (let gy = -h / 2; gy <= h / 2; gy += 5) {
+                    const d = applyDistortion(gx, gy, params);
+                    const sx = w / 2 + d.x;
+                    const sy = h / 2 + d.y;
+                    if (gy === -h / 2) ctx.moveTo(sx, sy);
+                    else ctx.lineTo(sx, sy);
+                }
+                ctx.stroke();
+            }
+
+            for (let gy = -h / 2; gy <= h / 2; gy += gridSize) {
+                ctx.beginPath();
+                for (let gx = -w / 2; gx <= w / 2; gx += 5) {
+                    const d = applyDistortion(gx, gy, params);
+                    const sx = w / 2 + d.x;
+                    const sy = h / 2 + d.y;
+                    if (gx === -w / 2) ctx.moveTo(sx, sy);
+                    else ctx.lineTo(sx, sy);
+                }
+                ctx.stroke();
+            }
+
+            // Person bounding box
+            if (dFeet && dHead && dLeft && dRight) {
+                const cx = w / 2;
+                const cy = h / 2;
+
+                const scaleX = w / params.resWidth;
+                const scaleY = h / params.resHeight;
+
+                const boxLeft = cx + dLeft.x * scaleX;
+                const boxRight = cx + dRight.x * scaleX;
+                const boxTop = cy + dHead.y * scaleY;
+                const boxBottom = cy + dFeet.y * scaleY;
+
+                const boxW = boxRight - boxLeft;
+                const boxH = boxBottom - boxTop;
+
+                // Motion blur effect visualization
+                if (params.motionBlur && blurPixels > 1) {
+                    const blurOffset = blurPixels * scaleX * 0.5;
+                    ctx.fillStyle = 'rgba(245, 158, 11, 0.15)';
+                    ctx.beginPath();
+                    ctx.roundRect(boxLeft - blurOffset, boxTop, boxW + blurOffset * 2, boxH, 4);
+                    ctx.fill();
+                }
+
+                ctx.fillStyle = 'rgba(34, 197, 94, 0.3)';
+                ctx.strokeStyle = '#22c55e';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.roundRect(boxLeft, boxTop, boxW, boxH, 4);
+                ctx.fill();
+                ctx.stroke();
+
+                // Labels
+                ctx.fillStyle = '#f8fafc';
+                ctx.font = 'bold 12px monospace';
+                ctx.textAlign = 'center';
+
+                const pixH = Math.abs(dFeet.y - dHead.y).toFixed(0);
+                const pixW = Math.abs(dRight.x - dLeft.x).toFixed(0);
+
+                ctx.fillText(`${pixH}px`, boxLeft + boxW / 2, boxTop - 8);
+                ctx.save();
+                ctx.translate(boxRight + 15, boxTop + boxH / 2);
+                ctx.rotate(Math.PI / 2);
+                ctx.fillText(`${pixW}px`, 0, 0);
+                ctx.restore();
+            }
+
+            // Center crosshair
+            ctx.strokeStyle = 'rgba(248, 250, 252, 0.3)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(w / 2, 0);
+            ctx.lineTo(w / 2, h);
+            ctx.moveTo(0, h / 2);
+            ctx.lineTo(w, h / 2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+
+        // Initialize
+        update();
+    </script>
+</body>
+
+</html>
