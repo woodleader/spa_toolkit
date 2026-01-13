@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Plot Viewer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        :root {
+            --bg-deep: #0f172a;
+            --bg-card: #1e293b;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --border: rgba(255, 255, 255, 0.1);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent: #38bdf8;
+            --accent-secondary: #818cf8;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-deep);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1600px;
+            width: 95%;
+            margin: 0 auto;
+            padding: 40px 0;
+            display: grid;
+            grid-template-columns: 1fr 360px;
+            gap: 30px;
+        }
+
+        header {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            margin: 0;
+            background: linear-gradient(to right, var(--accent), var(--accent-secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .back-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            border: 1px solid var(--border);
+            padding: 6px 12px;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .back-link:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .section-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .visualization-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        #plot-container {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 12px;
+            position: relative;
+            height: 600px;
+            overflow: hidden;
+        }
+
+        #plot-title {
+            position: absolute;
+            top: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            z-index: 10;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        #canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Color Legend */
+        .color-legend {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            z-index: 10;
+        }
+
+        .legend-gradient {
+            width: 20px;
+            height: 150px;
+            border-radius: 4px;
+            background: linear-gradient(to bottom, #ef4444, #f59e0b, #22c55e);
+        }
+
+        .legend-label {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+        }
+
+        .legend-title {
+            font-size: 0.75rem;
+            color: var(--text-primary);
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+            margin-top: 8px;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            max-height: calc(100vh - 160px);
+            overflow-y: auto;
+        }
+
+        /* Dropzone */
+        .dropzone {
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .dropzone:hover,
+        .dropzone.dragover {
+            border-color: var(--accent);
+            background: rgba(56, 189, 248, 0.1);
+        }
+
+        .dropzone-icon {
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+
+        .dropzone-text {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .dropzone-text strong {
+            color: var(--accent);
+        }
+
+        .file-info {
+            margin-top: 12px;
+            padding: 10px;
+            background: rgba(34, 197, 94, 0.1);
+            border-radius: 8px;
+            font-size: 0.8rem;
+            color: var(--success);
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .label {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        select {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 10px 12px;
+            border-radius: 8px;
+            outline: none;
+            font-size: 0.85rem;
+            width: 100%;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        select:focus {
+            border-color: var(--accent);
+        }
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: var(--accent);
+        }
+
+        input[type="color"] {
+            width: 40px;
+            height: 32px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            background: transparent;
+        }
+
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .input-row-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+        }
+
+        .color-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .color-row input[type="color"] {
+            flex-shrink: 0;
+        }
+
+        .color-row span {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        /* Toggle */
+        .toggle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+        }
+
+        .toggle-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 44px;
+            height: 24px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            inset: 0;
+            background-color: rgba(255, 255, 255, 0.1);
+            transition: 0.3s;
+            border-radius: 24px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: var(--text-secondary);
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        .toggle-switch input:checked+.toggle-slider {
+            background-color: var(--accent);
+        }
+
+        .toggle-switch input:checked+.toggle-slider:before {
+            transform: translateX(20px);
+            background-color: var(--bg-deep);
+        }
+
+        .divider {
+            height: 1px;
+            background: var(--border);
+            margin: 8px 0;
+        }
+
+        .hint {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        /* No data state */
+        .no-data {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-secondary);
+        }
+
+        .no-data-icon {
+            font-size: 4rem;
+            opacity: 0.3;
+            margin-bottom: 16px;
+        }
+
+        /* Help Section */
+        .help-section {
+            border-top: 1px solid var(--border);
+            margin-top: 12px;
+            padding-top: 12px;
+        }
+
+        .help-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            user-select: none;
+        }
+
+        .help-toggle:hover {
+            color: var(--accent);
+        }
+
+        .help-content {
+            margin-top: 12px;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .help-content h4 {
+            color: var(--text-primary);
+            margin: 12px 0 6px 0;
+            font-size: 0.75rem;
+        }
+
+        .help-content h4:first-child {
+            margin-top: 0;
+        }
+
+        .help-content code {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.7rem;
+        }
+
+        .help-content pre {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 0.7rem;
+            margin: 8px 0;
+        }
+
+        @media (max-width: 1100px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+
+            #plot-container {
+                height: 450px;
+            }
+
+            .controls {
+                max-height: none;
+            }
+        }
+
+        /* Paste Data Textarea */
+        .paste-container {
+            margin-top: 12px;
+        }
+
+        .paste-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 8px;
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            cursor: pointer;
+            border-top: 1px solid var(--border);
+        }
+
+        .paste-toggle:hover {
+            color: var(--accent);
+        }
+
+        .paste-textarea {
+            width: 100%;
+            min-height: 120px;
+            max-height: 200px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 10px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 0.75rem;
+            resize: vertical;
+            margin-bottom: 10px;
+        }
+
+        .paste-textarea:focus {
+            border-color: var(--accent);
+            outline: none;
+        }
+
+        .paste-btn {
+            width: 100%;
+            background: var(--accent);
+            color: var(--bg-deep);
+            border: none;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .paste-btn:hover {
+            filter: brightness(1.1);
+        }
+
+        .paste-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>3D Plot Viewer</h1>
+            <a href="../index.html" class="back-link">← Return to Toolbox</a>
+        </header>
+
+        <main class="visualization-container">
+            <div class="card">
+                <div id="plot-container">
+                    <div id="plot-title"></div>
+                    <canvas id="canvas"></canvas>
+                    <div class="color-legend" id="color-legend" style="display: none;">
+                        <span class="legend-label" id="legend-max">--</span>
+                        <div class="legend-gradient" id="legend-gradient"></div>
+                        <span class="legend-label" id="legend-min">--</span>
+                        <span class="legend-title" id="legend-title">Value</span>
+                    </div>
+                    <div class="no-data" id="no-data">
+                        <div class="no-data-icon">📊</div>
+                        <div>Import a CSV or JSON file to visualize</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <aside class="controls">
+            <!-- File Import -->
+            <div class="card">
+                <div class="section-title">Data Import</div>
+                <div class="dropzone" id="dropzone">
+                    <div class="dropzone-icon">📁</div>
+                    <div class="dropzone-text">
+                        <strong>Drag & drop</strong> a CSV or JSON file<br>
+                        or click to browse
+                    </div>
+                    <input type="file" id="file-input" accept=".csv,.json" hidden>
+                </div>
+                <div class="file-info" id="file-info" style="display: none;"></div>
+
+                <details class="help-section">
+                    <summary class="help-toggle">📋 Expected Data Format</summary>
+                    <div class="help-content">
+                        <h4>CSV Files</h4>
+                        <p>Must include a header row. Supports <code>,</code> <code>;</code> or <code>tab</code>
+                            delimiters (auto-detected).</p>
+                        <pre>x,y,z,value
+1.5,2.0,100,0.85
+2.0,3.5,200,0.42</pre>
+
+                        <h4>JSON Files</h4>
+                        <p>Array of objects with consistent keys:</p>
+                        <pre>[{"x":1.5,"y":2.0,"z":100,"value":0.85},
+ {"x":2.0,"y":3.5,"z":200,"value":0.42}]</pre>
+                        <p>Nested arrays are also supported—the first array found will be used.</p>
+                    </div>
+                </details>
+
+                <div class="paste-container">
+                    <div class="paste-toggle" onclick="togglePasteMode()">
+                        <span>📝</span>
+                        <span id="paste-toggle-text">Or paste data directly...</span>
+                    </div>
+                    <div id="paste-area" style="display: none;">
+                        <textarea class="paste-textarea" id="paste-input"
+                            placeholder="Paste CSV or JSON data here..."></textarea>
+                        <button class="paste-btn" onclick="parseFromPaste()">Load Pasted Data</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Axis Mapping -->
+            <div class="card" id="axis-card" style="display: none;">
+                <div class="section-title">Axis Configuration</div>
+
+                <div class="input-group">
+                    <label class="label">X Axis Column</label>
+                    <select id="x-column"></select>
+                </div>
+                <div class="input-group">
+                    <label class="label">X Axis Label</label>
+                    <input type="text" id="x-label" value="X">
+                </div>
+                <div class="toggle-row">
+                    <span class="toggle-label">X Log₁₀ Scale</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="x-log">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="input-group">
+                    <label class="label">Y Axis Column</label>
+                    <select id="y-column"></select>
+                </div>
+                <div class="input-group">
+                    <label class="label">Y Axis Label</label>
+                    <input type="text" id="y-label" value="Y">
+                </div>
+                <div class="toggle-row">
+                    <span class="toggle-label">Y Log₁₀ Scale</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="y-log">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="input-group">
+                    <label class="label">Z Axis Column</label>
+                    <select id="z-column"></select>
+                </div>
+                <div class="input-group">
+                    <label class="label">Z Axis Label</label>
+                    <input type="text" id="z-label" value="Z">
+                </div>
+                <div class="toggle-row">
+                    <span class="toggle-label">Z Log₁₀ Scale</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="z-log">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Color Configuration -->
+            <div class="card" id="color-card" style="display: none;">
+                <div class="section-title">Color Mapping</div>
+
+                <div class="input-group">
+                    <label class="label">Color Value Column</label>
+                    <select id="color-column">
+                        <option value="">None (uniform color)</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label class="label">Color Legend Label</label>
+                    <input type="text" id="color-label" value="Value">
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="color-row">
+                    <input type="color" id="color-min" value="#22c55e">
+                    <span>Low Value Color</span>
+                </div>
+                <div class="color-row">
+                    <input type="color" id="color-max" value="#ef4444">
+                    <span>High Value Color</span>
+                </div>
+            </div>
+
+            <!-- Display Settings -->
+            <div class="card" id="display-card" style="display: none;">
+                <div class="section-title">Display Settings</div>
+
+                <div class="input-group">
+                    <label class="label">Plot Title</label>
+                    <input type="text" id="plot-title-input" placeholder="Enter plot title...">
+                </div>
+
+                <div class="input-group">
+                    <label class="label">Point Size</label>
+                    <input type="range" id="point-size" min="0.02" max="0.2" step="0.01" value="0.06">
+                </div>
+
+                <div class="toggle-row">
+                    <span class="toggle-label">Show Grid</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="show-grid" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <div class="toggle-row">
+                    <span class="toggle-label">Show Axis Labels</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="show-labels" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <script>
+        // State
+        let rawData = [];
+        let columns = [];
+        let scene, camera, renderer, controls;
+        let pointsGroup = null;
+        let gridGroup = null;
+        let labelsGroup = null;
+
+        // DOM Elements
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('file-input');
+        const fileInfo = document.getElementById('file-info');
+        const noData = document.getElementById('no-data');
+        const axisCard = document.getElementById('axis-card');
+        const colorCard = document.getElementById('color-card');
+        const displayCard = document.getElementById('display-card');
+        const colorLegend = document.getElementById('color-legend');
+
+        // Initialize Three.js
+        function initThreeJS() {
+            const container = document.getElementById('plot-container');
+            const canvas = document.getElementById('canvas');
+
+            scene = new THREE.Scene();
+
+            camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.set(3, 3, 3);
+
+            renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+
+            // Ambient light
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+
+            // Directional light
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(5, 10, 7);
+            scene.add(directionalLight);
+
+            animate();
+
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        function onWindowResize() {
+            const container = document.getElementById('plot-container');
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // File handling
+        dropzone.addEventListener('click', () => fileInput.click());
+        dropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropzone.classList.add('dragover');
+        });
+        dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file) handleFile(file);
+        });
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files[0]) handleFile(e.target.files[0]);
+        });
+
+        function handleFile(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const content = e.target.result;
+                const ext = file.name.split('.').pop().toLowerCase();
+
+                try {
+                    if (ext === 'json') {
+                        rawData = JSON.parse(content);
+                        if (!Array.isArray(rawData)) {
+                            // Try to find array in object
+                            const keys = Object.keys(rawData);
+                            for (const key of keys) {
+                                if (Array.isArray(rawData[key])) {
+                                    rawData = rawData[key];
+                                    break;
+                                }
+                            }
+                        }
+                    } else {
+                        rawData = parseCSV(content);
+                    }
+
+                    if (rawData.length === 0) {
+                        throw new Error('No data found');
+                    }
+
+                    columns = Object.keys(rawData[0]);
+
+                    fileInfo.style.display = 'block';
+                    fileInfo.textContent = `✓ Loaded ${file.name}: ${rawData.length} rows, ${columns.length} columns`;
+
+                    populateColumnSelectors();
+                    showConfigCards();
+                    updatePlot();
+
+                } catch (err) {
+                    alert('Error parsing file: ' + err.message);
+                    console.error(err);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Paste mode toggle
+        function togglePasteMode() {
+            const pasteArea = document.getElementById('paste-area');
+            const toggleText = document.getElementById('paste-toggle-text');
+            if (pasteArea.style.display === 'none') {
+                pasteArea.style.display = 'block';
+                toggleText.textContent = 'Hide paste area';
+            } else {
+                pasteArea.style.display = 'none';
+                toggleText.textContent = 'Or paste data directly...';
+            }
+        }
+
+        // Parse pasted data
+        function parseFromPaste() {
+            const content = document.getElementById('paste-input').value.trim();
+            if (!content) {
+                alert('Please paste some data first');
+                return;
+            }
+
+            try {
+                // Try JSON first
+                if (content.startsWith('[') || content.startsWith('{')) {
+                    rawData = JSON.parse(content);
+                    if (!Array.isArray(rawData)) {
+                        // Try to find array in object
+                        const keys = Object.keys(rawData);
+                        for (const key of keys) {
+                            if (Array.isArray(rawData[key])) {
+                                rawData = rawData[key];
+                                break;
+                            }
+                        }
+                    }
+                } else {
+                    // Parse as CSV
+                    rawData = parseCSV(content);
+                }
+
+                if (!Array.isArray(rawData) || rawData.length === 0) {
+                    throw new Error('No valid data found');
+                }
+
+                columns = Object.keys(rawData[0]);
+
+                fileInfo.style.display = 'block';
+                fileInfo.textContent = `✓ Loaded from paste: ${rawData.length} rows, ${columns.length} columns`;
+
+                populateColumnSelectors();
+                showConfigCards();
+                updatePlot();
+
+            } catch (err) {
+                alert('Error parsing data: ' + err.message);
+                console.error(err);
+            }
+        }
+
+        function parseCSV(content) {
+            const lines = content.trim().split('\n');
+            if (lines.length < 2) return [];
+
+            // Detect delimiter
+            const firstLine = lines[0];
+            const delimiter = firstLine.includes('\t') ? '\t' :
+                firstLine.includes(';') ? ';' : ',';
+
+            const headers = lines[0].split(delimiter).map(h => h.trim().replace(/^["']|["']$/g, ''));
+            const data = [];
+
+            for (let i = 1; i < lines.length; i++) {
+                const values = lines[i].split(delimiter);
+                if (values.length !== headers.length) continue;
+
+                const row = {};
+                headers.forEach((header, idx) => {
+                    let val = values[idx].trim().replace(/^["']|["']$/g, '');
+                    // Try to parse as number
+                    const num = parseFloat(val);
+                    row[header] = isNaN(num) ? val : num;
+                });
+                data.push(row);
+            }
+
+            return data;
+        }
+
+        function populateColumnSelectors() {
+            const selectors = ['x-column', 'y-column', 'z-column', 'color-column'];
+
+            selectors.forEach((id, idx) => {
+                const select = document.getElementById(id);
+                select.innerHTML = id === 'color-column' ? '<option value="">None (uniform color)</option>' : '';
+
+                columns.forEach((col, colIdx) => {
+                    const option = document.createElement('option');
+                    option.value = col;
+                    option.textContent = col;
+                    // Pre-select first 3 numeric columns for axes
+                    if (id !== 'color-column' && colIdx === idx && colIdx < 3) {
+                        option.selected = true;
+                        document.getElementById(id.replace('-column', '-label')).value = col;
+                    }
+                    select.appendChild(option);
+                });
+            });
+        }
+
+        function showConfigCards() {
+            noData.style.display = 'none';
+            axisCard.style.display = 'block';
+            colorCard.style.display = 'block';
+            displayCard.style.display = 'block';
+        }
+
+        // Plot rendering
+        function updatePlot() {
+            if (rawData.length === 0) return;
+
+            const xCol = document.getElementById('x-column').value;
+            const yCol = document.getElementById('y-column').value;
+            const zCol = document.getElementById('z-column').value;
+            const colorCol = document.getElementById('color-column').value;
+
+            const xLog = document.getElementById('x-log').checked;
+            const yLog = document.getElementById('y-log').checked;
+            const zLog = document.getElementById('z-log').checked;
+
+            const pointSize = parseFloat(document.getElementById('point-size').value);
+            const showGrid = document.getElementById('show-grid').checked;
+            const showLabels = document.getElementById('show-labels').checked;
+
+            const colorMin = document.getElementById('color-min').value;
+            const colorMax = document.getElementById('color-max').value;
+
+            // Get data ranges
+            let xVals = rawData.map(d => parseFloat(d[xCol])).filter(v => !isNaN(v) && v > 0 || !xLog);
+            let yVals = rawData.map(d => parseFloat(d[yCol])).filter(v => !isNaN(v) && v > 0 || !yLog);
+            let zVals = rawData.map(d => parseFloat(d[zCol])).filter(v => !isNaN(v) && v > 0 || !zLog);
+            let colorVals = colorCol ? rawData.map(d => parseFloat(d[colorCol])).filter(v => !isNaN(v)) : [];
+
+            if (xVals.length === 0 || yVals.length === 0 || zVals.length === 0) {
+                console.warn('Not enough valid data');
+                return;
+            }
+
+            const xRange = getRange(xVals, xLog);
+            const yRange = getRange(yVals, yLog);
+            const zRange = getRange(zVals, zLog);
+            const colorRange = colorVals.length > 0 ? [Math.min(...colorVals), Math.max(...colorVals)] : [0, 1];
+
+            // Clear previous
+            if (pointsGroup) scene.remove(pointsGroup);
+            if (gridGroup) scene.remove(gridGroup);
+            if (labelsGroup) scene.remove(labelsGroup);
+
+            pointsGroup = new THREE.Group();
+            gridGroup = new THREE.Group();
+            labelsGroup = new THREE.Group();
+
+            // Create points
+            const geometry = new THREE.SphereGeometry(pointSize, 16, 12);
+
+            rawData.forEach(row => {
+                let x = parseFloat(row[xCol]);
+                let y = parseFloat(row[yCol]);
+                let z = parseFloat(row[zCol]);
+                let colorVal = colorCol ? parseFloat(row[colorCol]) : null;
+
+                if (isNaN(x) || isNaN(y) || isNaN(z)) return;
+                if (xLog && x <= 0) return;
+                if (yLog && y <= 0) return;
+                if (zLog && z <= 0) return;
+
+                // Normalize to 0-2 range
+                const nx = normalize(x, xRange, xLog);
+                const ny = normalize(y, yRange, yLog);
+                const nz = normalize(z, zRange, zLog);
+
+                // Color
+                let color;
+                if (colorVal !== null && !isNaN(colorVal)) {
+                    const t = (colorVal - colorRange[0]) / (colorRange[1] - colorRange[0] || 1);
+                    color = lerpColor(colorMin, colorMax, t);
+                } else {
+                    color = new THREE.Color(0x38bdf8);
+                }
+
+                const material = new THREE.MeshLambertMaterial({ color });
+                const sphere = new THREE.Mesh(geometry, material);
+                sphere.position.set(nx - 1, nz - 1, ny - 1); // Y/Z swapped for Three.js coord system
+                pointsGroup.add(sphere);
+            });
+
+            scene.add(pointsGroup);
+
+            // Grid
+            if (showGrid) {
+                createGrid();
+            }
+            scene.add(gridGroup);
+
+            // Labels
+            if (showLabels) {
+                createAxisLabels(xRange, yRange, zRange, xLog, yLog, zLog);
+            }
+            scene.add(labelsGroup);
+
+            // Update legend
+            if (colorCol) {
+                colorLegend.style.display = 'flex';
+                document.getElementById('legend-min').textContent = colorRange[0].toFixed(2);
+                document.getElementById('legend-max').textContent = colorRange[1].toFixed(2);
+                document.getElementById('legend-title').textContent = document.getElementById('color-label').value;
+                document.getElementById('legend-gradient').style.background =
+                    `linear-gradient(to bottom, ${colorMax}, ${colorMin})`;
+            } else {
+                colorLegend.style.display = 'none';
+            }
+
+            // Update title
+            document.getElementById('plot-title').textContent = document.getElementById('plot-title-input').value;
+        }
+
+        function getRange(vals, log) {
+            if (log) {
+                const logVals = vals.filter(v => v > 0).map(v => Math.log10(v));
+                return [Math.min(...logVals), Math.max(...logVals)];
+            }
+            return [Math.min(...vals), Math.max(...vals)];
+        }
+
+        function normalize(val, range, log) {
+            if (log) val = Math.log10(val);
+            return ((val - range[0]) / (range[1] - range[0] || 1)) * 2;
+        }
+
+        function lerpColor(hex1, hex2, t) {
+            const c1 = new THREE.Color(hex1);
+            const c2 = new THREE.Color(hex2);
+            return new THREE.Color().lerpColors(c1, c2, Math.max(0, Math.min(1, t)));
+        }
+
+        function createGrid() {
+            const gridMaterial = new THREE.LineBasicMaterial({ color: 0x4a5568, transparent: true, opacity: 0.3 });
+
+            // Create grid lines
+            for (let i = 0; i <= 4; i++) {
+                const pos = (i / 4) * 2 - 1;
+
+                // XY plane lines (at Z = -1)
+                const xyGeo1 = new THREE.BufferGeometry().setFromPoints([
+                    new THREE.Vector3(-1, -1, pos),
+                    new THREE.Vector3(1, -1, pos)
+                ]);
+                gridGroup.add(new THREE.Line(xyGeo1, gridMaterial));
+
+                const xyGeo2 = new THREE.BufferGeometry().setFromPoints([
+                    new THREE.Vector3(pos, -1, -1),
+                    new THREE.Vector3(pos, -1, 1)
+                ]);
+                gridGroup.add(new THREE.Line(xyGeo2, gridMaterial));
+            }
+
+            // Axis lines
+            const axisMaterial = new THREE.LineBasicMaterial({ color: 0x94a3b8 });
+
+            // X axis
+            const xAxis = new THREE.BufferGeometry().setFromPoints([
+                new THREE.Vector3(-1, -1, -1),
+                new THREE.Vector3(1, -1, -1)
+            ]);
+            gridGroup.add(new THREE.Line(xAxis, axisMaterial));
+
+            // Y axis (Z in Three.js)
+            const yAxis = new THREE.BufferGeometry().setFromPoints([
+                new THREE.Vector3(-1, -1, -1),
+                new THREE.Vector3(-1, -1, 1)
+            ]);
+            gridGroup.add(new THREE.Line(yAxis, axisMaterial));
+
+            // Z axis (Y in Three.js)
+            const zAxis = new THREE.BufferGeometry().setFromPoints([
+                new THREE.Vector3(-1, -1, -1),
+                new THREE.Vector3(-1, 1, -1)
+            ]);
+            gridGroup.add(new THREE.Line(zAxis, axisMaterial));
+        }
+
+        function createAxisLabels(xRange, yRange, zRange, xLog, yLog, zLog) {
+            const xLabel = document.getElementById('x-label').value;
+            const yLabel = document.getElementById('y-label').value;
+            const zLabel = document.getElementById('z-label').value;
+
+            // Create text sprites for axis labels
+            createTextSprite(xLabel, new THREE.Vector3(0, -1.3, -1.3), labelsGroup);
+            createTextSprite(yLabel, new THREE.Vector3(-1.3, -1.3, 0), labelsGroup);
+            createTextSprite(zLabel, new THREE.Vector3(-1.3, 0, -1.3), labelsGroup);
+
+            // Add tick labels
+            for (let i = 0; i <= 4; i++) {
+                const t = i / 4;
+                const pos = t * 2 - 1;
+
+                // X ticks
+                const xVal = xLog ? Math.pow(10, xRange[0] + t * (xRange[1] - xRange[0])) :
+                    xRange[0] + t * (xRange[1] - xRange[0]);
+                createTextSprite(formatNumber(xVal), new THREE.Vector3(pos, -1.15, -1.15), labelsGroup, 0.4);
+
+                // Y ticks
+                const yVal = yLog ? Math.pow(10, yRange[0] + t * (yRange[1] - yRange[0])) :
+                    yRange[0] + t * (yRange[1] - yRange[0]);
+                createTextSprite(formatNumber(yVal), new THREE.Vector3(-1.15, -1.15, pos), labelsGroup, 0.4);
+
+                // Z ticks
+                const zVal = zLog ? Math.pow(10, zRange[0] + t * (zRange[1] - zRange[0])) :
+                    zRange[0] + t * (zRange[1] - zRange[0]);
+                createTextSprite(formatNumber(zVal), new THREE.Vector3(-1.15, pos, -1.15), labelsGroup, 0.4);
+            }
+        }
+
+        function createTextSprite(text, position, parent, scale = 0.5) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 256;
+            canvas.height = 64;
+
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = 'bold 32px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(text, 128, 32);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
+            const sprite = new THREE.Sprite(material);
+            sprite.position.copy(position);
+            sprite.scale.set(scale, scale * 0.25, 1);
+            parent.add(sprite);
+        }
+
+        function formatNumber(num) {
+            if (Math.abs(num) >= 1000) return num.toExponential(1);
+            if (Math.abs(num) < 0.01 && num !== 0) return num.toExponential(1);
+            return num.toFixed(1);
+        }
+
+        // Event listeners for controls
+        const updateTriggers = [
+            'x-column', 'y-column', 'z-column', 'color-column',
+            'x-log', 'y-log', 'z-log',
+            'x-label', 'y-label', 'z-label', 'color-label',
+            'point-size', 'show-grid', 'show-labels',
+            'color-min', 'color-max', 'plot-title-input'
+        ];
+
+        updateTriggers.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener('change', updatePlot);
+                el.addEventListener('input', updatePlot);
+            }
+        });
+
+        // Initialize
+        initThreeJS();
+    </script>
+</body>
+
+</html>
