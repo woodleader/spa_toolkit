@@ -1,0 +1,1792 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAKRA Cable Compare</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --text-color: #f8fafc;
+            --accent-color: #38bdf8;
+            --accent-secondary: #818cf8;
+            --secondary-text: #94a3b8;
+            --success-color: #22c55e;
+            --warning-color: #facc15;
+            --danger-color: #ef4444;
+            --border-color: rgba(148, 163, 184, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            min-height: 100vh;
+            background-image:
+                radial-gradient(circle at 10% 20%, rgba(56, 189, 248, 0.1) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(139, 92, 246, 0.1) 0%, transparent 20%);
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--secondary-text);
+            text-decoration: none;
+            font-size: 0.85rem;
+            padding: 0.4rem 0.8rem;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+        }
+
+        .back-link:hover {
+            color: var(--text-color);
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--accent-color);
+        }
+
+        .back-link svg {
+            width: 14px;
+            height: 14px;
+            stroke: currentColor;
+        }
+
+        .header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin: 0;
+            background: linear-gradient(to right, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--secondary-text);
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .viz-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 1200px) {
+            .viz-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .panel-title svg {
+            width: 20px;
+            height: 20px;
+            stroke: var(--accent-color);
+            fill: none;
+        }
+
+        /* Cable Table */
+        .cable-controls {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .preset-select {
+            flex: 1;
+            min-width: 150px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+
+        .preset-select:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        .preset-select option {
+            background: var(--bg-color);
+            color: var(--text-color);
+        }
+
+        .btn {
+            background: var(--accent-color);
+            color: var(--bg-color);
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .btn svg {
+            width: 16px;
+            height: 16px;
+            stroke: currentColor;
+            fill: none;
+        }
+
+        .cable-table-wrapper {
+            overflow-x: auto;
+            margin-bottom: 1rem;
+        }
+
+        .cable-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
+        .cable-table th,
+        .cable-table td {
+            padding: 0.6rem 0.5rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .cable-table th {
+            font-weight: 600;
+            color: var(--secondary-text);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            white-space: nowrap;
+        }
+
+        .cable-table td {
+            color: var(--text-color);
+        }
+
+        .cable-table tbody tr:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .cable-checkbox {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--accent-color);
+            cursor: pointer;
+        }
+
+        .cable-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 0.5rem;
+        }
+
+        .edit-btn,
+        .delete-btn {
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--secondary-text);
+            padding: 0.3rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .delete-btn:hover {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: var(--danger-color);
+            color: var(--danger-color);
+        }
+
+        .edit-btn:hover {
+            background: rgba(59, 130, 246, 0.2);
+            border-color: #3b82f6;
+            color: #3b82f6;
+        }
+
+        .edit-btn svg,
+        .delete-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: var(--secondary-text);
+        }
+
+        /* Visualization Tabs */
+        .viz-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .viz-tab {
+            flex: 1;
+            padding: 0.6rem 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--secondary-text);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .viz-tab:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .viz-tab.active {
+            background: rgba(56, 189, 248, 0.2);
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+        }
+
+        .viz-content {
+            display: none;
+        }
+
+        .viz-content.active {
+            display: block;
+        }
+
+        /* Visualization Controls Container */
+        .viz-controls {
+            padding-top: 0.75rem;
+        }
+
+        /* Zoom Control */
+        .zoom-control {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+            padding: 0.5rem 0.75rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+        }
+
+        .viz-controls .zoom-control:last-child {
+            margin-bottom: 0;
+        }
+
+        .zoom-label {
+            font-size: 0.8rem;
+            color: var(--secondary-text);
+            min-width: 50px;
+        }
+
+        .zoom-slider {
+            flex: 1;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            outline: none;
+        }
+
+        .zoom-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .zoom-value {
+            font-size: 0.85rem;
+            color: var(--accent-color);
+            font-weight: 600;
+            min-width: 40px;
+            text-align: right;
+        }
+
+        /* Bend Type Toggle */
+        .bend-toggle {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .bend-btn {
+            flex: 1;
+            padding: 0.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--secondary-text);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s ease;
+        }
+
+        .bend-btn.active {
+            background: rgba(56, 189, 248, 0.2);
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+        }
+
+        /* SVG Container */
+        .svg-container {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 1rem;
+            overflow: hidden;
+        }
+
+        .chart-svg {
+            width: 100%;
+            height: 350px;
+        }
+
+        /* Legend */
+        .chart-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-top: 1rem;
+            padding: 0.75rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+
+        .legend-name {
+            color: var(--text-color);
+        }
+
+        .legend-value {
+            color: var(--secondary-text);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-overlay.visible {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            background: transparent;
+            border: none;
+            color: var(--secondary-text);
+            cursor: pointer;
+            padding: 0.3rem;
+            border-radius: 6px;
+        }
+
+        .modal-close:hover {
+            color: var(--text-color);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.8rem;
+            color: var(--secondary-text);
+            margin-bottom: 0.4rem;
+        }
+
+        .form-input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 0.6rem 0.75rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .form-section {
+            margin-top: 1.25rem;
+            padding-top: 1.25rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .form-section-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--accent-color);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+        }
+
+        .modal-actions .btn {
+            flex: 1;
+            justify-content: center;
+        }
+
+        /* Rigid Zone Control */
+        .rigid-zone-panel {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .rigid-zone-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .rigid-zone-header label {
+            font-size: 0.85rem;
+            color: var(--secondary-text);
+        }
+
+        .rigid-zone-toggle {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--accent-color);
+            cursor: pointer;
+        }
+
+        .rigid-zone-content {
+            display: none;
+        }
+
+        .rigid-zone-content.active {
+            display: block;
+            margin-top: 0.75rem;
+        }
+
+        .rigid-zone-presets {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .preset-btn {
+            padding: 0.4rem 0.8rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--secondary-text);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: all 0.2s ease;
+        }
+
+        .preset-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .preset-btn.active {
+            background: rgba(56, 189, 248, 0.2);
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+        }
+
+        .rigid-zone-custom {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .rigid-zone-custom.hidden {
+            display: none;
+        }
+
+        .rigid-input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .rigid-input-group label {
+            font-size: 0.7rem;
+            color: var(--secondary-text);
+        }
+
+        .rigid-input-group input {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 0.35rem 0.5rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            width: 100%;
+        }
+
+        .rigid-input-group input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: absolute;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.8rem;
+            pointer-events: none;
+            z-index: 100;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .tooltip.visible {
+            opacity: 1;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header-row"
+            style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+            <a href="../index.html" class="back-link">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7" />
+                </svg>
+                Back to Toolbox
+            </a>
+            <h1 style="margin: 0; flex: 1; text-align: center;">FAKRA Cable Compare</h1>
+            <div style="width: 120px;"></div> <!-- Spacer to balance the back link -->
+        </div>
+        <p class="subtitle">Compare bending radius and insertion loss of coaxial cables</p>
+
+        <div class="main-content">
+            <!-- Left Panel: Cable Management -->
+            <div class="panel">
+                <div class="panel-title">
+                    <svg viewBox="0 0 24 24" stroke-width="2">
+                        <path d="M12 2v20M2 12h20" />
+                        <circle cx="12" cy="12" r="4" />
+                    </svg>
+                    Cable Library
+                </div>
+
+                <div class="cable-controls">
+                    <select class="preset-select" id="preset-select">
+                        <option value="">Add from preset...</option>
+                    </select>
+                    <button class="btn" id="add-preset-btn">
+                        <svg viewBox="0 0 24 24" stroke-width="2">
+                            <path d="M12 5v14M5 12h14" />
+                        </svg>
+                        Add
+                    </button>
+                    <button class="btn btn-secondary" id="add-custom-btn">
+                        <svg viewBox="0 0 24 24" stroke-width="2">
+                            <path d="M11 4H4v14a2 2 0 002 2h12a2 2 0 002-2v-5" />
+                            <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+                        </svg>
+                        Custom
+                    </button>
+                </div>
+
+                <div class="cable-table-wrapper">
+                    <table class="cable-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 40px;">Viz</th>
+                                <th>Cable Name</th>
+                                <th>OD (mm)</th>
+                                <th>Bend S</th>
+                                <th>Bend D</th>
+                                <th title="Insertion Loss at 0.5 GHz">Loss 0.5G (dB/m)</th>
+                                <th title="Insertion Loss at 1 GHz">Loss 1G (dB/m)</th>
+                                <th title="Insertion Loss at 2 GHz">Loss 2G (dB/m)</th>
+                                <th title="Insertion Loss at 3 GHz">Loss 3G (dB/m)</th>
+                                <th style="width: 40px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="cable-table-body">
+                        </tbody>
+                    </table>
+                </div>
+                <div class="empty-state" id="empty-state">
+                    Add cables from presets or create custom entries
+                </div>
+            </div>
+
+            <!-- Visualization Row: 3 panels side by side -->
+            <div class="viz-row">
+                <!-- Static Bending Radius -->
+                <div class="panel viz-panel">
+                    <div class="panel-title">
+                        <svg viewBox="0 0 24 24" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M12 8v4l2 2"></path>
+                        </svg>
+                        Static Bend Radius
+                    </div>
+
+                    <div class="svg-container">
+                        <svg class="chart-svg" id="static-chart" viewBox="0 0 400 280"></svg>
+                    </div>
+
+                    <div class="chart-legend" id="static-legend"></div>
+
+                    <div class="viz-controls">
+                        <div class="zoom-control">
+                            <span class="zoom-label">Zoom:</span>
+                            <input type="range" class="zoom-slider" id="static-zoom" min="0.5" max="4" step="0.1"
+                                value="1">
+                            <span class="zoom-value" id="static-zoom-value">1.0x</span>
+                        </div>
+
+                        <div class="rigid-zone-panel" id="static-rigid-panel">
+                            <div class="rigid-zone-header">
+                                <input type="checkbox" class="rigid-zone-toggle" id="static-rigid-toggle">
+                                <label for="static-rigid-toggle">Show Connector Rigid Zone</label>
+                            </div>
+                            <div class="rigid-zone-content" id="static-rigid-content">
+                                <div class="rigid-zone-presets">
+                                    <button class="preset-btn active" data-preset="standard"
+                                        data-chart="static">Standard FAKRA (8mm)</button>
+                                    <button class="preset-btn" data-preset="custom" data-chart="static">Custom</button>
+                                </div>
+                                <div class="rigid-zone-custom hidden" id="static-rigid-custom">
+                                    <div class="rigid-input-group">
+                                        <label for="static-rigid-length">Rigid Length (mm)</label>
+                                        <input type="number" id="static-rigid-length" min="0" max="50" step="0.5"
+                                            value="8">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dynamic Bending Radius -->
+                <div class="panel viz-panel">
+                    <div class="panel-title">
+                        <svg viewBox="0 0 24 24" stroke-width="2">
+                            <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+                        </svg>
+                        Dynamic Bend Radius
+                    </div>
+
+                    <div class="svg-container">
+                        <svg class="chart-svg" id="dynamic-chart" viewBox="0 0 400 280"></svg>
+                    </div>
+
+                    <div class="chart-legend" id="dynamic-legend"></div>
+
+                    <div class="viz-controls">
+                        <div class="zoom-control">
+                            <span class="zoom-label">Zoom:</span>
+                            <input type="range" class="zoom-slider" id="dynamic-zoom" min="0.5" max="4" step="0.1"
+                                value="1">
+                            <span class="zoom-value" id="dynamic-zoom-value">1.0x</span>
+                        </div>
+
+                        <div class="rigid-zone-panel" id="dynamic-rigid-panel">
+                            <div class="rigid-zone-header">
+                                <input type="checkbox" class="rigid-zone-toggle" id="dynamic-rigid-toggle">
+                                <label for="dynamic-rigid-toggle">Show Connector Rigid Zone</label>
+                            </div>
+                            <div class="rigid-zone-content" id="dynamic-rigid-content">
+                                <div class="rigid-zone-presets">
+                                    <button class="preset-btn active" data-preset="standard"
+                                        data-chart="dynamic">Standard FAKRA (8mm)</button>
+                                    <button class="preset-btn" data-preset="custom" data-chart="dynamic">Custom</button>
+                                </div>
+                                <div class="rigid-zone-custom hidden" id="dynamic-rigid-custom">
+                                    <div class="rigid-input-group">
+                                        <label for="dynamic-rigid-length">Rigid Length (mm)</label>
+                                        <input type="number" id="dynamic-rigid-length" min="0" max="50" step="0.5"
+                                            value="8">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Insertion Loss -->
+                <div class="panel viz-panel">
+                    <div class="panel-title">
+                        <svg viewBox="0 0 24 24" stroke-width="2">
+                            <path d="M3 3v18h18"></path>
+                            <path d="M18 17V9M13 17V5M8 17v-3"></path>
+                        </svg>
+                        Insertion Loss
+                    </div>
+
+                    <div class="svg-container">
+                        <svg class="chart-svg" id="loss-chart" viewBox="0 0 400 280"></svg>
+                    </div>
+
+                    <div class="chart-legend" id="loss-legend"></div>
+
+                    <div class="viz-controls">
+                        <div class="zoom-control">
+                            <span class="zoom-label">Y Scale:</span>
+                            <input type="range" class="zoom-slider" id="loss-zoom" min="0.5" max="3" step="0.1"
+                                value="1">
+                            <span class="zoom-value" id="loss-zoom-value">1.0x</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Cable Modal -->
+    <div class="modal-overlay" id="custom-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <span class="modal-title">Add Custom Cable</span>
+                <button class="modal-close" id="modal-close">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <form id="custom-form">
+                <div class="form-group">
+                    <label class="form-label">Cable Name *</label>
+                    <input type="text" class="form-input" id="custom-name" required placeholder="e.g., My Custom Cable">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Outer Diameter (mm) *</label>
+                        <input type="number" class="form-input" id="custom-od" required min="0.5" max="20" step="0.01"
+                            value="5">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Bend Factor (xOD)</label>
+                        <input type="number" class="form-input" id="custom-bend-factor" min="5" max="30" step="1"
+                            value="10" placeholder="Static">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Static Bend Radius (mm)</label>
+                        <input type="number" class="form-input" id="custom-bend-static" min="5" max="500" step="1">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Dynamic Bend Radius (mm)</label>
+                        <input type="number" class="form-input" id="custom-bend-dynamic" min="10" max="1000" step="1">
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <div class="form-section-title">Insertion Loss (dB/m)</div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">@ 500 MHz</label>
+                            <input type="number" class="form-input" id="custom-loss-500" min="0" max="5" step="0.01"
+                                value="0.3">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">@ 1000 MHz</label>
+                            <input type="number" class="form-input" id="custom-loss-1000" min="0" max="5" step="0.01"
+                                value="0.5">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">@ 2000 MHz</label>
+                            <input type="number" class="form-input" id="custom-loss-2000" min="0" max="5" step="0.01"
+                                value="0.8">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">@ 3000 MHz</label>
+                            <input type="number" class="form-input" id="custom-loss-3000" min="0" max="5" step="0.01"
+                                value="1.0">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="modal-cancel">Cancel</button>
+                    <button type="submit" class="btn">Save Cable</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="tooltip" id="tooltip"></div>
+
+    <script>
+        // ============================================
+        // Cable Presets
+        // ============================================
+        const CABLE_PRESETS = {
+            'rg174': {
+                name: 'RG-174',
+                outerDiameter: 2.8,
+                bendRadiusStatic: 25,
+                bendRadiusDynamic: 50,
+                loss: { 500: 0.52, 1000: 0.78, 2000: 1.18, 3000: 1.52 },
+                color: '#f97316'
+            },
+            'rg58': {
+                name: 'RG-58',
+                outerDiameter: 4.95,
+                bendRadiusStatic: 50,
+                bendRadiusDynamic: 100,
+                loss: { 500: 0.28, 1000: 0.42, 2000: 0.62, 3000: 0.80 },
+                color: '#22c55e'
+            },
+            'rtk031': {
+                name: 'RTK-031',
+                outerDiameter: 3.0,
+                bendRadiusStatic: 30,
+                bendRadiusDynamic: 60,
+                loss: { 500: 0.42, 1000: 0.62, 2000: 0.95, 3000: 1.22 },
+                color: '#38bdf8'
+            },
+            'dacar302': {
+                name: 'Dacar 302',
+                outerDiameter: 2.5,
+                bendRadiusStatic: 25,
+                bendRadiusDynamic: 50,
+                loss: { 500: 0.48, 1000: 0.72, 2000: 1.08, 3000: 1.38 },
+                color: '#a855f7'
+            },
+            'dacar462': {
+                name: 'Dacar 462',
+                outerDiameter: 4.6,
+                bendRadiusStatic: 46,
+                bendRadiusDynamic: 92,
+                loss: { 500: 0.30, 1000: 0.45, 2000: 0.68, 3000: 0.88 },
+                color: '#ec4899'
+            }
+        };
+
+        // Rigid Zone Presets
+        const RIGID_ZONE_PRESETS = {
+            standard: { length: 8, name: 'Standard FAKRA' }
+        };
+
+        // Color palette for custom cables
+        const CUSTOM_COLORS = [
+            '#fbbf24', '#34d399', '#60a5fa', '#f472b6', '#a78bfa',
+            '#fb923c', '#4ade80', '#22d3ee', '#e879f9', '#c084fc'
+        ];
+
+        // ============================================
+        // State
+        // ============================================
+        let cables = [];
+        let cableIdCounter = 0;
+        let customColorIndex = 0;
+        let staticZoom = 1;
+        let dynamicZoom = 1;
+        let lossZoom = 1;
+        let editingCableId = null;
+
+        // Rigid zone state
+        let rigidZone = {
+            static: { enabled: false, preset: 'standard', length: 8 },
+            dynamic: { enabled: false, preset: 'standard', length: 8 }
+        };
+
+        const STORAGE_KEY = 'fakra_cables_data';
+
+        // ============================================
+        // DOM Elements
+        // ============================================
+        const presetSelect = document.getElementById('preset-select');
+        const addPresetBtn = document.getElementById('add-preset-btn');
+        const addCustomBtn = document.getElementById('add-custom-btn');
+        const cableTableBody = document.getElementById('cable-table-body');
+        const emptyState = document.getElementById('empty-state');
+        const customModal = document.getElementById('custom-modal');
+        const customForm = document.getElementById('custom-form');
+        const modalClose = document.getElementById('modal-close');
+        const modalCancel = document.getElementById('modal-cancel');
+
+        // Zoom controls
+        const staticZoomSlider = document.getElementById('static-zoom');
+        const staticZoomValue = document.getElementById('static-zoom-value');
+        const dynamicZoomSlider = document.getElementById('dynamic-zoom');
+        const dynamicZoomValue = document.getElementById('dynamic-zoom-value');
+        const lossZoomSlider = document.getElementById('loss-zoom');
+        const lossZoomValue = document.getElementById('loss-zoom-value');
+
+        // Charts and legends
+        const staticChart = document.getElementById('static-chart');
+        const staticLegend = document.getElementById('static-legend');
+        const dynamicChart = document.getElementById('dynamic-chart');
+        const dynamicLegend = document.getElementById('dynamic-legend');
+        const lossChart = document.getElementById('loss-chart');
+        const lossLegend = document.getElementById('loss-legend');
+        const tooltip = document.getElementById('tooltip');
+
+        // Rigid zone elements
+        const staticRigidToggle = document.getElementById('static-rigid-toggle');
+        const staticRigidContent = document.getElementById('static-rigid-content');
+        const staticRigidCustom = document.getElementById('static-rigid-custom');
+        const staticRigidLength = document.getElementById('static-rigid-length');
+        const dynamicRigidToggle = document.getElementById('dynamic-rigid-toggle');
+        const dynamicRigidContent = document.getElementById('dynamic-rigid-content');
+        const dynamicRigidCustom = document.getElementById('dynamic-rigid-custom');
+        const dynamicRigidLength = document.getElementById('dynamic-rigid-length');
+
+        // ============================================
+        // Initialization
+        // ============================================
+        function init() {
+            populatePresetDropdown();
+            loadCables();
+            setupEventListeners();
+            renderTable();
+            updateVisualizations();
+        }
+
+        function populatePresetDropdown() {
+            Object.entries(CABLE_PRESETS).forEach(([key, preset]) => {
+                const option = document.createElement('option');
+                option.value = key;
+                option.textContent = preset.name;
+                presetSelect.appendChild(option);
+            });
+        }
+
+        function setupEventListeners() {
+            addPresetBtn.addEventListener('click', addPresetCable);
+            addCustomBtn.addEventListener('click', () => customModal.classList.add('visible'));
+            modalClose.addEventListener('click', closeModal);
+            modalCancel.addEventListener('click', closeModal);
+            customModal.addEventListener('click', (e) => {
+                if (e.target === customModal) closeModal();
+            });
+            customForm.addEventListener('submit', handleCustomSubmit);
+
+            // Zoom sliders for each chart
+            staticZoomSlider.addEventListener('input', (e) => {
+                staticZoom = parseFloat(e.target.value);
+                staticZoomValue.textContent = staticZoom.toFixed(1) + 'x';
+                updateStaticChart();
+            });
+
+            dynamicZoomSlider.addEventListener('input', (e) => {
+                dynamicZoom = parseFloat(e.target.value);
+                dynamicZoomValue.textContent = dynamicZoom.toFixed(1) + 'x';
+                updateDynamicChart();
+            });
+
+            lossZoomSlider.addEventListener('input', (e) => {
+                lossZoom = parseFloat(e.target.value);
+                lossZoomValue.textContent = lossZoom.toFixed(1) + 'x';
+                updateLossChart();
+            });
+
+            // Auto-calculate bend radii from OD and factor
+            const odInput = document.getElementById('custom-od');
+            const factorInput = document.getElementById('custom-bend-factor');
+            const staticInput = document.getElementById('custom-bend-static');
+            const dynamicInput = document.getElementById('custom-bend-dynamic');
+
+            function updateBendRadii() {
+                const od = parseFloat(odInput.value) || 5;
+                const factor = parseFloat(factorInput.value) || 10;
+                staticInput.value = Math.round(od * factor);
+                dynamicInput.value = Math.round(od * factor * 2);
+            }
+
+            odInput.addEventListener('input', updateBendRadii);
+            factorInput.addEventListener('input', updateBendRadii);
+            updateBendRadii();
+
+            // Rigid zone event listeners
+            setupRigidZoneListeners('static', staticRigidToggle, staticRigidContent, staticRigidCustom,
+                staticRigidLength, updateStaticChart);
+            setupRigidZoneListeners('dynamic', dynamicRigidToggle, dynamicRigidContent, dynamicRigidCustom,
+                dynamicRigidLength, updateDynamicChart);
+        }
+
+        function setupRigidZoneListeners(chartType, toggle, content, customPanel, lengthInput, updateFn) {
+            // Toggle checkbox
+            toggle.addEventListener('change', () => {
+                rigidZone[chartType].enabled = toggle.checked;
+                content.classList.toggle('active', toggle.checked);
+                updateFn();
+            });
+
+            // Preset buttons
+            const presetBtns = content.querySelectorAll('.preset-btn');
+            presetBtns.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const preset = btn.dataset.preset;
+
+                    // Update active state
+                    presetBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+
+                    rigidZone[chartType].preset = preset;
+
+                    if (preset === 'custom') {
+                        customPanel.classList.remove('hidden');
+                        rigidZone[chartType].length = parseFloat(lengthInput.value) || 8;
+                    } else {
+                        customPanel.classList.add('hidden');
+                        const presetData = RIGID_ZONE_PRESETS[preset];
+                        rigidZone[chartType].length = presetData.length;
+                        lengthInput.value = presetData.length;
+                    }
+                    updateFn();
+                });
+            });
+
+            // Custom length input
+            lengthInput.addEventListener('input', () => {
+                if (rigidZone[chartType].preset === 'custom') {
+                    rigidZone[chartType].length = parseFloat(lengthInput.value) || 0;
+                    updateFn();
+                }
+            });
+        }
+
+        // ============================================
+        // Cable Management
+        // ============================================
+        function addPresetCable() {
+            const key = presetSelect.value;
+            if (!key) return;
+
+            const preset = CABLE_PRESETS[key];
+            const cable = {
+                id: cableIdCounter++,
+                name: preset.name,
+                outerDiameter: preset.outerDiameter,
+                bendRadiusStatic: preset.bendRadiusStatic,
+                bendRadiusDynamic: preset.bendRadiusDynamic,
+                loss: { ...preset.loss },
+                color: preset.color,
+                visible: true,
+                isPreset: true,
+                presetKey: key
+            };
+
+            cables.push(cable);
+            saveCables();
+            renderTable();
+            updateVisualizations();
+            presetSelect.value = '';
+        }
+
+        function addCustomCable(data) {
+            const cable = {
+                id: cableIdCounter++,
+                name: data.name,
+                outerDiameter: data.outerDiameter,
+                bendRadiusStatic: data.bendRadiusStatic,
+                bendRadiusDynamic: data.bendRadiusDynamic,
+                loss: data.loss,
+                color: CUSTOM_COLORS[customColorIndex % CUSTOM_COLORS.length],
+                visible: true,
+                isPreset: false
+            };
+            customColorIndex++;
+
+            cables.push(cable);
+            saveCables();
+            renderTable();
+            updateVisualizations();
+        }
+
+        function removeCable(id) {
+            cables = cables.filter(c => c.id !== id);
+            saveCables();
+            renderTable();
+            updateVisualizations();
+        }
+
+        function toggleCableVisibility(id) {
+            const cable = cables.find(c => c.id === id);
+            if (cable) {
+                cable.visible = !cable.visible;
+                saveCables();
+                updateVisualizations();
+            }
+        }
+
+        // ============================================
+        // Persistence
+        // ============================================
+        function saveCables() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                    cables,
+                    cableIdCounter,
+                    customColorIndex
+                }));
+            } catch (e) {
+                console.error('Failed to save cables:', e);
+            }
+        }
+
+        function loadCables() {
+            try {
+                const data = localStorage.getItem(STORAGE_KEY);
+                if (data) {
+                    const parsed = JSON.parse(data);
+                    cables = parsed.cables || [];
+                    cableIdCounter = parsed.cableIdCounter || 0;
+                    customColorIndex = parsed.customColorIndex || 0;
+                }
+            } catch (e) {
+                console.error('Failed to load cables:', e);
+                cables = [];
+            }
+        }
+
+        // ============================================
+        // Table Rendering
+        // ============================================
+        function renderTable() {
+            cableTableBody.innerHTML = '';
+
+            if (cables.length === 0) {
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            emptyState.style.display = 'none';
+
+            cables.forEach(cable => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>
+                        <input type="checkbox" class="cable-checkbox" data-id="${cable.id}" ${cable.visible ? 'checked' : ''}>
+                    </td>
+                    <td>
+                        <span class="cable-color" style="background: ${cable.color}"></span>
+                        ${cable.name}
+                    </td>
+                    <td>${cable.outerDiameter}</td>
+                    <td>${cable.bendRadiusStatic} mm</td>
+                    <td>${cable.bendRadiusDynamic} mm</td>
+                    <td>${cable.loss[500] || '-'}</td>
+                    <td>${cable.loss[1000] || '-'}</td>
+                    <td>${cable.loss[2000] || '-'}</td>
+                    <td>${cable.loss[3000] || '-'}</td>
+                    <td style="display: flex; gap: 4px;">
+                        <button class="edit-btn" data-id="${cable.id}" title="Edit cable">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M11 4H4v14a2 2 0 002 2h12a2 2 0 002-2v-5"/>
+                                <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                        </button>
+                        <button class="delete-btn" data-id="${cable.id}" title="Remove cable">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 6L6 18M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </td>
+                `;
+
+                const checkbox = tr.querySelector('.cable-checkbox');
+                checkbox.addEventListener('change', () => toggleCableVisibility(cable.id));
+
+                const editBtn = tr.querySelector('.edit-btn');
+                editBtn.addEventListener('click', () => openEditModal(cable.id));
+
+                const deleteBtn = tr.querySelector('.delete-btn');
+                deleteBtn.addEventListener('click', () => removeCable(cable.id));
+
+                cableTableBody.appendChild(tr);
+            });
+        }
+
+        // ============================================
+        // Modal Handling
+        // ============================================
+        function openEditModal(id) {
+            const cable = cables.find(c => c.id === id);
+            if (!cable) return;
+
+            editingCableId = id;
+
+            // Update modal UI for edit mode
+            document.querySelector('.modal-title').textContent = 'Edit Cable';
+            document.querySelector('#custom-form button[type="submit"]').textContent = 'Update Cable';
+
+            // Populate form
+            document.getElementById('custom-name').value = cable.name;
+            document.getElementById('custom-od').value = cable.outerDiameter;
+            document.getElementById('custom-bend-static').value = cable.bendRadiusStatic;
+            document.getElementById('custom-bend-dynamic').value = cable.bendRadiusDynamic;
+
+            // Calculate and set approximate bend factor
+            const factor = Math.round(cable.bendRadiusStatic / cable.outerDiameter);
+            document.getElementById('custom-bend-factor').value = factor || 10;
+
+            document.getElementById('custom-loss-500').value = cable.loss[500] || 0;
+            document.getElementById('custom-loss-1000').value = cable.loss[1000] || 0;
+            document.getElementById('custom-loss-2000').value = cable.loss[2000] || 0;
+            document.getElementById('custom-loss-3000').value = cable.loss[3000] || 0;
+
+            customModal.classList.add('visible');
+        }
+
+        function closeModal() {
+            customModal.classList.remove('visible');
+            customForm.reset();
+
+            // Reset state and UI
+            editingCableId = null;
+            document.querySelector('.modal-title').textContent = 'Add Custom Cable';
+            document.querySelector('#custom-form button[type="submit"]').textContent = 'Save Cable';
+            document.getElementById('custom-bend-factor').value = 10;
+        }
+
+        function handleCustomSubmit(e) {
+            e.preventDefault();
+
+            const data = {
+                name: document.getElementById('custom-name').value.trim(),
+                outerDiameter: parseFloat(document.getElementById('custom-od').value),
+                bendRadiusStatic: parseFloat(document.getElementById('custom-bend-static').value),
+                bendRadiusDynamic: parseFloat(document.getElementById('custom-bend-dynamic').value),
+                loss: {
+                    500: parseFloat(document.getElementById('custom-loss-500').value),
+                    1000: parseFloat(document.getElementById('custom-loss-1000').value),
+                    2000: parseFloat(document.getElementById('custom-loss-2000').value),
+                    3000: parseFloat(document.getElementById('custom-loss-3000').value)
+                }
+            };
+
+            if (editingCableId !== null) {
+                // Update existing cable
+                const index = cables.findIndex(c => c.id === editingCableId);
+                if (index !== -1) {
+                    cables[index] = { ...cables[index], ...data };
+                    saveCables();
+                    renderTable();
+                    updateVisualizations();
+                }
+            } else {
+                addCustomCable(data);
+            }
+
+            closeModal();
+        }
+
+        // ============================================
+        // Visualizations
+        // ============================================
+        function updateVisualizations() {
+            updateStaticChart();
+            updateDynamicChart();
+            updateLossChart();
+        }
+
+        function updateStaticChart() {
+            renderBendChart(staticChart, staticLegend, 'static', staticZoom);
+        }
+
+        function updateDynamicChart() {
+            renderBendChart(dynamicChart, dynamicLegend, 'dynamic', dynamicZoom);
+        }
+
+        function renderBendChart(svg, legendEl, bendType, zoom) {
+            const visibleCables = cables.filter(c => c.visible);
+            svg.innerHTML = '';
+
+            if (visibleCables.length === 0) {
+                svg.innerHTML = `
+                    <text x="200" y="140" text-anchor="middle" fill="#94a3b8" font-size="12">
+                        Select cables to visualize
+                    </text>
+                `;
+                legendEl.innerHTML = '';
+                return;
+            }
+
+            const baseScale = 1.5;
+            const scale = baseScale * zoom;
+            const centerX = 40;
+            const centerY = 140;
+            const chartWidth = 340;
+
+            const gridSteps = [25, 50, 75, 100, 125, 150];
+            gridSteps.forEach(r => {
+                const scaledR = r * scale;
+                if (scaledR > 5 && scaledR < chartWidth) {
+                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    path.setAttribute('d', describeArcRight(centerX, centerY, scaledR));
+                    path.setAttribute('fill', 'none');
+                    path.setAttribute('stroke', 'rgba(148, 163, 184, 0.12)');
+                    path.setAttribute('stroke-width', '1');
+                    path.setAttribute('stroke-dasharray', '3,3');
+                    svg.appendChild(path);
+
+                    const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    label.setAttribute('x', centerX + scaledR);
+                    label.setAttribute('y', centerY + 12);
+                    label.setAttribute('text-anchor', 'middle');
+                    label.setAttribute('fill', '#64748b');
+                    label.setAttribute('font-size', '9');
+                    label.textContent = r + 'mm';
+                    svg.appendChild(label);
+                }
+            });
+
+            const vertLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            vertLine.setAttribute('x1', centerX);
+            vertLine.setAttribute('y1', 30);
+            vertLine.setAttribute('x2', centerX);
+            vertLine.setAttribute('y2', 250);
+            vertLine.setAttribute('stroke', 'rgba(148, 163, 184, 0.3)');
+            vertLine.setAttribute('stroke-width', '1');
+            vertLine.setAttribute('stroke-dasharray', '4,4');
+            svg.appendChild(vertLine);
+
+            const baseLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            baseLine.setAttribute('x1', centerX);
+            baseLine.setAttribute('y1', centerY);
+            baseLine.setAttribute('x2', centerX + chartWidth);
+            baseLine.setAttribute('y2', centerY);
+            baseLine.setAttribute('stroke', 'rgba(148, 163, 184, 0.4)');
+            baseLine.setAttribute('stroke-width', '2');
+            svg.appendChild(baseLine);
+
+            const originCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            originCircle.setAttribute('cx', centerX);
+            originCircle.setAttribute('cy', centerY);
+            originCircle.setAttribute('r', '5');
+            originCircle.setAttribute('fill', 'rgba(148, 163, 184, 0.5)');
+            svg.appendChild(originCircle);
+
+            // Draw rigid zone if enabled
+            const rzConfig = rigidZone[bendType];
+            const rigidEnabled = rzConfig.enabled && rzConfig.length > 0;
+            const rigidLengthScaled = rigidEnabled ? rzConfig.length * scale : 0;
+
+            // Teal color for rigid zone (not used by cables)
+            const rigidZoneColor = '#14b8a6';
+            const rigidZoneFill = 'rgba(20, 184, 166, 0.2)';
+
+            // Draw cables with their arcs and per-cable rigid zones
+            visibleCables.forEach((cable, index) => {
+                const radius = bendType === 'static' ? cable.bendRadiusStatic : cable.bendRadiusDynamic;
+                const scaledR = radius * scale;
+
+                // Arc center is shifted RIGHT by rigid zone length
+                const arcCenterX = centerX + rigidLengthScaled;
+                const arcCenterY = centerY;
+
+                // Arc start point is at the top of the semicircle
+                const arcStartX = arcCenterX;
+                const arcStartY = arcCenterY - scaledR;
+
+                // Draw rigid zone for this cable (from arc start back toward origin)
+                if (rigidEnabled) {
+                    // Rigid zone extends from arc start toward the left (back to where connector is)
+                    const rigidRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                    rigidRect.setAttribute('x', centerX - 4);
+                    rigidRect.setAttribute('y', arcStartY - 4);
+                    rigidRect.setAttribute('width', rigidLengthScaled + 8);
+                    rigidRect.setAttribute('height', 8);
+                    rigidRect.setAttribute('fill', rigidZoneFill);
+                    rigidRect.setAttribute('stroke', rigidZoneColor);
+                    rigidRect.setAttribute('stroke-width', '1.5');
+                    rigidRect.setAttribute('stroke-dasharray', '4,2');
+                    rigidRect.setAttribute('rx', '3');
+                    svg.appendChild(rigidRect);
+                }
+
+                // Draw the arc - full semicircle, shifted right by rigid zone length
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('d', describeArcRight(arcCenterX, arcCenterY, scaledR));
+                path.setAttribute('fill', 'none');
+                path.setAttribute('stroke', cable.color);
+                path.setAttribute('stroke-width', '3');
+                path.setAttribute('stroke-linecap', 'round');
+                svg.appendChild(path);
+
+                // End circle at the right side of the arc
+                const endCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                endCircle.setAttribute('cx', arcCenterX + scaledR);
+                endCircle.setAttribute('cy', arcCenterY);
+                endCircle.setAttribute('r', '4');
+                endCircle.setAttribute('fill', cable.color);
+                endCircle.setAttribute('stroke', '#0f172a');
+                endCircle.setAttribute('stroke-width', '1.5');
+                svg.appendChild(endCircle);
+            });
+
+            updateBendLegend(legendEl, visibleCables, bendType, rzConfig);
+        }
+
+        // Arc from custom start angle (for custom rigid zone offsets)
+        function describeArcFromAngle(cx, cy, r, startAngle) {
+            const startRad = (startAngle - 90) * Math.PI / 180;
+            const endRad = (startAngle + 90) * Math.PI / 180;
+            const startX = cx + r * Math.cos(startRad);
+            const startY = cy + r * Math.sin(startRad);
+            const endX = cx + r * Math.cos(endRad);
+            const endY = cy + r * Math.sin(endRad);
+            return `M ${startX} ${startY} A ${r} ${r} 0 0 1 ${endX} ${endY}`;
+        }
+
+
+        // Draws a semicircle arc on the RIGHT side of center
+        function describeArcRight(cx, cy, r) {
+            // Start at top (cx, cy-r), arc to bottom (cx, cy+r)
+            // For a 180-degree arc, large-arc flag doesn't matter, but sweep=1 means clockwise
+            // Try: large-arc=1, sweep=1 to force the "long" clockwise path (RIGHT)
+            return `M ${cx} ${cy - r} A ${r} ${r} 0 1 1 ${cx} ${cy + r}`;
+        }
+
+        function describeArc(x, y, radius, startAngle, endAngle) {
+            const start = polarToCartesian(x, y, radius, endAngle);
+            const end = polarToCartesian(x, y, radius, startAngle);
+            const largeArcFlag = endAngle - startAngle <= 180 ? '0' : '1';
+            return `M ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArcFlag} 0 ${end.x} ${end.y}`;
+        }
+
+        function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
+            const angleInRadians = (angleInDegrees - 90) * Math.PI / 180;
+            return {
+                x: centerX + radius * Math.cos(angleInRadians),
+                y: centerY + radius * Math.sin(angleInRadians)
+            };
+        }
+
+        function updateBendLegend(legendEl, visibleCables, bendType, rzConfig) {
+            const rigidLength = (rzConfig && rzConfig.enabled && rzConfig.length > 0) ? rzConfig.length : 0;
+
+            let legendHtml = visibleCables.map(cable => {
+                const radius = bendType === 'static' ? cable.bendRadiusStatic : cable.bendRadiusDynamic;
+                const totalRadius = radius + rigidLength;
+                const displayValue = rigidLength > 0 ? `${totalRadius} mm (${radius}+${rigidLength})` : `${radius} mm`;
+                return `
+                    <div class="legend-item">
+                        <span class="legend-color" style="background: ${cable.color}"></span>
+                        <span class="legend-name">${cable.name}</span>
+                        <span class="legend-value">${displayValue}</span>
+                    </div>
+                `;
+            }).join('');
+
+            // Add rigid zone info if enabled
+            if (rzConfig && rzConfig.enabled && rzConfig.length > 0) {
+                legendHtml += `
+                    <div class="legend-item">
+                        <span class="legend-color" style="background: rgba(20, 184, 166, 0.3); border: 1.5px dashed #14b8a6;"></span>
+                        <span class="legend-name">Rigid Zone</span>
+                        <span class="legend-value">${rzConfig.length} mm</span>
+                    </div>
+                `;
+            }
+
+            legendEl.innerHTML = legendHtml;
+        }
+
+        function updateLossChart() {
+            const visibleCables = cables.filter(c => c.visible);
+            const svg = lossChart;
+            svg.innerHTML = '';
+
+            if (visibleCables.length === 0) {
+                svg.innerHTML = `
+                    <text x="200" y="140" text-anchor="middle" fill="#94a3b8" font-size="12">
+                        Select cables to visualize insertion loss
+                    </text>
+                `;
+                lossLegend.innerHTML = '';
+                return;
+            }
+
+            const padding = { top: 25, right: 25, bottom: 40, left: 50 };
+            const width = 400 - padding.left - padding.right;
+            const height = 280 - padding.top - padding.bottom;
+
+            const frequencies = [500, 1000, 2000, 3000];
+            const allLossValues = visibleCables.flatMap(c => frequencies.map(f => c.loss[f]));
+            const maxLoss = Math.max(...allLossValues) * (1 / lossZoom);
+            const yMax = Math.ceil(maxLoss * 10) / 10 + 0.1;
+
+            const xScale = (freq) => padding.left + (freq / 3000) * width;
+            const yScale = (loss) => padding.top + height - (loss / yMax) * height;
+
+            // Grid
+            for (let loss = 0; loss <= yMax; loss += 0.2) {
+                const y = yScale(loss);
+                if (y >= padding.top && y <= padding.top + height) {
+                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    line.setAttribute('x1', padding.left);
+                    line.setAttribute('y1', y);
+                    line.setAttribute('x2', padding.left + width);
+                    line.setAttribute('y2', y);
+                    line.setAttribute('stroke', 'rgba(148, 163, 184, 0.1)');
+                    svg.appendChild(line);
+
+                    const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    label.setAttribute('x', padding.left - 10);
+                    label.setAttribute('y', y + 4);
+                    label.setAttribute('text-anchor', 'end');
+                    label.setAttribute('fill', '#64748b');
+                    label.setAttribute('font-size', '11');
+                    label.textContent = loss.toFixed(1);
+                    svg.appendChild(label);
+                }
+            }
+
+            frequencies.forEach(freq => {
+                const x = xScale(freq);
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', x);
+                line.setAttribute('y1', padding.top);
+                line.setAttribute('x2', x);
+                line.setAttribute('y2', padding.top + height);
+                line.setAttribute('stroke', 'rgba(148, 163, 184, 0.1)');
+                svg.appendChild(line);
+
+                const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                label.setAttribute('x', x);
+                label.setAttribute('y', padding.top + height + 20);
+                label.setAttribute('text-anchor', 'middle');
+                label.setAttribute('fill', '#64748b');
+                label.setAttribute('font-size', '11');
+                label.textContent = freq + ' MHz';
+                svg.appendChild(label);
+            });
+
+            // Axes
+            const xAxis = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            xAxis.setAttribute('x1', padding.left);
+            xAxis.setAttribute('y1', padding.top + height);
+            xAxis.setAttribute('x2', padding.left + width);
+            xAxis.setAttribute('y2', padding.top + height);
+            xAxis.setAttribute('stroke', 'rgba(148, 163, 184, 0.3)');
+            svg.appendChild(xAxis);
+
+            const yAxis = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            yAxis.setAttribute('x1', padding.left);
+            yAxis.setAttribute('y1', padding.top);
+            yAxis.setAttribute('x2', padding.left);
+            yAxis.setAttribute('y2', padding.top + height);
+            yAxis.setAttribute('stroke', 'rgba(148, 163, 184, 0.3)');
+            svg.appendChild(yAxis);
+
+            // Y-axis label
+            const yLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            yLabel.setAttribute('x', 15);
+            yLabel.setAttribute('y', padding.top + height / 2);
+            yLabel.setAttribute('text-anchor', 'middle');
+            yLabel.setAttribute('fill', '#94a3b8');
+            yLabel.setAttribute('font-size', '12');
+            yLabel.setAttribute('transform', `rotate(-90, 15, ${padding.top + height / 2})`);
+            yLabel.textContent = 'Loss (dB/m)';
+            svg.appendChild(yLabel);
+
+            // Cable lines
+            visibleCables.forEach(cable => {
+                const points = frequencies.map(freq => ({
+                    x: xScale(freq),
+                    y: yScale(cable.loss[freq]),
+                    freq,
+                    loss: cable.loss[freq]
+                }));
+
+                // Line
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                const d = points.map((p, i) => (i === 0 ? 'M' : 'L') + ` ${p.x} ${p.y}`).join(' ');
+                path.setAttribute('d', d);
+                path.setAttribute('fill', 'none');
+                path.setAttribute('stroke', cable.color);
+                path.setAttribute('stroke-width', '2');
+                path.setAttribute('stroke-linecap', 'round');
+                path.setAttribute('stroke-linejoin', 'round');
+                svg.appendChild(path);
+
+                // Points
+                points.forEach(p => {
+                    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    circle.setAttribute('cx', p.x);
+                    circle.setAttribute('cy', p.y);
+                    circle.setAttribute('r', '4');
+                    circle.setAttribute('fill', cable.color);
+                    circle.setAttribute('stroke', '#0f172a');
+                    circle.setAttribute('stroke-width', '2');
+                    circle.style.cursor = 'pointer';
+
+                    circle.addEventListener('mouseenter', (e) => {
+                        tooltip.textContent = `${cable.name}: ${p.loss} dB/m @ ${p.freq} MHz`;
+                        tooltip.style.left = e.pageX + 10 + 'px';
+                        tooltip.style.top = e.pageY - 30 + 'px';
+                        tooltip.classList.add('visible');
+                    });
+
+                    circle.addEventListener('mouseleave', () => {
+                        tooltip.classList.remove('visible');
+                    });
+
+                    svg.appendChild(circle);
+                });
+            });
+
+            // Legend
+            updateLossLegend(visibleCables);
+        }
+
+        function updateLossLegend(visibleCables) {
+            lossLegend.innerHTML = visibleCables.map(cable => {
+                return `
+                    <div class="legend-item">
+                        <span class="legend-color" style="background: ${cable.color}"></span>
+                        <span class="legend-name">${cable.name}</span>
+                        <span class="legend-value">${cable.loss[2000]} dB/m @2GHz</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Initialize
+        init();
+    </script>
+</body>
+
+</html>
