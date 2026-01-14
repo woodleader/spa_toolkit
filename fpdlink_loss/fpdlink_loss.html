@@ -449,7 +449,6 @@
             border-radius: 10px;
             border: 1px solid var(--border-color);
             animation: fadeIn 0.3s ease;
-            overflow: hidden;
         }
 
         @keyframes fadeIn {
@@ -489,6 +488,11 @@
         .segment-row input[type="number"] {
             text-align: right;
             width: 100%;
+        }
+
+        .segment-row .custom-rate-row input[type="number"] {
+            width: 70px;
+            text-align: center;
         }
 
         .segment-length-wrapper {
@@ -585,21 +589,27 @@
             grid-column: 1 / -1;
             display: none;
             margin-top: 0.5rem;
+            max-width: 100%;
+            box-sizing: border-box;
         }
 
         .custom-rate-row.visible {
             display: flex;
             gap: 0.5rem;
             align-items: center;
+            flex-wrap: wrap;
         }
 
         .custom-rate-row label {
             font-size: 0.75rem;
             color: var(--secondary-text);
+            white-space: nowrap;
         }
 
         .custom-rate-row input {
-            width: 80px;
+            width: 70px;
+            min-width: 0;
+            flex-shrink: 1;
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid var(--border-color);
             color: var(--text-color);
