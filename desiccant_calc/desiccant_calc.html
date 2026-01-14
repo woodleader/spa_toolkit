@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Desiccant Calculator</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --text-color: #f8fafc;
+            --accent-color: #38bdf8;
+            --accent-secondary: #818cf8;
+            --secondary-text: #94a3b8;
+            --success-color: #22c55e;
+            --warning-color: #facc15;
+            --danger-color: #ef4444;
+            --border-color: rgba(148, 163, 184, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            min-height: 100vh;
+            background-image:
+                radial-gradient(circle at 10% 20%, rgba(56, 189, 248, 0.1) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(139, 92, 246, 0.1) 0%, transparent 20%);
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--secondary-text);
+            text-decoration: none;
+            font-size: 0.85rem;
+            padding: 0.4rem 0.8rem;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+        }
+
+        .back-link:hover {
+            color: var(--text-color);
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--accent-color);
+        }
+
+        .back-link svg {
+            width: 14px;
+            height: 14px;
+            stroke: currentColor;
+        }
+
+        .header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin: 0;
+            background: linear-gradient(to right, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--secondary-text);
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 860px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 1.5rem;
+        }
+
+        .panel-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .panel-title svg {
+            width: 20px;
+            height: 20px;
+            stroke: var(--accent-color);
+            fill: none;
+        }
+
+        /* Input Groups */
+        .input-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .input-label {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+
+        .input-label-left {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .input-name {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .input-value {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--accent-color);
+            min-width: 70px;
+            text-align: right;
+        }
+
+        .input-desc {
+            font-size: 0.75rem;
+            color: var(--secondary-text);
+            margin-bottom: 0.5rem;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .input-row input,
+        .input-row select {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 0.6rem 0.75rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+
+        .input-row input:focus,
+        .input-row select:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        .input-unit {
+            font-size: 0.8rem;
+            color: var(--secondary-text);
+            min-width: 40px;
+        }
+
+        /* Toggle Switch */
+        .toggle-section {
+            margin: 1.5rem 0;
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .toggle-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 48px;
+            height: 26px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 26px;
+            transition: 0.3s;
+        }
+
+        .toggle-slider::before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background: var(--text-color);
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+
+        .toggle-switch input:checked+.toggle-slider {
+            background: var(--accent-color);
+        }
+
+        .toggle-switch input:checked+.toggle-slider::before {
+            transform: translateX(22px);
+        }
+
+        .advanced-inputs {
+            display: none;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .advanced-inputs.visible {
+            display: block;
+        }
+
+        /* Results Panel */
+        .results-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .result-card {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 16px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .result-card.primary {
+            background: linear-gradient(135deg, rgba(56, 189, 248, 0.15), rgba(129, 140, 248, 0.15));
+            border: 2px solid var(--accent-color);
+        }
+
+        .result-icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .result-icon svg {
+            width: 24px;
+            height: 24px;
+            stroke: var(--accent-color);
+            fill: none;
+        }
+
+        .result-label {
+            font-size: 0.75rem;
+            color: var(--secondary-text);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .result-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--text-color);
+            line-height: 1;
+        }
+
+        .result-value span {
+            font-size: 1rem;
+            font-weight: 400;
+            color: var(--secondary-text);
+        }
+
+        .result-desc {
+            font-size: 0.85rem;
+            color: var(--secondary-text);
+            margin-top: 0.75rem;
+        }
+
+        /* Summary Grid */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .summary-item {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .summary-item-label {
+            font-size: 0.7rem;
+            color: var(--secondary-text);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .summary-item-value {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--accent-color);
+        }
+
+        .summary-item-value span {
+            font-size: 0.8rem;
+            color: var(--secondary-text);
+        }
+
+        /* Fogging Status Indicator */
+        .fogging-status {
+            border-radius: 16px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .fogging-status.safe {
+            background: rgba(34, 197, 94, 0.15);
+            border: 2px solid var(--success-color);
+        }
+
+        .fogging-status.warning {
+            background: rgba(250, 204, 21, 0.15);
+            border: 2px solid var(--warning-color);
+        }
+
+        .fogging-status.danger {
+            background: rgba(239, 68, 68, 0.15);
+            border: 2px solid var(--danger-color);
+        }
+
+        .fogging-icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 0.75rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .fogging-status.safe .fogging-icon {
+            background: rgba(34, 197, 94, 0.2);
+        }
+
+        .fogging-status.warning .fogging-icon {
+            background: rgba(250, 204, 21, 0.2);
+        }
+
+        .fogging-status.danger .fogging-icon {
+            background: rgba(239, 68, 68, 0.2);
+        }
+
+        .fogging-icon svg {
+            width: 28px;
+            height: 28px;
+            fill: none;
+            stroke-width: 2;
+        }
+
+        .fogging-status.safe .fogging-icon svg {
+            stroke: var(--success-color);
+        }
+
+        .fogging-status.warning .fogging-icon svg {
+            stroke: var(--warning-color);
+        }
+
+        .fogging-status.danger .fogging-icon svg {
+            stroke: var(--danger-color);
+        }
+
+        .fogging-title {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .fogging-status.safe .fogging-title {
+            color: var(--success-color);
+        }
+
+        .fogging-status.warning .fogging-title {
+            color: var(--warning-color);
+        }
+
+        .fogging-status.danger .fogging-title {
+            color: var(--danger-color);
+        }
+
+        .fogging-detail {
+            font-size: 0.85rem;
+            color: var(--secondary-text);
+            line-height: 1.5;
+        }
+
+        .fogging-detail strong {
+            color: var(--text-color);
+        }
+
+        /* Warning Banner */
+        .warning-banner {
+            display: none;
+            background: rgba(250, 204, 21, 0.15);
+            border: 1px solid var(--warning-color);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .warning-banner.visible {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .warning-banner svg {
+            width: 24px;
+            height: 24px;
+            stroke: var(--warning-color);
+            fill: none;
+            flex-shrink: 0;
+        }
+
+        .warning-text {
+            font-size: 0.85rem;
+            color: var(--warning-color);
+            font-weight: 500;
+        }
+
+        /* Collapsible Math Section */
+        .math-section {
+            margin-top: 2rem;
+        }
+
+        .math-toggle {
+            width: 100%;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            color: var(--text-color);
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.2s ease;
+        }
+
+        .math-toggle:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--accent-color);
+        }
+
+        .math-toggle svg {
+            width: 20px;
+            height: 20px;
+            stroke: var(--secondary-text);
+            fill: none;
+            transition: transform 0.3s ease;
+        }
+
+        .math-toggle.open svg {
+            transform: rotate(180deg);
+        }
+
+        .math-content {
+            display: none;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-top: none;
+            border-radius: 0 0 12px 12px;
+            padding: 1.5rem;
+            margin-top: -12px;
+        }
+
+        .math-content.visible {
+            display: block;
+        }
+
+        .formula-block {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .formula-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--accent-color);
+            margin-bottom: 0.75rem;
+        }
+
+        .formula-eq {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            color: var(--text-color);
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+            overflow-x: auto;
+        }
+
+        .formula-desc {
+            font-size: 0.8rem;
+            color: var(--secondary-text);
+            line-height: 1.5;
+        }
+
+        .formula-desc strong {
+            color: var(--accent-secondary);
+        }
+
+        .formula-vars {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 0.25rem 1rem;
+            font-size: 0.8rem;
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .formula-vars dt {
+            color: var(--accent-secondary);
+            font-family: 'Courier New', monospace;
+        }
+
+        .formula-vars dd {
+            color: var(--secondary-text);
+            margin: 0;
+        }
+
+        .constants-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 0.5rem;
+            font-size: 0.8rem;
+        }
+
+        .constants-table th,
+        .constants-table td {
+            padding: 0.5rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .constants-table th {
+            color: var(--secondary-text);
+            font-weight: 500;
+        }
+
+        .constants-table td {
+            color: var(--text-color);
+        }
+
+        .constants-table td:first-child {
+            color: var(--accent-secondary);
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header-row">
+            <a href="../index.html" class="back-link">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 12H5M12 19l-7-7 7-7" />
+                </svg>
+                Back to Toolbox
+            </a>
+        </div>
+
+        <h1>Desiccant Calculator</h1>
+        <p class="subtitle">Calculate dew point and desiccant requirements for sealed enclosures</p>
+
+        <div class="main-content">
+            <!-- Input Panel -->
+            <div class="panel">
+                <div class="panel-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M12 2v6M12 22v-6M4.93 4.93l4.24 4.24M14.83 14.83l4.24 4.24" />
+                        <path d="M2 12h6M22 12h-6M4.93 19.07l4.24-4.24M14.83 9.17l4.24-4.24" />
+                    </svg>
+                    Basic Parameters
+                </div>
+
+                <div class="input-group">
+                    <div class="input-label">
+                        <span class="input-name">Assembly Temperature (T<sub>seal</sub>)</span>
+                        <span class="input-value" id="tseal-display">25°C</span>
+                    </div>
+                    <div class="input-desc">Temperature when the enclosure is sealed</div>
+                    <div class="input-row">
+                        <input type="number" id="tseal" value="25" step="1" min="-40" max="85">
+                        <span class="input-unit">°C</span>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <div class="input-label">
+                        <span class="input-name">Assembly Humidity (RH<sub>seal</sub>)</span>
+                        <span class="input-value" id="rhseal-display">60%</span>
+                    </div>
+                    <div class="input-desc">Relative humidity when enclosed</div>
+                    <div class="input-row">
+                        <input type="number" id="rhseal" value="60" step="1" min="0" max="100">
+                        <span class="input-unit">%</span>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <div class="input-label">
+                        <span class="input-name">Internal Volume (V)</span>
+                        <span class="input-value" id="volume-display">1 L</span>
+                    </div>
+                    <div class="input-desc">Air volume inside the sealed enclosure</div>
+                    <div class="input-row">
+                        <input type="number" id="volume" value="1" step="1" min="0.01" max="1000">
+                        <span class="input-unit">Liters</span>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <div class="input-label">
+                        <span class="input-name">Minimum Operating Temp (T<sub>min</sub>)</span>
+                        <span class="input-value" id="tmin-display">-20°C</span>
+                    </div>
+                    <div class="input-desc">Coldest expected operating temperature</div>
+                    <div class="input-row">
+                        <input type="number" id="tmin" value="-20" step="1" min="-60" max="50">
+                        <span class="input-unit">°C</span>
+                    </div>
+                </div>
+
+                <!-- Advanced Mode Toggle -->
+                <div class="toggle-section">
+                    <div class="toggle-row">
+                        <span class="toggle-label">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18"
+                                height="18" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="3"></circle>
+                                <path
+                                    d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                                </path>
+                            </svg>
+                            Advanced Mode
+                        </span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="advanced-toggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="advanced-inputs" id="advanced-inputs">
+                        <div class="input-group">
+                            <div class="input-label">
+                                <span class="input-name">Seal Surface Area (A)</span>
+                                <span class="input-value" id="area-display">10 cm²</span>
+                            </div>
+                            <div class="input-desc">Total area of seals/gaskets exposed to permeation</div>
+                            <div class="input-row">
+                                <input type="number" id="sealarea" value="10" step="1" min="0.1" max="10000">
+                                <span class="input-unit">cm²</span>
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <div class="input-label">
+                                <span class="input-name">MVTR</span>
+                                <span class="input-value" id="mvtr-display">0.5</span>
+                            </div>
+                            <div class="input-desc">Moisture Vapor Transmission Rate of seal material</div>
+                            <div class="input-row">
+                                <input type="number" id="mvtr" value="0.5" step="0.1" min="0.01" max="10">
+                                <span class="input-unit">g/m²/day</span>
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <div class="input-label">
+                                <span class="input-name">Service Life (L)</span>
+                                <span class="input-value" id="life-display">10 yrs</span>
+                            </div>
+                            <div class="input-desc">Required time before desiccant replacement</div>
+                            <div class="input-row">
+                                <input type="number" id="servicelife" value="10" step="1" min="1" max="50">
+                                <span class="input-unit">Years</span>
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <div class="input-label">
+                                <span class="input-name">Safety Factor</span>
+                                <span class="input-value" id="safety-display">1.5x</span>
+                            </div>
+                            <div class="input-desc">Multiplier for safety margin (Default: 1.5)</div>
+                            <div class="input-row">
+                                <input type="number" id="safetyfactor" value="1.5" step="0.1" min="1.0" max="5.0">
+                                <span class="input-unit">x</span>
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <div class="input-label">
+                                <span class="input-name">Desiccant Type</span>
+                            </div>
+                            <div class="input-desc">Adsorption capacity varies by material</div>
+                            <div class="input-row">
+                                <select id="desiccant-type">
+                                    <option value="0.20">Silica Gel (K = 0.20)</option>
+                                    <option value="0.25">Molecular Sieve (K = 0.25)</option>
+                                    <option value="0.15">Clay (K = 0.15)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Panel -->
+            <div class="results-panel">
+                <!-- Fogging Status Indicator -->
+                <div class="fogging-status safe" id="fogging-status">
+                    <div class="fogging-icon" id="fogging-icon">
+                        <!-- Icon will be set by JS -->
+                        <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" id="fogging-svg">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                        </svg>
+                    </div>
+                    <div class="fogging-title" id="fogging-title">No Fogging Risk</div>
+                    <div class="fogging-detail" id="fogging-detail">
+                        Dew point <strong id="dewpoint-display">16.7°C</strong> is safely below T<sub>min</sub> <strong
+                            id="tmin-compare">-20°C</strong>
+                    </div>
+                </div>
+
+                <!-- Dew Point Result -->
+                <div class="result-card primary">
+                    <div class="result-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round">
+                            <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
+                        </svg>
+                    </div>
+                    <div class="result-label">Internal Dew Point (T<sub>d</sub>)</div>
+                    <div class="result-value"><span id="dewpoint-value">16.7</span><span>°C</span></div>
+                    <div class="result-desc" id="dewpoint-desc">Moisture condenses when cold surface reaches this
+                        temperature</div>
+                </div>
+
+                <!-- Summary Grid -->
+                <div class="panel">
+                    <div class="panel-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="3" y1="9" x2="21" y2="9"></line>
+                            <line x1="9" y1="21" x2="9" y2="9"></line>
+                        </svg>
+                        Moisture Analysis
+                    </div>
+
+                    <div class="summary-grid">
+                        <div class="summary-item">
+                            <div class="summary-item-label">Initial Moisture</div>
+                            <div class="summary-item-value"><span id="initial-moisture">0.014</span> <span>g</span>
+                            </div>
+                        </div>
+                        <div class="summary-item" id="ingress-item" style="display: none;">
+                            <div class="summary-item-label">Ingress (Long-term)</div>
+                            <div class="summary-item-value"><span id="ingress-moisture">0.183</span> <span>g</span>
+                            </div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-item-label">Saturation Pressure</div>
+                            <div class="summary-item-value"><span id="sat-pressure">31.7</span> <span>hPa</span></div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-item-label">Actual Vapor Press.</div>
+                            <div class="summary-item-value"><span id="actual-pressure">19.0</span> <span>hPa</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Final Desiccant Result -->
+                <div class="result-card">
+                    <div class="result-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round">
+                            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                            <line x1="3" y1="6" x2="21" y2="6"></line>
+                            <path d="M16 10a4 4 0 0 1-8 0"></path>
+                        </svg>
+                    </div>
+                    <div class="result-label">Total Desiccant Required</div>
+                    <div class="result-value"><span id="total-desiccant">0.07</span><span> g</span></div>
+                    <div class="result-desc" id="desiccant-desc">Using Silica Gel (K = 0.20)</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Collapsible Math Section -->
+        <div class="math-section">
+            <button class="math-toggle" id="math-toggle">
+                <span>📐 Formulas & Calculation Reference</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+            </button>
+
+            <div class="math-content" id="math-content">
+                <div class="formula-block">
+                    <div class="formula-title">1. Saturation Vapor Pressure (August-Roche-Magnus)</div>
+                    <div class="formula-eq">P<sub>s</sub> = 6.1094 × exp(17.625 × T / (T + 243.04))</div>
+                    <div class="formula-desc">
+                        Calculates the maximum water vapor pressure at a given temperature. This is the pressure at
+                        which air becomes saturated (100% RH).
+                    </div>
+                    <dl class="formula-vars">
+                        <dt>P<sub>s</sub></dt>
+                        <dd>Saturation vapor pressure (hPa)</dd>
+                        <dt>T</dt>
+                        <dd>Temperature (°C)</dd>
+                    </dl>
+                </div>
+
+                <div class="formula-block">
+                    <div class="formula-title">2. Actual Vapor Pressure</div>
+                    <div class="formula-eq">P<sub>a</sub> = RH × P<sub>s</sub> / 100</div>
+                    <div class="formula-desc">
+                        The partial pressure of water vapor in the air based on relative humidity.
+                    </div>
+                    <dl class="formula-vars">
+                        <dt>P<sub>a</sub></dt>
+                        <dd>Actual vapor pressure (hPa)</dd>
+                        <dt>RH</dt>
+                        <dd>Relative humidity (%)</dd>
+                    </dl>
+                </div>
+
+                <div class="formula-block">
+                    <div class="formula-title">3. Dew Point Temperature</div>
+                    <div class="formula-eq">T<sub>d</sub> = (243.04 × ln(P<sub>a</sub> / 6.1094)) / (17.625 -
+                        ln(P<sub>a</sub> / 6.1094))</div>
+                    <div class="formula-desc">
+                        The temperature at which air becomes saturated and condensation begins. Derived by inverting the
+                        Magnus formula.
+                    </div>
+                    <dl class="formula-vars">
+                        <dt>T<sub>d</sub></dt>
+                        <dd>Dew point temperature (°C)</dd>
+                    </dl>
+                </div>
+
+                <div class="formula-block">
+                    <div class="formula-title">4. Initial Moisture Load</div>
+                    <div class="formula-eq">W<sub>initial</sub> = (P<sub>a</sub> × V) / (R<sub>w</sub> ×
+                        (T<sub>seal</sub> + 273.15))</div>
+                    <div class="formula-desc">
+                        Calculates the mass of water vapor trapped inside the enclosure at the time of sealing, using
+                        the ideal gas law for water vapor.
+                    </div>
+                    <dl class="formula-vars">
+                        <dt>W<sub>initial</sub></dt>
+                        <dd>Initial water mass (grams)</dd>
+                        <dt>V</dt>
+                        <dd>Volume (Liters)</dd>
+                        <dt>R<sub>w</sub></dt>
+                        <dd>Gas constant for water vapor = 0.4615 J/(g·K)</dd>
+                        <dt>T<sub>seal</sub></dt>
+                        <dd>Assembly temperature (°C)</dd>
+                    </dl>
+                </div>
+
+                <div class="formula-block">
+                    <div class="formula-title">5. Moisture Ingress Over Time (Advanced Mode)</div>
+                    <div class="formula-eq">W<sub>ingress</sub> = (A / 10000) × MVTR × (L × 365)</div>
+                    <div class="formula-desc">
+                        Estimates moisture that permeates through seals/gaskets over the service life. The area is
+                        converted from cm² to m².
+                    </div>
+                    <dl class="formula-vars">
+                        <dt>W<sub>ingress</sub></dt>
+                        <dd>Ingress water mass (grams)</dd>
+                        <dt>A</dt>
+                        <dd>Seal surface area (cm²)</dd>
+                        <dt>MVTR</dt>
+                        <dd>Moisture Vapor Transmission Rate (g/m²/day)</dd>
+                        <dt>L</dt>
+                        <dd>Service life (years)</dd>
+                    </dl>
+                </div>
+
+                <div class="formula-block">
+                    <div class="formula-title">6. Total Desiccant Mass Required</div>
+                    <div class="formula-eq">M<sub>total</sub> = (W<sub>initial</sub> + W<sub>ingress</sub>) / K</div>
+                    <div class="formula-desc">
+                        The mass of desiccant needed to adsorb all moisture. <strong>K</strong> is the adsorption
+                        capacity (fraction of desiccant mass that can be water).
+                    </div>
+
+                    <table class="constants-table">
+                        <thead>
+                            <tr>
+                                <th>Desiccant Type</th>
+                                <th>K Value</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Silica Gel</td>
+                                <td>0.20</td>
+                                <td>Most common, good for general use</td>
+                            </tr>
+                            <tr>
+                                <td>Molecular Sieve</td>
+                                <td>0.25</td>
+                                <td>Higher capacity, works at low humidity</td>
+                            </tr>
+                            <tr>
+                                <td>Clay</td>
+                                <td>0.15</td>
+                                <td>Economical, lower capacity</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Constants
+        const R_WATER = 0.4615; // Gas constant for water vapor in J/(g·K)
+
+        // DOM Elements
+        const tsealInput = document.getElementById('tseal');
+        const rhsealInput = document.getElementById('rhseal');
+        const volumeInput = document.getElementById('volume');
+        const tminInput = document.getElementById('tmin');
+        const advancedToggle = document.getElementById('advanced-toggle');
+        const advancedInputs = document.getElementById('advanced-inputs');
+        const sealareaInput = document.getElementById('sealarea');
+        const mvtrInput = document.getElementById('mvtr');
+        const servicelifeInput = document.getElementById('servicelife');
+        const desiccantTypeSelect = document.getElementById('desiccant-type');
+        const mathToggle = document.getElementById('math-toggle');
+        const mathContent = document.getElementById('math-content');
+
+        // Display elements
+        const tsealDisplay = document.getElementById('tseal-display');
+        const rhsealDisplay = document.getElementById('rhseal-display');
+        const volumeDisplay = document.getElementById('volume-display');
+        const tminDisplay = document.getElementById('tmin-display');
+        const areaDisplay = document.getElementById('area-display');
+        const mvtrDisplay = document.getElementById('mvtr-display');
+        const lifeDisplay = document.getElementById('life-display');
+
+        // Result elements
+        const dewpointValue = document.getElementById('dewpoint-value');
+        const dewpointDesc = document.getElementById('dewpoint-desc');
+        const initialMoisture = document.getElementById('initial-moisture');
+        const ingressMoisture = document.getElementById('ingress-moisture');
+        const ingressItem = document.getElementById('ingress-item');
+        const satPressure = document.getElementById('sat-pressure');
+        const actualPressure = document.getElementById('actual-pressure');
+        const totalDesiccant = document.getElementById('total-desiccant');
+        const desiccantDesc = document.getElementById('desiccant-desc');
+
+        // Fogging status elements
+        const foggingStatus = document.getElementById('fogging-status');
+        const foggingSvg = document.getElementById('fogging-svg');
+        const foggingTitle = document.getElementById('fogging-title');
+        const foggingDetail = document.getElementById('fogging-detail');
+        const dewpointDisplay = document.getElementById('dewpoint-display');
+        const tminCompare = document.getElementById('tmin-compare');
+
+        // SVG icons for different states
+        const ICONS = {
+            safe: '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline>',
+            warning: '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line>',
+            danger: '<circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line>'
+        };
+
+        // August-Roche-Magnus formula for saturation vapor pressure
+        function getSaturationPressure(tempC) {
+            return 6.1094 * Math.exp((17.625 * tempC) / (tempC + 243.04));
+        }
+
+        // Calculate dew point from actual vapor pressure
+        function getDewPoint(actualPressureHPa) {
+            if (actualPressureHPa <= 0) return -273.15; // Handle edge case
+            const ln = Math.log(actualPressureHPa / 6.1094);
+            return (243.04 * ln) / (17.625 - ln);
+        }
+
+        // Calculate initial moisture in grams
+        function getInitialMoisture(actualPressureHPa, volumeL, tempC) {
+            const tempK = tempC + 273.15;
+            return (actualPressureHPa * volumeL * 0.1) / (R_WATER * tempK);
+        }
+
+        // Calculate moisture ingress over service life
+        function getMoistureIngress(areaCm2, mvtr, years) {
+            const areaM2 = areaCm2 / 10000;
+            const days = years * 365;
+            return areaM2 * mvtr * days;
+        }
+
+        // Helper to parse number with default, handling 0 correctly
+        function parseNum(input, defaultVal) {
+            const val = parseFloat(input.value);
+            return isNaN(val) ? defaultVal : val;
+        }
+
+        // Update fogging status indicator
+        function updateFoggingStatus(dewPoint, tmin) {
+            const margin = tmin - dewPoint; // Positive = safe (tmin > dewPoint)
+
+            dewpointDisplay.textContent = `${dewPoint.toFixed(1)}°C`;
+            tminCompare.textContent = `${tmin}°C`;
+
+            // Remove all status classes
+            foggingStatus.classList.remove('safe', 'warning', 'danger');
+
+            if (margin > 5) {
+                // Safe: T_min well above dew point
+                foggingStatus.classList.add('safe');
+                foggingSvg.innerHTML = ICONS.safe;
+                foggingTitle.textContent = 'No Fogging Risk';
+                foggingDetail.innerHTML = `T<sub>min</sub> <strong>${tmin}°C</strong> is <strong>${margin.toFixed(1)}°C</strong> above dew point — air stays transparent`;
+            } else if (margin > 0) {
+                // Warning: Close margin
+                foggingStatus.classList.add('warning');
+                foggingSvg.innerHTML = ICONS.warning;
+                foggingTitle.textContent = 'Marginal Safety';
+                foggingDetail.innerHTML = `T<sub>min</sub> is only <strong>${margin.toFixed(1)}°C</strong> above dew point — consider adding desiccant`;
+            } else {
+                // Danger: T_min at or below dew point — WILL FOG
+                foggingStatus.classList.add('danger');
+                foggingSvg.innerHTML = ICONS.danger;
+                foggingTitle.textContent = 'Fogging Will Occur';
+                foggingDetail.innerHTML = `T<sub>min</sub> <strong>${tmin}°C</strong> ≤ dew point <strong>${dewPoint.toFixed(1)}°C</strong> — condensation forms on cold surfaces`;
+            }
+
+            return margin;
+        }
+
+        // Main calculation function
+        function calculate() {
+            const tseal = parseNum(tsealInput, 25);
+            const rhseal = parseNum(rhsealInput, 60);
+            const volume = parseNum(volumeInput, 1);
+            const tmin = parseNum(tminInput, -20);
+            const isAdvanced = advancedToggle.checked;
+
+            // Update displays
+            tsealDisplay.textContent = `${tseal}°C`;
+            rhsealDisplay.textContent = `${rhseal}%`;
+            volumeDisplay.textContent = `${volume} L`;
+            tminDisplay.textContent = `${tmin}°C`;
+
+            // Calculate saturation and actual vapor pressure at sealing
+            const ps = getSaturationPressure(tseal);
+            const pa = (rhseal * ps) / 100;
+
+            // Calculate dew point (current state without desiccant)
+            const dewPoint = getDewPoint(pa);
+
+            // Calculate initial moisture in the sealed volume
+            const wInitial = getInitialMoisture(pa, volume, tseal);
+
+            // Update basic results
+            satPressure.textContent = ps.toFixed(1);
+            actualPressure.textContent = pa.toFixed(1);
+            dewpointValue.textContent = dewPoint.toFixed(1);
+            initialMoisture.textContent = wInitial.toFixed(4);
+
+            // Update fogging status (informational only - doesn't affect desiccant calculation)
+            const margin = updateFoggingStatus(dewPoint, tmin);
+
+            // Desiccant calculation per original spec:
+            // Total desiccant = ((W_initial + W_ingress) / K) * SafetyFactor
+            const kValue = parseFloat(desiccantTypeSelect.value);
+            const desiccantName = desiccantTypeSelect.options[desiccantTypeSelect.selectedIndex].text;
+
+            // Start with initial moisture load
+            let wTotal = wInitial;
+            let safetyFactor = 1.0;
+
+            if (isAdvanced) {
+                const sealArea = parseNum(sealareaInput, 10);
+                const mvtr = parseNum(mvtrInput, 0.5);
+                const serviceLife = parseNum(servicelifeInput, 10);
+                const safetyInput = document.getElementById('safetyfactor');
+                safetyFactor = safetyInput ? parseNum(safetyInput, 1.5) : 1.5;
+
+                // Update advanced displays
+                areaDisplay.textContent = `${sealArea} cm²`;
+                mvtrDisplay.textContent = mvtr.toFixed(1);
+                lifeDisplay.textContent = `${serviceLife} yrs`;
+                if (document.getElementById('safety-display')) {
+                    document.getElementById('safety-display').textContent = `${safetyFactor.toFixed(1)}x`;
+                }
+
+                // Calculate ingress
+                const wIngress = getMoistureIngress(sealArea, mvtr, serviceLife);
+                wTotal += wIngress;
+
+                ingressItem.style.display = 'block';
+                ingressMoisture.textContent = wIngress.toFixed(4);
+            } else {
+                ingressItem.style.display = 'none';
+                safetyFactor = 1.5; // Default safety factor in simple mode
+            }
+
+            // Calculate total desiccant
+            const mDesiccantTheoretical = wTotal / kValue;
+            const mDesiccantRecommended = mDesiccantTheoretical * safetyFactor;
+
+            totalDesiccant.textContent = mDesiccantRecommended.toFixed(3);
+
+            if (safetyFactor > 1.0) {
+                desiccantDesc.innerHTML = `Using ${desiccantName}<br><span style="font-size: 0.8em; opacity: 0.8">Includes ${safetyFactor}x Safety Factor (Min: ${mDesiccantTheoretical.toFixed(3)}g)</span>`;
+            } else {
+                desiccantDesc.textContent = `Using ${desiccantName}`;
+            }
+        }
+
+        // Event listeners
+        [tsealInput, rhsealInput, volumeInput, tminInput, sealareaInput, mvtrInput, servicelifeInput].forEach(input => {
+            input.addEventListener('input', calculate);
+        });
+
+        // Add listener for safety factor if it exists
+        const safetyInput = document.getElementById('safetyfactor');
+        if (safetyInput) {
+            safetyInput.addEventListener('input', calculate);
+        }
+
+        // Add dynamic listener for safety factor in case it's added later or if I missed adding it to the list above
+        document.addEventListener('input', function (e) {
+            if (e.target.id === 'safetyfactor') {
+                calculate();
+            }
+        });
+
+        desiccantTypeSelect.addEventListener('change', calculate);
+
+        advancedToggle.addEventListener('change', function () {
+            advancedInputs.classList.toggle('visible', this.checked);
+            calculate();
+        });
+
+        mathToggle.addEventListener('click', function () {
+            this.classList.toggle('open');
+            mathContent.classList.toggle('visible');
+        });
+
+        // Initial calculation
+        calculate();
+    </script>
+</body>
+
+</html>
