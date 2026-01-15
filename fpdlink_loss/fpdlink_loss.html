@@ -441,7 +441,7 @@
 
         .segment-row {
             display: grid;
-            grid-template-columns: 1fr 90px 32px;
+            grid-template-columns: 1fr 70px 32px;
             gap: 0.5rem;
             align-items: center;
             padding: 0.75rem;
@@ -516,13 +516,16 @@
             background: transparent;
             border: 1px solid transparent;
             color: var(--secondary-text);
-            padding: 0.4rem;
+            padding: 0.25rem;
             border-radius: 6px;
             cursor: pointer;
             transition: all 0.2s ease;
             display: flex;
             align-items: center;
             justify-content: center;
+            flex-shrink: 0;
+            width: 28px;
+            height: 28px;
         }
 
         .delete-segment-btn:hover {
@@ -532,8 +535,9 @@
         }
 
         .delete-segment-btn svg {
-            width: 18px;
-            height: 18px;
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
         }
 
         /* PCLK Calculator */
@@ -1448,8 +1452,9 @@
                 <div class="mode-section">
                     <div class="mode-label">Deserializer AEQ Limit</div>
                     <div class="mode-buttons" id="aeq-buttons">
-                        <button class="mode-btn selected" data-aeq="-20">-20 dB (Standard)</button>
-                        <button class="mode-btn" data-aeq="-25">-25 dB (High Perf.)</button>
+                        <button class="mode-btn selected" data-aeq="-12">-12 dB (Conservative)</button>
+                        <button class="mode-btn" data-aeq="-15">-15 dB (Standard)</button>
+                        <button class="mode-btn" data-aeq="-21">-21 dB (Max. Perf.)</button>
                     </div>
                 </div>
 
@@ -1644,24 +1649,24 @@
                             <path d="M 40 160 A 110 110 0 0 1 260 160" fill="none" stroke="rgba(255,255,255,0.08)"
                                 stroke-width="20" stroke-linecap="round" />
 
-                            <!-- Green zone: 0 to 15 dB (left half, -90° to 0°) -->
-                            <!-- Start: (40, 160), End: (150, 50) -->
-                            <path class="gauge-zone-green" d="M 40 160 A 110 110 0 0 1 150 50" fill="none"
+                            <!-- Green zone: 0 to 12 dB (-90° to -18°) -->
+                            <!-- Start: (40, 160), End at -18°: x=150+110*sin(-18°)=116, y=160-110*cos(-18°)=55 -->
+                            <path class="gauge-zone-green" d="M 40 160 A 110 110 0 0 1 116 55" fill="none"
                                 stroke="#22c55e" stroke-width="20" stroke-linecap="butt" opacity="0.4" />
 
-                            <!-- Yellow zone: 15 to 20 dB (0° to 30°) -->
-                            <!-- Start: (150, 50), End at 30°: x=150+110*sin(30°)=205, y=160-110*cos(30°)=64.7 -->
-                            <path class="gauge-zone-yellow" d="M 150 50 A 110 110 0 0 1 205 65" fill="none"
+                            <!-- Yellow zone: 12 to 21 dB (-18° to +33°) -->
+                            <!-- Start: (116, 55), End at 33°: x=150+110*sin(33°)=210, y=160-110*cos(33°)=68 -->
+                            <path class="gauge-zone-yellow" d="M 116 55 A 110 110 0 0 1 210 68" fill="none"
                                 stroke="#facc15" stroke-width="20" stroke-linecap="butt" opacity="0.4" />
 
-                            <!-- Red zone: 20 to 30 dB (30° to 90°) -->
-                            <!-- Start: (205, 65), End: (260, 160) -->
-                            <path class="gauge-zone-red" d="M 205 65 A 110 110 0 0 1 260 160" fill="none"
+                            <!-- Red zone: 21 to 30 dB (+33° to +90°) -->
+                            <!-- Start: (210, 68), End: (260, 160) -->
+                            <path class="gauge-zone-red" d="M 210 68 A 110 110 0 0 1 260 160" fill="none"
                                 stroke="#ef4444" stroke-width="20" stroke-linecap="butt" opacity="0.4" />
 
                             <!-- Value arc (animated) -->
                             <path id="gauge-value-arc" d="M 40 160 A 110 110 0 0 1 40 160" fill="none"
-                                stroke="var(--success-color)" stroke-width="20" stroke-linecap="round" />
+                                stroke="var(--success-color)" stroke-width="20" stroke-linecap="butt" />
 
                             <!-- Needle -->
                             <g id="gauge-needle" transform="rotate(-90, 150, 160)">
@@ -2065,7 +2070,7 @@
         // ============================================
         let operatingFreq = 2.0; // GHz (Nyquist frequency)
         let currentMode = '4000'; // Link mode
-        let aeqLimit = -20; // dB
+        let aeqLimit = -12; // dB (Conservative/Safety Limit)
         let ambientTemp = 20; // °C
         let pcbMaterial = 'fr4'; // Current PCB material
         let segments = [];
@@ -2383,9 +2388,9 @@
 
             // Set value text color based on totalLoss vs zones
             const valueDisplay = gaugeValueText;
-            if (totalLoss <= 15) {
+            if (totalLoss <= 12) {
                 valueDisplay.style.color = 'var(--success-color)';
-            } else if (totalLoss <= Math.abs(aeqLimit)) {
+            } else if (totalLoss <= 21) {
                 valueDisplay.style.color = 'var(--warning-color)';
             } else {
                 valueDisplay.style.color = 'var(--danger-color)';
@@ -2399,9 +2404,9 @@
 
             // Set arc color based on totalLoss vs zones
             let arcColor;
-            if (totalLoss <= 15) {
+            if (totalLoss <= 12) {
                 arcColor = 'var(--success-color)';
-            } else if (totalLoss <= Math.abs(aeqLimit)) {
+            } else if (totalLoss <= 21) {
                 arcColor = 'var(--warning-color)';
             } else {
                 arcColor = 'var(--danger-color)';
