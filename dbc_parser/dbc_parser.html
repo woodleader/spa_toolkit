@@ -210,6 +210,8 @@
             border-radius: 6px;
             min-width: 80px;
             text-align: center;
+            user-select: text;
+            cursor: text;
         }
 
         .message-info {
@@ -670,7 +672,7 @@
                 card.className = 'message-card';
                 card.innerHTML = `
                     <div class="message-header" onclick="toggleMessage(this)">
-                        <div class="message-id">0x${msg.id.toString(16).toUpperCase()}${msg.isExtended ? ' <span style="font-size:0.65rem;opacity:0.7">EXT</span>' : ''}</div>
+                        <div class="message-id" onclick="event.stopPropagation()">0x${msg.id.toString(16).toUpperCase()}${msg.isExtended ? ' <span style="font-size:0.65rem;opacity:0.7">EXT</span>' : ''}</div>
                         <div class="message-info">
                             <div class="message-name">${msg.name}</div>
                             <div class="message-meta">
