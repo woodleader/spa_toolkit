@@ -1,0 +1,3158 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GMSL2 Channel Loss Calculator</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --text-color: #f8fafc;
+            --accent-color: #38bdf8;
+            --accent-secondary: #818cf8;
+            --secondary-text: #94a3b8;
+            --success-color: #22c55e;
+            --warning-color: #facc15;
+            --danger-color: #ef4444;
+            --border-color: rgba(148, 163, 184, 0.1);
+
+            /* Component colors */
+            --cable-color: #f97316;
+            --connector-color: #a855f7;
+            --pcb-color: #10b981;
+            --margin-color: #ec4899;
+            --temp-color: #fb923c;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            min-height: 100vh;
+            background-image:
+                radial-gradient(circle at 10% 20%, rgba(56, 189, 248, 0.1) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(139, 92, 246, 0.1) 0%, transparent 20%);
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--secondary-text);
+            text-decoration: none;
+            font-size: 0.85rem;
+            padding: 0.4rem 0.8rem;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+        }
+
+        .back-link:hover {
+            color: var(--text-color);
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--accent-color);
+        }
+
+        .back-link svg {
+            width: 14px;
+            height: 14px;
+            stroke: currentColor;
+        }
+
+        .header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin: 0;
+            background: linear-gradient(to right, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--secondary-text);
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 400px 1fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 960px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 1.5rem;
+        }
+
+        .panel-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .panel-title svg {
+            width: 20px;
+            height: 20px;
+            stroke: var(--accent-color);
+            fill: none;
+        }
+
+        /* Mode Selectors */
+        .mode-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .mode-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--secondary-text);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .mode-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .mode-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s ease;
+        }
+
+        .mode-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .mode-btn.selected {
+            background: rgba(56, 189, 248, 0.2);
+        }
+
+        /* SerDes Dropdown */
+        .serdes-select {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 0.6rem 0.75rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .serdes-select:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .serdes-select:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        .serdes-select option {
+            background: var(--bg-color);
+            color: var(--text-color);
+            padding: 0.5rem;
+        }
+
+        .serdes-select optgroup {
+            font-weight: 600;
+            color: var(--accent-color);
+        }
+
+        /* Custom Frequency Input */
+        .custom-freq-container {
+            display: none;
+            margin-top: 0.75rem;
+            padding: 0.75rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .custom-freq-container.visible {
+            display: flex;
+        }
+
+        .custom-mode-toggle {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .custom-mode-btn {
+            flex: 1;
+            padding: 0.4rem 0.5rem;
+            font-size: 0.7rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--secondary-text);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .custom-mode-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .custom-mode-btn.selected {
+            background: rgba(56, 189, 248, 0.2);
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+        }
+
+        .custom-input-direct,
+        .custom-input-pclk {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .custom-input-direct {
+            flex-direction: row;
+            align-items: center;
+        }
+
+        .custom-input-direct label,
+        .custom-input-pclk label {
+            font-size: 0.8rem;
+            color: var(--secondary-text);
+        }
+
+        .custom-input-direct input,
+        .custom-input-pclk input,
+        .custom-input-pclk select {
+            width: 80px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 0.4rem 0.5rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+
+        .custom-input-pclk select {
+            width: auto;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .custom-input-direct input:focus,
+        .custom-input-pclk input:focus,
+        .custom-input-pclk select:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        .custom-input-direct span {
+            font-size: 0.8rem;
+            color: var(--secondary-text);
+        }
+
+        .pclk-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .pclk-row label {
+            min-width: 85px;
+        }
+
+        .pclk-row span {
+            font-size: 0.8rem;
+            color: var(--secondary-text);
+        }
+
+        .pclk-formula {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding-top: 0.5rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .formula-label {
+            font-size: 0.75rem;
+            color: var(--secondary-text);
+        }
+
+        .formula-value {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--accent-secondary);
+        }
+
+        .freq-info {
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+            color: var(--secondary-text);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .freq-info .nyquist {
+            color: var(--accent-color);
+            font-weight: 600;
+        }
+
+        /* Temperature styling */
+        .input-dot.temp {
+            background: var(--temp-color);
+        }
+
+        input[type="range"].temp-slider::-webkit-slider-thumb {
+            background: var(--temp-color);
+        }
+
+        /* PCB material toggle */
+        .pcb-material-row {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .pcb-material-btn {
+            flex: 1;
+            padding: 0.5rem;
+            font-size: 0.75rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--secondary-text);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .pcb-material-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .pcb-material-btn.selected {
+            background: rgba(16, 185, 129, 0.2);
+            border-color: var(--pcb-color);
+            color: var(--pcb-color);
+        }
+
+        .mode-btn.selected {
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+        }
+
+        /* Segment Section */
+        .segments-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .segment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .segment-header h3 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .segment-header h3 .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--cable-color);
+        }
+
+        .add-segment-btn {
+            background: var(--accent-color);
+            color: var(--bg-color);
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .add-segment-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .segments-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .segment-row {
+            display: grid;
+            grid-template-columns: 1fr 70px 32px;
+            gap: 0.5rem;
+            align-items: center;
+            padding: 0.75rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .segment-row select,
+        .segment-row input {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 0.4rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            min-width: 0;
+        }
+
+        .segment-row select {
+            text-overflow: ellipsis;
+            overflow: hidden;
+        }
+
+        .segment-row select:focus,
+        .segment-row input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        .segment-row input[type="number"] {
+            text-align: right;
+            width: 100%;
+        }
+
+        .segment-row .custom-rate-row input[type="number"] {
+            width: 70px;
+            text-align: center;
+        }
+
+        .segment-length-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .segment-length-wrapper input {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .segment-unit {
+            font-size: 0.75rem;
+            color: var(--secondary-text);
+            flex-shrink: 0;
+        }
+
+        .delete-segment-btn {
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--secondary-text);
+            padding: 0.25rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            width: 28px;
+            height: 28px;
+        }
+
+        .delete-segment-btn:hover {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: var(--danger-color);
+            color: var(--danger-color);
+        }
+
+        .delete-segment-btn svg {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+        }
+
+        /* PCLK Calculator */
+        .pclk-calc-row {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+            align-items: flex-end;
+        }
+
+        .pclk-calc-group {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+
+        .pclk-calc-label {
+            font-size: 0.75rem;
+            color: var(--secondary-text);
+        }
+
+        .pclk-calc-input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 0.5rem;
+            border-radius: 6px;
+            font-family: inherit;
+        }
+
+        /* Footer Note */
+        .footer-note {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            font-size: 0.9rem;
+            color: var(--secondary-text);
+            line-height: 1.6;
+        }
+
+        .footer-note strong {
+            color: var(--accent-color);
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Custom dB/m input */
+        .custom-rate-row {
+            grid-column: 1 / -1;
+            display: none;
+            margin-top: 0.5rem;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+
+        .custom-rate-row.visible {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .custom-rate-row label {
+            font-size: 0.75rem;
+            color: var(--secondary-text);
+            white-space: nowrap;
+        }
+
+        .custom-rate-row input {
+            width: 70px;
+            min-width: 0;
+            flex-shrink: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 0.4rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+
+        /* Input Groups */
+        .input-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .input-label {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+
+        .input-label-left {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .input-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .input-dot.connector {
+            background: var(--connector-color);
+        }
+
+        .input-dot.pcb {
+            background: var(--pcb-color);
+        }
+
+        .input-dot.margin {
+            background: var(--margin-color);
+        }
+
+        .input-name {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .input-value {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--accent-color);
+            min-width: 70px;
+            text-align: right;
+        }
+
+        .input-desc {
+            font-size: 0.75rem;
+            color: var(--secondary-text);
+            margin-bottom: 0.5rem;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .input-row select,
+        .input-row input[type="number"] {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+        }
+
+        .input-row select:focus,
+        .input-row input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        /* Slider */
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            flex: 1;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--margin-color);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        /* Right Panel */
+        .results-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        /* Gauge Container */
+        .gauge-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1.5rem;
+            background: linear-gradient(180deg, #1a2332 0%, #0d1520 100%);
+            border-radius: 16px;
+        }
+
+        .gauge-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--secondary-text);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .gauge-svg {
+            width: 100%;
+            max-width: 320px;
+        }
+
+        .gauge-value-display {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 0.5rem;
+        }
+
+        .gauge-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--accent-color);
+            line-height: 1;
+        }
+
+        .gauge-label {
+            font-size: 0.85rem;
+            color: var(--secondary-text);
+            margin-top: 0.25rem;
+        }
+
+        /* Summary Card */
+        .summary-card {
+            background: rgba(56, 189, 248, 0.1);
+            border: 2px solid var(--accent-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+        }
+
+        .summary-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--secondary-text);
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            text-align: center;
+        }
+
+        .summary-item {
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+        }
+
+        .summary-item-label {
+            font-size: 0.7rem;
+            color: var(--secondary-text);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .summary-item-value {
+            font-size: 1.5rem;
+            font-weight: 800;
+        }
+
+        .summary-item-value.total {
+            color: var(--accent-color);
+        }
+
+        .summary-item-value.margin {
+            color: var(--success-color);
+        }
+
+        .summary-item-value.status {
+            font-size: 1.1rem;
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            display: inline-block;
+        }
+
+        .status-pass {
+            background: rgba(34, 197, 94, 0.2);
+            color: var(--success-color);
+        }
+
+        .status-marginal {
+            background: rgba(250, 204, 21, 0.2);
+            color: var(--warning-color);
+        }
+
+        .status-fail {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger-color);
+        }
+
+        .summary-unit {
+            font-size: 0.8rem;
+            color: var(--secondary-text);
+        }
+
+        /* Breakdown */
+        .breakdown-section {
+            margin-top: 1.5rem;
+        }
+
+        .breakdown-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--secondary-text);
+            margin-bottom: 0.75rem;
+        }
+
+        .breakdown-bar {
+            display: flex;
+            height: 16px;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 0.75rem;
+        }
+
+        .breakdown-segment {
+            transition: width 0.3s ease;
+            min-width: 2px;
+        }
+
+        .breakdown-segment.cables {
+            background: var(--cable-color);
+        }
+
+        .breakdown-segment.connectors {
+            background: var(--connector-color);
+        }
+
+        .breakdown-segment.pcb {
+            background: var(--pcb-color);
+        }
+
+        .breakdown-segment.safety {
+            background: var(--margin-color);
+        }
+
+        .breakdown-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            font-size: 0.75rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 3px;
+        }
+
+        .legend-value {
+            color: var(--accent-color);
+            font-weight: 600;
+        }
+
+        /* Reference Table */
+        .reference-section {
+            margin-top: 1rem;
+            border-top: 1px solid var(--border-color);
+            padding-top: 1rem;
+        }
+
+        .reference-toggle {
+            width: 100%;
+            background: transparent;
+            border: none;
+            padding: 0.75rem;
+            color: var(--secondary-text);
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .reference-toggle:hover {
+            color: var(--text-color);
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .ref-toggle-icon {
+            transition: transform 0.3s;
+        }
+
+        .reference-toggle.active .ref-toggle-icon {
+            transform: rotate(180deg);
+        }
+
+        .reference-content {
+            display: none;
+            padding: 1rem;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        .reference-content.visible {
+            display: block;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .ref-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.75rem;
+        }
+
+        .ref-table th,
+        .ref-table td {
+            padding: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+            text-align: left;
+        }
+
+        .ref-table th {
+            color: var(--secondary-text);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .ref-table td {
+            color: var(--text-color);
+        }
+
+        .ref-table tr:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .ref-note {
+            font-size: 0.7rem;
+            color: var(--secondary-text);
+            margin-top: 0.75rem;
+            font-style: italic;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.visible {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            max-width: 450px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.25rem;
+        }
+
+        .modal-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        .modal-close {
+            background: transparent;
+            border: none;
+            color: var(--secondary-text);
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            color: var(--text-color);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .modal-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .form-group label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--secondary-text);
+        }
+
+        .form-group input {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+
+        .datapoint-section {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .datapoint-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--accent-color);
+            margin-bottom: 0.75rem;
+            display: block;
+        }
+
+        .single-point-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem;
+            background: rgba(56, 189, 248, 0.1);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .single-point-toggle:hover {
+            background: rgba(56, 189, 248, 0.15);
+        }
+
+        .single-point-toggle input {
+            accent-color: var(--accent-color);
+        }
+
+        .single-point-toggle span {
+            font-size: 0.8rem;
+            color: var(--secondary-text);
+        }
+
+        .modal-warning {
+            display: none;
+            padding: 0.75rem;
+            background: rgba(250, 204, 21, 0.1);
+            border: 1px solid var(--warning-color);
+            border-radius: 8px;
+            font-size: 0.8rem;
+            color: var(--warning-color);
+        }
+
+        .modal-warning.visible {
+            display: block;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 0.5rem;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 0.6rem 1rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .modal-btn-primary {
+            background: var(--accent-color);
+            color: var(--bg-color);
+            border: none;
+        }
+
+        .modal-btn-primary:hover {
+            opacity: 0.9;
+        }
+
+        .modal-btn-secondary {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+        }
+
+        .modal-btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Custom Cable Info Icon */
+        .cable-info-wrapper {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .cable-info-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: rgba(56, 189, 248, 0.2);
+            color: var(--accent-color);
+            font-size: 10px;
+            font-weight: bold;
+            margin-left: 6px;
+            cursor: help;
+        }
+
+        .cable-info-tooltip {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.6rem 0.8rem;
+            font-size: 0.7rem;
+            color: var(--text-color);
+            white-space: nowrap;
+            z-index: 100;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s;
+            pointer-events: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .cable-info-icon:hover+.cable-info-tooltip {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .cable-info-tooltip code {
+            color: var(--accent-color);
+            font-weight: 600;
+        }
+
+        /* Custom cables header in segment section */
+        .segment-header-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .add-custom-cable-btn {
+            background: rgba(168, 85, 247, 0.2);
+            color: var(--connector-color);
+            border: 1px solid var(--connector-color);
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .add-custom-cable-btn:hover {
+            background: rgba(168, 85, 247, 0.3);
+        }
+
+        /* Custom cable delete option in dropdown */
+        .custom-cable-option {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Math Section */
+        .math-section {
+            margin-top: 1rem;
+            padding: 1.5rem;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+        }
+
+        .math-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-color);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+        }
+
+        .math-title svg {
+            transition: transform 0.3s ease;
+        }
+
+        .math-section.collapsed .math-title svg {
+            transform: rotate(-90deg);
+        }
+
+        .math-content {
+            display: grid;
+            gap: 1.5rem;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        .math-section.collapsed .math-content {
+            display: none;
+        }
+
+        .math-formula-card {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 3px solid var(--accent-color);
+        }
+
+        .math-formula-header {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--accent-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .math-eq {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 0.5rem;
+            border-radius: 4px;
+            margin-bottom: 0.5rem;
+            overflow-x: auto;
+        }
+
+        .math-desc {
+            font-size: 0.8rem;
+            color: var(--secondary-text);
+            line-height: 1.5;
+        }
+
+        .math-var {
+            color: var(--accent-color);
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header-row">
+            <a href="../index.html" class="back-link">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7" />
+                </svg>
+                Back to Toolbox
+            </a>
+            <h1>GMSL2 Channel Loss Calculator</h1>
+            <div style="width: 130px;"></div>
+        </div>
+        <p class="subtitle">Calculate total insertion loss and determine link margin for GMSL2 channels</p>
+
+        <div class="main-content">
+            <!-- Left Panel: Inputs -->
+            <div class="panel">
+                <div class="panel-title">
+                    <svg viewBox="0 0 24 24" stroke-width="2">
+                        <circle cx="12" cy="12" r="3" />
+                        <path
+                            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                    </svg>
+                    Configuration
+                </div>
+
+                <!-- FPD-Link III Mode -->
+                <div class="mode-section">
+                    <div class="mode-label">GMSL2 Link Mode</div>
+                    <select class="serdes-select" id="serdes-select">
+                        <optgroup label="GMSL2 Data Rates">
+                            <option value="gmsl2_3g">GMSL2 3 Gbps — 1.5 GHz</option>
+                            <option value="gmsl2_6g" selected>GMSL2 6 Gbps — 3.0 GHz</option>
+                        </optgroup>
+                        <optgroup label="Custom">
+                            <option value="custom">Custom Frequency...</option>
+                        </optgroup>
+                    </select>
+                    <div class="custom-freq-container" id="custom-freq-container">
+                        <div class="custom-mode-toggle">
+                            <button class="custom-mode-btn selected" data-input="direct">Direct Frequency</button>
+                            <button class="custom-mode-btn" data-input="pclk">Calculate from PCLK</button>
+                        </div>
+                        <div class="custom-input-direct" id="custom-input-direct">
+                            <label>Nyquist Frequency:</label>
+                            <input type="number" id="custom-freq" min="0.5" max="5" step="0.01" value="2.0">
+                            <span>GHz</span>
+                        </div>
+                        <div class="custom-input-pclk" id="custom-input-pclk" style="display: none;">
+                            <div class="pclk-row">
+                                <label>PCLK:</label>
+                                <input type="number" id="pclk-input" min="10" max="200" step="1" value="148.5">
+                                <span>MHz</span>
+                            </div>
+                            <div class="pclk-row">
+                                <label>Payload Bits:</label>
+                                <select id="payload-bits">
+                                    <option value="28">28-bit (Standard)</option>
+                                    <option value="35" selected>35-bit (High Color)</option>
+                                </select>
+                            </div>
+                            <div class="pclk-formula">
+                                <span class="formula-label">Serial Bit Rate:</span>
+                                <span class="formula-value" id="bitrate-display">5.198 Gbps</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="freq-info">
+                        <span>Nyquist frequency:</span>
+                        <span class="nyquist" id="nyquist-display">2.0 GHz</span>
+                    </div>
+                </div>
+
+                <!-- Insertion Loss Limit -->
+                <div class="mode-section">
+                    <div class="mode-label">Maximum Insertion Loss Limit</div>
+                    <div class="mode-buttons" id="aeq-buttons">
+                        <button class="mode-btn" data-aeq="-15.5">-15.5 dB (3G Cable)</button>
+                        <button class="mode-btn selected" data-aeq="-17">-17 dB (6G Cable)</button>
+                        <button class="mode-btn" data-aeq="-19.5">-19.5 dB (3G System)</button>
+                        <button class="mode-btn" data-aeq="-21">-21 dB (6G System)</button>
+                    </div>
+                    <p class="input-desc" style="margin-top: 0.5rem;">Cable: -15.5 dB (3G) / -17 dB (6G). System
+                        includes 2 dB per PCB module.</p>
+                </div>
+
+                <!-- Temperature -->
+                <div class="input-group">
+                    <div class="input-label">
+                        <div class="input-label-left">
+                            <span class="input-dot temp"></span>
+                            <span class="input-name">Ambient Temperature</span>
+                        </div>
+                        <span class="input-value" id="temp-derating-display">+0%</span>
+                    </div>
+                    <p class="input-desc">De-rates cable loss for high-heat environments (Reference: 20°C)</p>
+                    <div class="slider-container">
+                        <input type="range" id="temp-slider" class="temp-slider" min="20" max="120" value="20" step="5">
+                        <input type="number" id="temp-input" min="20" max="120" value="20" step="5"
+                            style="width: 55px; text-align: center; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); color: var(--text-color); padding: 0.4rem; border-radius: 6px; font-size: 0.85rem;">
+                        <span style="color: var(--secondary-text); font-size: 0.85rem;">°C</span>
+                    </div>
+                </div>
+
+                <!-- Cable Segments -->
+                <div class="segments-section">
+                    <div class="segment-header">
+                        <h3><span class="dot"></span> Cable Segments</h3>
+                        <div class="segment-header-actions">
+                            <button class="add-custom-cable-btn" id="add-custom-cable-btn">+ Custom Cable</button>
+                            <button class="add-segment-btn" id="add-segment-btn">+ Add Segment</button>
+                        </div>
+                    </div>
+                    <div class="segments-list" id="segments-list">
+                        <!-- Dynamic segments here -->
+                    </div>
+                </div>
+
+                <!-- Connectors -->
+                <div class="input-group">
+                    <div class="input-label">
+                        <div class="input-label-left">
+                            <span class="input-dot connector"></span>
+                            <span class="input-name">Connector Mating Pairs</span>
+                        </div>
+                        <span class="input-value" id="connector-loss-display">0.00 dB</span>
+                    </div>
+                    <p class="input-desc">Loss scales with frequency (base values @ 2 GHz reference)</p>
+                    <div class="input-row">
+                        <select id="connector-type">
+                            <option value="fakra">FAKRA</option>
+                            <option value="mini-fakra">Mini-FAKRA</option>
+                            <option value="hsd">HSD</option>
+                        </select>
+                        <input type="number" id="connector-count" min="0" max="20" value="2" style="width: 60px;">
+                        <span style="color: var(--secondary-text); font-size: 0.85rem;">pairs</span>
+                    </div>
+                </div>
+
+                <!-- PCB Trace -->
+                <div class="input-group">
+                    <div class="input-label">
+                        <div class="input-label-left">
+                            <span class="input-dot pcb"></span>
+                            <span class="input-name">PCB Trace</span>
+                        </div>
+                        <span class="input-value" id="pcb-loss-display">0.00 dB</span>
+                    </div>
+                    <p class="input-desc">Combined TX + RX PCB trace length (loss scales with frequency)</p>
+                    <div class="pcb-material-row">
+                        <button class="pcb-material-btn selected" data-material="fr4">Standard FR4</button>
+                        <button class="pcb-material-btn" data-material="megtron">Megtron 6 (High-Speed)</button>
+                    </div>
+                    <div class="input-row">
+                        <input type="number" id="pcb-length" min="0" max="20" value="4" step="0.5" style="width: 80px;">
+                        <span style="color: var(--secondary-text); font-size: 0.85rem;">inches</span>
+                    </div>
+                </div>
+
+                <!-- Safety Margin -->
+                <div class="input-group">
+                    <div class="input-label">
+                        <div class="input-label-left">
+                            <span class="input-dot margin"></span>
+                            <span class="input-name">Safety Margin</span>
+                        </div>
+                        <span class="input-value" id="safety-margin-display">3.0 dB</span>
+                    </div>
+                    <p class="input-desc">Design margin for temperature variation, aging, and manufacturing tolerance
+                    </p>
+                    <div class="slider-container">
+                        <input type="range" id="safety-slider" min="0" max="10" value="3" step="0.5">
+                        <input type="number" id="safety-input" min="0" max="10" value="3" step="0.5"
+                            style="width: 55px; text-align: center; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); color: var(--text-color); padding: 0.4rem; border-radius: 6px; font-size: 0.85rem;">
+                        <span style="color: var(--secondary-text); font-size: 0.85rem;">dB</span>
+                    </div>
+                </div>
+
+                <!-- Reference Section -->
+                <div class="reference-section">
+                    <button class="reference-toggle" id="ref-toggle">
+                        <span>Loss Value Reference</span>
+                        <span class="ref-toggle-icon">▼</span>
+                    </button>
+                    <div class="reference-content" id="ref-content">
+                        <table class="ref-table">
+                            <thead>
+                                <tr>
+                                    <th>Cable Type</th>
+                                    <th>a (Skin)</th>
+                                    <th>b (Diel.)</th>
+                                    <th>Typical Use</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Dacar 535</td>
+                                    <td>0.520</td>
+                                    <td>0.080</td>
+                                    <td>Standard Auto Coax</td>
+                                </tr>
+                                <tr>
+                                    <td>Leoni Mocar 125</td>
+                                    <td>0.410</td>
+                                    <td>0.065</td>
+                                    <td>High-perf long runs</td>
+                                </tr>
+                                <tr>
+                                    <td>RG-174</td>
+                                    <td>0.950</td>
+                                    <td>0.210</td>
+                                    <td>Thin pigtails only</td>
+                                </tr>
+                                <tr>
+                                    <td>Shielded Twisted Pair</td>
+                                    <td>0.720</td>
+                                    <td>0.150</td>
+                                    <td>Differential (HSD)</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p class="ref-note" style="margin-top: 0.75rem;">
+                            <strong>Formula:</strong> Loss (dB/m) = a×√f + b×f where f is frequency in GHz
+                        </p>
+                        <table class="ref-table" style="margin-top: 1rem;">
+                            <thead>
+                                <tr>
+                                    <th>Other Components</th>
+                                    <th>@ 1.5 GHz</th>
+                                    <th>@ 2.0 GHz</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>FAKRA Connector</td>
+                                    <td>~0.13 dB/pair</td>
+                                    <td>0.15 dB/pair</td>
+                                </tr>
+                                <tr>
+                                    <td>Mini-FAKRA Connector</td>
+                                    <td>~0.09 dB/pair</td>
+                                    <td>0.10 dB/pair</td>
+                                </tr>
+                                <tr>
+                                    <td>HSD Connector</td>
+                                    <td>~0.17 dB/pair</td>
+                                    <td>0.20 dB/pair</td>
+                                </tr>
+                                <tr>
+                                    <td>PCB Trace (FR4)</td>
+                                    <td>~0.30 dB/inch</td>
+                                    <td>0.35 dB/inch</td>
+                                </tr>
+                                <tr>
+                                    <td>PCB Trace (Megtron 6)</td>
+                                    <td>~0.10 dB/inch</td>
+                                    <td>0.12 dB/inch</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p class="ref-note">Temp de-rating: +0.25% per °C above 20°C. Values derived from typical
+                            datasheet curves.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Results -->
+            <div class="results-panel">
+                <!-- Gauge -->
+                <div class="panel">
+                    <div class="gauge-container">
+                        <div class="gauge-title">Link Health Gauge</div>
+                        <svg class="gauge-svg" viewBox="0 0 300 200" id="health-gauge">
+                            <!-- Background track -->
+                            <path d="M 40 160 A 110 110 0 0 1 260 160" fill="none" stroke="rgba(255,255,255,0.08)"
+                                stroke-width="20" stroke-linecap="round" />
+
+                            <!-- Green zone: 0 to 12 dB (-90° to -18°) -->
+                            <!-- Start: (40, 160), End at -18°: x=150+110*sin(-18°)=116, y=160-110*cos(-18°)=55 -->
+                            <path class="gauge-zone-green" d="M 40 160 A 110 110 0 0 1 116 55" fill="none"
+                                stroke="#22c55e" stroke-width="20" stroke-linecap="butt" opacity="0.4" />
+
+                            <!-- Yellow zone: 12 to 21 dB (-18° to +33°) -->
+                            <!-- Start: (116, 55), End at 33°: x=150+110*sin(33°)=210, y=160-110*cos(33°)=68 -->
+                            <path class="gauge-zone-yellow" d="M 116 55 A 110 110 0 0 1 210 68" fill="none"
+                                stroke="#facc15" stroke-width="20" stroke-linecap="butt" opacity="0.4" />
+
+                            <!-- Red zone: 21 to 30 dB (+33° to +90°) -->
+                            <!-- Start: (210, 68), End: (260, 160) -->
+                            <path class="gauge-zone-red" d="M 210 68 A 110 110 0 0 1 260 160" fill="none"
+                                stroke="#ef4444" stroke-width="20" stroke-linecap="butt" opacity="0.4" />
+
+                            <!-- Value arc (animated) -->
+                            <path id="gauge-value-arc" d="M 40 160 A 110 110 0 0 1 40 160" fill="none"
+                                stroke="var(--success-color)" stroke-width="20" stroke-linecap="butt" />
+
+                            <!-- Needle -->
+                            <g id="gauge-needle" transform="rotate(-90, 150, 160)">
+                                <line x1="150" y1="160" x2="150" y2="65" stroke="var(--text-color)" stroke-width="2"
+                                    stroke-linecap="round" />
+                                <circle cx="150" cy="160" r="8" fill="var(--text-color)" />
+                                <circle cx="150" cy="160" r="4" fill="var(--bg-color)" />
+                            </g>
+
+                            <!-- Scale labels -->
+                            <text x="40" y="185" fill="var(--secondary-text)" font-size="11"
+                                text-anchor="middle">0</text>
+                            <text x="150" y="35" fill="var(--secondary-text)" font-size="11"
+                                text-anchor="middle">15</text>
+                            <text x="260" y="185" fill="var(--secondary-text)" font-size="11"
+                                text-anchor="middle">30</text>
+
+                            <!-- AEQ Limit marker -->
+                            <g id="aeq-marker">
+                                <!-- Rendered dynamically by JS -->
+                            </g>
+                        </svg>
+                        <!-- Value display below gauge -->
+                        <div class="gauge-value-display">
+                            <span class="gauge-value" id="gauge-value-text">0.0</span>
+                            <span class="gauge-label">dB Total Loss</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Summary Card -->
+                <div class="panel">
+                    <div class="summary-card">
+                        <div class="summary-title">Live Summary</div>
+                        <div class="summary-grid">
+                            <div class="summary-item">
+                                <div class="summary-item-label">Total Loss</div>
+                                <div class="summary-item-value total" id="summary-total">0.0</div>
+                                <div class="summary-unit">dB</div>
+                            </div>
+                            <div class="summary-item">
+                                <div class="summary-item-label">Remaining Margin</div>
+                                <div class="summary-item-value margin" id="summary-margin">20.0</div>
+                                <div class="summary-unit">dB</div>
+                            </div>
+                            <div class="summary-item">
+                                <div class="summary-item-label">Status</div>
+                                <div class="summary-item-value status status-pass" id="summary-status">PASS</div>
+                            </div>
+                        </div>
+
+                        <!-- Breakdown Bar -->
+                        <div class="breakdown-section">
+                            <div class="breakdown-title">Loss Breakdown</div>
+                            <div class="breakdown-bar" id="breakdown-bar">
+                                <div class="breakdown-segment cables" id="bar-cables" style="width: 0%;"></div>
+                                <div class="breakdown-segment connectors" id="bar-connectors" style="width: 0%;"></div>
+                                <div class="breakdown-segment pcb" id="bar-pcb" style="width: 0%;"></div>
+                                <div class="breakdown-segment safety" id="bar-safety" style="width: 0%;"></div>
+                            </div>
+                            <div class="breakdown-legend">
+                                <div class="legend-item">
+                                    <span class="legend-dot" style="background: var(--cable-color);"></span>
+                                    Cables: <span class="legend-value" id="legend-cables">0.0</span> dB
+                                </div>
+                                <div class="legend-item">
+                                    <span class="legend-dot" style="background: var(--connector-color);"></span>
+                                    Connectors: <span class="legend-value" id="legend-connectors">0.0</span> dB
+                                </div>
+                                <div class="legend-item">
+                                    <span class="legend-dot" style="background: var(--pcb-color);"></span>
+                                    PCB: <span class="legend-value" id="legend-pcb">0.0</span> dB
+                                </div>
+                                <div class="legend-item">
+                                    <span class="legend-dot" style="background: var(--margin-color);"></span>
+                                    Safety: <span class="legend-value" id="legend-safety">0.0</span> dB
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Control Channel Note -->
+        <div class="footer-note">
+            <strong>GMSL2 Control Channel</strong>
+            The reverse (control) channel operates at lower frequencies. Ensure the cable and connectors don't have
+            resonance dips at the control channel frequencies. Refer to the GMSL2 Channel Specification User Guide.
+        </div>
+
+        <!-- GMSL2 Spec Insertion Loss Graphs -->
+        <div class="math-section" id="graph-section">
+            <div class="math-title" onclick="document.getElementById('graph-section').classList.toggle('collapsed')">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 9l-7 7-7-7" />
+                </svg>
+                GMSL2 Spec Insertion Loss Curves
+            </div>
+            <div class="math-content">
+                <div style="display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="checkbox" id="show-3g-curves" checked onchange="drawAllGraphs()">
+                        <span style="color: #22c55e;">■</span> 3 Gbps Spec
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="checkbox" id="show-6g-curves" checked onchange="drawAllGraphs()">
+                        <span style="color: #38bdf8;">■</span> 6 Gbps Spec
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="checkbox" id="show-user-cables" checked onchange="drawAllGraphs()">
+                        <span style="color: #f59e0b;">■</span> Your Selected Cables
+                    </label>
+                </div>
+
+                <!-- Two graphs side by side -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1rem;">
+                    <!-- Cable Loss Graph -->
+                    <div>
+                        <div
+                            style="color: var(--text-color); font-weight: 600; margin-bottom: 0.5rem; font-size: 0.9rem;">
+                            Cable Total Insertion Loss (dB)</div>
+                        <div style="background: rgba(0,0,0,0.3); border-radius: 12px; padding: 0.75rem;">
+                            <canvas id="cable-graph" width="400" height="280" style="width: 100%;"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- PCB Loss Graph -->
+                    <div>
+                        <div
+                            style="color: var(--text-color); font-weight: 600; margin-bottom: 0.5rem; font-size: 0.9rem;">
+                            PCB Module Insertion Loss (dB)</div>
+                        <div style="background: rgba(0,0,0,0.3); border-radius: 12px; padding: 0.75rem;">
+                            <canvas id="pcb-graph" width="400" height="280" style="width: 100%;"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div
+                    style="margin-top: 1rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
+                    <div class="math-formula-card" style="border-left-color: #22c55e;">
+                        <div class="math-formula-header" style="color: #22c55e;">3 Gbps Cable (2 MHz - 2 GHz)</div>
+                        <div class="math-eq">IL = 1.7 + 0.27×√f<sub>MHz</sub> + 2.2×f<sub>GHz</sub></div>
+                    </div>
+                    <div class="math-formula-card" style="border-left-color: #38bdf8;">
+                        <div class="math-formula-header" style="color: #38bdf8;">6 Gbps Cable (2 MHz - 3.5 GHz)</div>
+                        <div class="math-eq">IL = 1.5 + 0.25×√f<sub>MHz</sub> + 0.64×f<sub>GHz</sub></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Calculation Methodology -->
+        <div class="math-section collapsed" id="math-section">
+            <div class="math-title" onclick="document.getElementById('math-section').classList.toggle('collapsed')">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 9l-7 7-7-7" />
+                </svg>
+                Calculation Methodology
+            </div>
+            <div class="math-content">
+                <div class="math-formula-card">
+                    <div class="math-formula-header">Cable Insertion Loss</div>
+                    <div class="math-eq">Loss = Length × (a·√f + b·f) × K<sub>temp</sub></div>
+                    <div class="math-desc">
+                        Calculates attenuation based on cable length and frequency (<span class="math-var">f</span> in
+                        GHz).
+                        Coefficients <span class="math-var">a</span> (resistive skin effect) and <span
+                            class="math-var">b</span> (dielectric loss) are derived from datasheet values.
+                        <span class="math-var">K<sub>temp</sub></span> compensates for heat (approx. +0.25% loss per °C
+                        above 20°C).
+                    </div>
+                </div>
+
+                <div class="math-formula-card">
+                    <div class="math-formula-header">Connector Loss</div>
+                    <div class="math-eq">Loss = Count × L<sub>base</sub> × √(f / f<sub>ref</sub>)</div>
+                    <div class="math-desc">
+                        Accounts for inline connectors. <span class="math-var">L<sub>base</sub></span> is the reference
+                        loss at <span class="math-var">f<sub>ref</sub></span> (2 GHz).
+                        Loss scales with the square root of frequency, modeling the dominant skin effect in connector
+                        interfaces.
+                    </div>
+                </div>
+
+                <div class="math-formula-card">
+                    <div class="math-formula-header">PCB Trace Loss</div>
+                    <div class="math-eq">Loss = Length × L<sub>mat</sub> × √(f / f<sub>ref</sub>)</div>
+                    <div class="math-desc">
+                        Estimates loss for TX and RX PCB traces. <span class="math-var">L<sub>mat</sub></span> is the
+                        material-specific loss factor (e.g., FR4 vs. Megtron 6) per inch at 2 GHz.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Custom Cable Modal -->
+    <div class="modal-overlay" id="custom-cable-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Add Custom Cable from Datasheet</h3>
+                <button class="modal-close" id="modal-close">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <form class="modal-form" id="custom-cable-form">
+                <div class="form-group">
+                    <label for="custom-cable-name">Cable Name</label>
+                    <input type="text" id="custom-cable-name" placeholder="e.g., My Custom Coax" required>
+                </div>
+
+                <label class="single-point-toggle">
+                    <input type="checkbox" id="single-point-mode">
+                    <span>I only have one data point (uses 90/10 Skin/Dielectric estimate)</span>
+                </label>
+
+                <div class="datapoint-section" id="datapoint1-section">
+                    <span class="datapoint-label">Data Point 1</span>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="freq1">Frequency (MHz)</label>
+                            <input type="number" id="freq1" min="1" max="10000" step="1" value="500" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="loss1">Loss (dB/m)</label>
+                            <input type="number" id="loss1" min="0.01" max="10" step="0.01" value="0.5" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="datapoint-section" id="datapoint2-section">
+                    <span class="datapoint-label">Data Point 2</span>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="freq2">Frequency (MHz)</label>
+                            <input type="number" id="freq2" min="1" max="10000" step="1" value="2000" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="loss2">Loss (dB/m)</label>
+                            <input type="number" id="loss2" min="0.01" max="10" step="0.01" value="1.2" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-warning" id="modal-warning"></div>
+
+                <div class="modal-actions">
+                    <button type="button" class="modal-btn modal-btn-secondary" id="modal-cancel">Cancel</button>
+                    <button type="submit" class="modal-btn modal-btn-primary">Save Cable</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // Data Constants (Power-Law Coefficients)
+        // ============================================
+        // Loss formula: dB/m = a * sqrt(f) + b * f, where f is frequency in GHz
+        const CABLE_TYPES = {
+            'coax_foam': {
+                name: '3.2mm 50Ω Coax (Foam Dielectric)',
+                a: 0.42,  // Skin effect coefficient
+                b: 0.08,  // Dielectric coefficient
+                description: 'Standard automotive coax, ~0.9 dB/m @ 3 GHz'
+            },
+            'coax_solid': {
+                name: '2.7mm 50Ω Coax (Solid Dielectric)',
+                a: 0.75,
+                b: 0.14,
+                description: 'Thin automotive coax, ~1.6 dB/m @ 3 GHz'
+            },
+            'stp_awg26': {
+                name: '100Ω STP AWG26',
+                a: 0.85,
+                b: 0.16,
+                description: 'Shielded Twisted Pair, ~1.8 dB/m @ 3 GHz'
+            },
+            'manual': {
+                name: 'Manual Entry (dB/m)',
+                a: null,
+                b: null,
+                description: 'User-specified loss rate'
+            }
+        };
+
+        // Connector types with base loss @ 2 GHz reference frequency
+        const CONNECTOR_TYPES = {
+            'fakra': { name: 'FAKRA', baseLoss: 0.15, refFreq: 2.0 },
+            'mini-fakra': { name: 'Mini-FAKRA', baseLoss: 0.10, refFreq: 2.0 },
+            'hsd': { name: 'HSD', baseLoss: 0.20, refFreq: 2.0 }
+        };
+
+        // PCB materials with loss per inch @ 2 GHz reference
+        const PCB_MATERIALS = {
+            'fr4': { name: 'Standard FR4', loss: 0.35, refFreq: 2.0 },
+            'megtron': { name: 'Megtron 6 (High-Speed)', loss: 0.12, refFreq: 2.0 }
+        };
+
+        // GMSL2 modes with their Nyquist frequencies
+        const LINK_MODES = {
+            'gmsl2_3g': { name: 'GMSL2 3 Gbps', baudRate: 3.0, nyquist: 1.5, doc: 'GMSL2 Spec' },
+            'gmsl2_6g': { name: 'GMSL2 6 Gbps', baudRate: 6.0, nyquist: 3.0, doc: 'GMSL2 Spec' },
+            'custom': { name: 'Custom', nyquist: null }
+        };
+
+        // Temperature de-rating constants
+        const TEMP_REFERENCE = 20; // °C
+        const TEMP_COEFFICIENT = 0.0025; // 0.25% per degree above reference
+
+        // localStorage key for custom cables
+        const CUSTOM_CABLES_KEY = 'gmsl2_custom_cables';
+
+        // ============================================
+        // Custom Cable Management (localStorage)
+        // ============================================
+        let customCables = {}; // Will be merged into CABLE_TYPES
+        let customCableIdCounter = 1;
+
+        function loadCustomCables() {
+            try {
+                const stored = localStorage.getItem(CUSTOM_CABLES_KEY);
+                if (stored) {
+                    customCables = JSON.parse(stored);
+                    // Find highest ID to set counter
+                    Object.keys(customCables).forEach(key => {
+                        const match = key.match(/^custom_(\d+)$/);
+                        if (match) {
+                            const id = parseInt(match[1]);
+                            if (id >= customCableIdCounter) {
+                                customCableIdCounter = id + 1;
+                            }
+                        }
+                    });
+                }
+            } catch (e) {
+                console.error('Failed to load custom cables:', e);
+                customCables = {};
+            }
+        }
+
+        function saveCustomCables() {
+            try {
+                localStorage.setItem(CUSTOM_CABLES_KEY, JSON.stringify(customCables));
+            } catch (e) {
+                console.error('Failed to save custom cables:', e);
+            }
+        }
+
+        function getCombinedCableTypes() {
+            return { ...CABLE_TYPES, ...customCables };
+        }
+
+        // ============================================
+        // Curve-Fitting Coefficient Solver
+        // ============================================
+
+        /**
+         * Solve for a (skin effect) and b (dielectric) from two datasheet points
+         * Formula: L = a*sqrt(f) + b*f where f is in GHz, L is dB/m
+         * 
+         * b = (L2*√f1 - L1*√f2) / (f2*√f1 - f1*√f2)
+         * a = (L1 - b*f1) / √f1
+         */
+        function solveCoefficients(f1_mhz, l1, f2_mhz, l2) {
+            // Convert MHz to GHz
+            const f1 = f1_mhz / 1000;
+            const f2 = f2_mhz / 1000;
+
+            const sqrt_f1 = Math.sqrt(f1);
+            const sqrt_f2 = Math.sqrt(f2);
+
+            // Calculate denominator
+            const denominator = f2 * sqrt_f1 - f1 * sqrt_f2;
+
+            // Check for division by zero (frequencies too similar)
+            if (Math.abs(denominator) < 0.0001) {
+                return {
+                    a: null,
+                    b: null,
+                    warning: 'Frequencies are too similar to solve. Choose more separated frequencies.',
+                    valid: false
+                };
+            }
+
+            let b = (l2 * sqrt_f1 - l1 * sqrt_f2) / denominator;
+            let a;
+            let warning = null;
+            const originalB = b;
+
+            // Validation: if b < 0, default to b=0 and solve for a only
+            if (b < 0) {
+                b = 0;
+                a = l1 / sqrt_f1;
+                warning = 'Dielectric coefficient calculated as negative (inconsistent data). Defaulted b=0, using skin-only model.';
+            } else {
+                a = (l1 - b * f1) / sqrt_f1;
+            }
+
+            // Additional validation: check if a is also negative (physically impossible)
+            if (a < 0) {
+                return {
+                    a: null,
+                    b: null,
+                    warning: 'Calculated coefficients are physically impossible. Please check your datasheet values.',
+                    valid: false
+                };
+            }
+
+            // Sanity check: verify the loss curve is realistic (0.1 to 3 dB/m at 2 GHz is reasonable)
+            const lossAt2GHz = a * Math.sqrt(2) + b * 2;
+            if (lossAt2GHz < 0.05 || lossAt2GHz > 5) {
+                warning = (warning ? warning + ' ' : '') +
+                    `Warning: Calculated loss at 2 GHz is ${lossAt2GHz.toFixed(2)} dB/m, which is unusual.`;
+            }
+
+            return { a, b, warning, valid: true };
+        }
+
+        /**
+         * Solve from a single data point assuming 90/10 skin/dielectric split
+         */
+        function solveSinglePoint(f_mhz, loss) {
+            const f = f_mhz / 1000; // Convert to GHz
+            const sqrt_f = Math.sqrt(f);
+
+            // 90% from skin effect, 10% from dielectric
+            const skinLoss = loss * 0.9;
+            const dielectricLoss = loss * 0.1;
+
+            const a = skinLoss / sqrt_f;
+            const b = dielectricLoss / f;
+
+            return {
+                a,
+                b,
+                warning: 'Coefficients estimated using 90/10 skin/dielectric split (single data point).',
+                valid: true,
+                singlePoint: true
+            };
+        }
+
+        // ============================================
+        // State
+        // ============================================
+        let operatingFreq = 3.0; // GHz (Nyquist frequency for 6 Gbps)
+        let currentMode = 'gmsl2_6g'; // Link mode
+        let aeqLimit = -17; // dB (6 Gbps Cable Module Limit)
+        let ambientTemp = 20; // °C
+        let pcbMaterial = 'fr4'; // Current PCB material
+        let segments = [];
+        let segmentIdCounter = 0;
+
+        // ============================================
+        // DOM Elements
+        // ============================================
+        const segmentsList = document.getElementById('segments-list');
+        const addSegmentBtn = document.getElementById('add-segment-btn');
+        const serdesSelect = document.getElementById('serdes-select');
+        const aeqButtons = document.querySelectorAll('#aeq-buttons .mode-btn');
+        const customFreqContainer = document.getElementById('custom-freq-container');
+        const customFreqInput = document.getElementById('custom-freq');
+        const nyquistDisplay = document.getElementById('nyquist-display');
+        const tempSlider = document.getElementById('temp-slider');
+        const tempInput = document.getElementById('temp-input');
+        const tempDeratingDisplay = document.getElementById('temp-derating-display');
+        const connectorType = document.getElementById('connector-type');
+        const connectorCount = document.getElementById('connector-count');
+        const pcbMaterialBtns = document.querySelectorAll('.pcb-material-btn');
+        const pcbLength = document.getElementById('pcb-length');
+        const safetySlider = document.getElementById('safety-slider');
+        const safetyInput = document.getElementById('safety-input');
+        const refToggle = document.getElementById('ref-toggle');
+        const refContent = document.getElementById('ref-content');
+
+        // Result displays
+        const connectorLossDisplay = document.getElementById('connector-loss-display');
+        const pcbLossDisplay = document.getElementById('pcb-loss-display');
+        const safetyMarginDisplay = document.getElementById('safety-margin-display');
+
+        // Gauge elements
+        const gaugeNeedle = document.getElementById('gauge-needle');
+        const gaugeValueArc = document.getElementById('gauge-value-arc');
+        const gaugeValueText = document.getElementById('gauge-value-text');
+
+        // Summary elements
+        const summaryTotal = document.getElementById('summary-total');
+        const summaryMargin = document.getElementById('summary-margin');
+        const summaryStatus = document.getElementById('summary-status');
+
+        // Breakdown bar elements
+        const barCables = document.getElementById('bar-cables');
+        const barConnectors = document.getElementById('bar-connectors');
+        const barPcb = document.getElementById('bar-pcb');
+        const barSafety = document.getElementById('bar-safety');
+        const legendCables = document.getElementById('legend-cables');
+        const legendConnectors = document.getElementById('legend-connectors');
+        const legendPcb = document.getElementById('legend-pcb');
+        const legendSafety = document.getElementById('legend-safety');
+
+        // ============================================
+        // Cable Segment Management
+        // ============================================
+        function addSegment(cableType = 'dacar535', length = 5, customRate = null) {
+            const id = segmentIdCounter++;
+            segments.push({ id, cableType, length, customRate });
+            renderSegments();
+            recalculate();
+        }
+
+        function removeSegment(id) {
+            segments = segments.filter(s => s.id !== id);
+            renderSegments();
+            recalculate();
+        }
+
+        function updateSegment(id, field, value) {
+            const segment = segments.find(s => s.id === id);
+            if (segment) {
+                segment[field] = value;
+                recalculate();
+            }
+        }
+
+        function renderSegments() {
+            segmentsList.innerHTML = '';
+            const allCableTypes = getCombinedCableTypes();
+
+            segments.forEach((segment, index) => {
+                const row = document.createElement('div');
+                row.className = 'segment-row';
+                row.dataset.id = segment.id;
+
+                const isManual = segment.cableType === 'manual';
+                const isCustom = segment.cableType.startsWith('custom_');
+                const selectedCable = allCableTypes[segment.cableType];
+
+                // Build options with info icons for custom cables
+                let optionsHtml = Object.entries(allCableTypes).map(([key, val]) => {
+                    const isCustomOption = key.startsWith('custom_');
+                    return `<option value="${key}" ${segment.cableType === key ? 'selected' : ''}>${val.name}${isCustomOption ? ' ⓘ' : ''}</option>`;
+                }).join('');
+
+                // Build info tooltip for custom cables
+                let infoTooltip = '';
+                if (isCustom && selectedCable && selectedCable.sourceData) {
+                    const src = selectedCable.sourceData;
+                    infoTooltip = `
+                        <div class="cable-info-wrapper">
+                            <span class="cable-info-icon">i</span>
+                            <div class="cable-info-tooltip">
+                                Coefficients: <code>a=${selectedCable.a.toFixed(3)}, b=${selectedCable.b.toFixed(3)}</code><br>
+                                ${src.singlePoint ?
+                            `Based on: ${src.f1} MHz → ${src.l1} dB/m (90/10 estimate)` :
+                            `Based on: ${src.f1} MHz → ${src.l1} dB/m, ${src.f2} MHz → ${src.l2} dB/m`
+                        }
+                            </div>
+                        </div>
+                    `;
+                }
+
+                row.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 4px;">
+                        <select class="segment-cable-select" style="flex: 1;">
+                            ${optionsHtml}
+                        </select>
+                        ${infoTooltip}
+                    </div>
+                    <div class="segment-length-wrapper">
+                        <input type="number" class="segment-length" min="0.1" max="50" step="0.1" value="${segment.length}">
+                        <span class="segment-unit">m</span>
+                    </div>
+                    <button class="delete-segment-btn" title="Remove segment">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 6L6 18M6 6l12 12"/>
+                        </svg>
+                    </button>
+                    <div class="custom-rate-row ${isManual ? 'visible' : ''}">
+                        <label>Custom dB/m:</label>
+                        <input type="number" class="segment-custom-rate" min="0.1" max="5" step="0.1" value="${segment.customRate || 1.0}">
+                    </div>
+                `;
+
+                // Event listeners
+                const select = row.querySelector('.segment-cable-select');
+                const lengthInput = row.querySelector('.segment-length');
+                const deleteBtn = row.querySelector('.delete-segment-btn');
+                const customRateRow = row.querySelector('.custom-rate-row');
+                const customRateInput = row.querySelector('.segment-custom-rate');
+
+                select.addEventListener('change', (e) => {
+                    updateSegment(segment.id, 'cableType', e.target.value);
+                    if (e.target.value === 'manual') {
+                        customRateRow.classList.add('visible');
+                    } else {
+                        customRateRow.classList.remove('visible');
+                    }
+                    renderSegments(); // Re-render to update info tooltip
+                });
+
+                lengthInput.addEventListener('input', (e) => {
+                    updateSegment(segment.id, 'length', parseFloat(e.target.value) || 0);
+                });
+
+                customRateInput.addEventListener('input', (e) => {
+                    updateSegment(segment.id, 'customRate', parseFloat(e.target.value) || 1.0);
+                });
+
+                deleteBtn.addEventListener('click', () => {
+                    removeSegment(segment.id);
+                });
+
+                segmentsList.appendChild(row);
+            });
+        }
+
+        // ============================================
+        // Calculation Functions
+        // ============================================
+
+        // Power-law cable loss: dB/m = a * sqrt(f) + b * f
+        function getCableLossRate(cableType, customRate) {
+            if (cableType === 'manual') {
+                return customRate || 1.0;
+            }
+            const allCables = getCombinedCableTypes();
+            const cable = allCables[cableType];
+            if (!cable || cable.a === null) return 1.0;
+
+            // Power-law formula
+            const freq = operatingFreq;
+            return cable.a * Math.sqrt(freq) + cable.b * freq;
+        }
+
+        // Temperature de-rating factor
+        function getTemperatureDerating() {
+            return 1 + (ambientTemp - TEMP_REFERENCE) * TEMP_COEFFICIENT;
+        }
+
+        // Connector loss scaled by frequency (sqrt scaling)
+        function getConnectorLoss(connectorTypeKey, count) {
+            const conn = CONNECTOR_TYPES[connectorTypeKey];
+            if (!conn) return 0;
+
+            // Scale loss with sqrt of frequency ratio
+            const freqScale = Math.sqrt(operatingFreq / conn.refFreq);
+            return count * conn.baseLoss * freqScale;
+        }
+
+        // PCB loss based on material and frequency
+        function getPcbLoss(length) {
+            const mat = PCB_MATERIALS[pcbMaterial];
+            if (!mat) return length * 0.35; // Default FR4
+
+            // Scale with sqrt of frequency ratio
+            const freqScale = Math.sqrt(operatingFreq / mat.refFreq);
+            return length * mat.loss * freqScale;
+        }
+
+        function recalculate() {
+            // Get temperature de-rating factor
+            const tempFactor = getTemperatureDerating();
+
+            // Calculate cable losses with temperature de-rating
+            let baseCableLoss = 0;
+            segments.forEach(seg => {
+                const rate = getCableLossRate(seg.cableType, seg.customRate);
+                baseCableLoss += seg.length * rate;
+            });
+            const cableLoss = baseCableLoss * tempFactor;
+
+            // Calculate connector loss (frequency-scaled)
+            const connCount = parseInt(connectorCount.value) || 0;
+            const connectorLoss = getConnectorLoss(connectorType.value, connCount);
+
+            // Calculate PCB loss (material and frequency dependent)
+            const pcbLen = parseFloat(pcbLength.value) || 0;
+            const pcbLoss = getPcbLoss(pcbLen);
+
+            // Safety margin
+            const safetyMargin = parseFloat(safetySlider.value) || 0;
+
+            // Total loss
+            const totalLoss = cableLoss + connectorLoss + pcbLoss + safetyMargin;
+
+            // Remaining margin (AEQ limit is negative, so margin = |aeqLimit| - totalLoss)
+            const remainingMargin = Math.abs(aeqLimit) - totalLoss;
+
+            // Update temperature de-rating display
+            const deratingPercent = ((tempFactor - 1) * 100).toFixed(0);
+            tempDeratingDisplay.textContent = `+${deratingPercent}%`;
+
+            // Update displays
+            connectorLossDisplay.textContent = connectorLoss.toFixed(2) + ' dB';
+            pcbLossDisplay.textContent = pcbLoss.toFixed(2) + ' dB';
+            safetyMarginDisplay.textContent = safetyMargin.toFixed(1) + ' dB';
+
+            // Update summary
+            summaryTotal.textContent = totalLoss.toFixed(1);
+            summaryMargin.textContent = remainingMargin.toFixed(1);
+
+            // Status
+            let status, statusClass;
+            if (remainingMargin >= 5) {
+                status = 'PASS';
+                statusClass = 'status-pass';
+            } else if (remainingMargin >= 0) {
+                status = 'MARGINAL';
+                statusClass = 'status-marginal';
+            } else {
+                status = 'FAIL';
+                statusClass = 'status-fail';
+            }
+            summaryStatus.textContent = status;
+            summaryStatus.className = 'summary-item-value status ' + statusClass;
+
+            // Update margin color
+            if (remainingMargin >= 5) {
+                summaryMargin.style.color = 'var(--success-color)';
+            } else if (remainingMargin >= 0) {
+                summaryMargin.style.color = 'var(--warning-color)';
+            } else {
+                summaryMargin.style.color = 'var(--danger-color)';
+            }
+
+            // Update breakdown bar
+            if (totalLoss > 0) {
+                barCables.style.width = (cableLoss / totalLoss * 100) + '%';
+                barConnectors.style.width = (connectorLoss / totalLoss * 100) + '%';
+                barPcb.style.width = (pcbLoss / totalLoss * 100) + '%';
+                barSafety.style.width = (safetyMargin / totalLoss * 100) + '%';
+            } else {
+                barCables.style.width = '0%';
+                barConnectors.style.width = '0%';
+                barPcb.style.width = '0%';
+                barSafety.style.width = '0%';
+            }
+
+            legendCables.textContent = cableLoss.toFixed(1);
+            legendConnectors.textContent = connectorLoss.toFixed(1);
+            legendPcb.textContent = pcbLoss.toFixed(1);
+            legendSafety.textContent = safetyMargin.toFixed(1);
+
+            // Update gauge
+            updateGauge(totalLoss);
+
+            // Update spec graphs to show user cables
+            if (typeof drawAllGraphs === 'function') {
+                drawAllGraphs();
+            }
+        }
+
+        // ============================================
+        // Gauge Update
+        // ============================================
+        function updateGauge(totalLoss) {
+            // Gauge configuration
+            const cx = 150, cy = 160, radius = 110;
+            const maxLoss = 30;
+            const clampedLoss = Math.min(Math.max(totalLoss, 0), maxLoss);
+            const angle = -90 + (clampedLoss / maxLoss) * 180;
+
+            // Update needle rotation
+            gaugeNeedle.setAttribute('transform', `rotate(${angle}, ${cx}, ${cy})`);
+
+            // Update value text
+            gaugeValueText.textContent = totalLoss.toFixed(1);
+
+            // Set value text color based on totalLoss vs zones
+            const valueDisplay = gaugeValueText;
+            if (totalLoss <= 12) {
+                valueDisplay.style.color = 'var(--success-color)';
+            } else if (totalLoss <= 21) {
+                valueDisplay.style.color = 'var(--warning-color)';
+            } else {
+                valueDisplay.style.color = 'var(--danger-color)';
+            }
+
+            // Calculate arc path
+            const startAngle = -90;
+            const endAngle = angle;
+            const arcPath = describeArc(cx, cy, radius, startAngle, endAngle);
+            gaugeValueArc.setAttribute('d', arcPath);
+
+            // Set arc color based on totalLoss vs zones
+            let arcColor;
+            if (totalLoss <= 12) {
+                arcColor = 'var(--success-color)';
+            } else if (totalLoss <= 21) {
+                arcColor = 'var(--warning-color)';
+            } else {
+                arcColor = 'var(--danger-color)';
+            }
+            gaugeValueArc.setAttribute('stroke', arcColor);
+
+            // Update AEQ marker position
+            updateAeqMarker();
+        }
+
+        function updateAeqMarker() {
+            // Gauge configuration
+            const cx = 150, cy = 160, radius = 110;
+            const maxLoss = 30;
+
+            const aeqMarker = document.getElementById('aeq-marker');
+            const aeqPosition = Math.abs(aeqLimit) / maxLoss; // 0 to 1
+            const aeqAngle = -90 + (aeqPosition * 180); // -90 to 90
+
+            // Calculate x, y position on arc (outer edge)
+            const radians = (aeqAngle - 90) * Math.PI / 180;
+            const innerR = radius - 12;
+            const outerR = radius + 18;
+
+            const x1 = cx + innerR * Math.cos(radians);
+            const y1 = cy + innerR * Math.sin(radians);
+            const x2 = cx + outerR * Math.cos(radians);
+            const y2 = cy + outerR * Math.sin(radians);
+
+            const textR = radius + 28;
+            const textX = cx + textR * Math.cos(radians);
+            const textY = cy + textR * Math.sin(radians);
+
+            aeqMarker.innerHTML = `
+                <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" 
+                      stroke="var(--danger-color)" stroke-width="3" stroke-linecap="round"/>
+                <text x="${textX}" y="${textY + 4}" fill="var(--danger-color)" font-size="10" 
+                      font-weight="bold" text-anchor="middle">${aeqLimit}dB</text>
+            `;
+        }
+
+        function describeArc(cx, cy, radius, startAngle, endAngle) {
+            // Convert angles to radians (SVG uses different coordinate system)
+            const start = polarToCartesian(cx, cy, radius, endAngle);
+            const end = polarToCartesian(cx, cy, radius, startAngle);
+
+            const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
+
+            return `M ${end.x} ${end.y} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${start.x} ${start.y}`;
+        }
+
+        function polarToCartesian(cx, cy, radius, angleDeg) {
+            const angleRad = (angleDeg - 90) * Math.PI / 180;
+            return {
+                x: cx + radius * Math.cos(angleRad),
+                y: cy + radius * Math.sin(angleRad)
+            };
+        }
+
+        // ============================================
+        // Event Listeners
+        // ============================================
+        addSegmentBtn.addEventListener('click', () => addSegment());
+
+        // SerDes / Mode selection
+        serdesSelect.addEventListener('change', (e) => {
+            currentMode = e.target.value;
+
+            if (currentMode === 'custom') {
+                customFreqContainer.classList.add('visible');
+                operatingFreq = parseFloat(customFreqInput.value) || 2.0;
+            } else {
+                customFreqContainer.classList.remove('visible');
+                operatingFreq = LINK_MODES[currentMode].nyquist;
+            }
+
+            nyquistDisplay.textContent = operatingFreq.toFixed(2) + ' GHz';
+            recalculate();
+        });
+
+        // Custom frequency input
+        customFreqInput.addEventListener('input', (e) => {
+            let val = parseFloat(e.target.value);
+            if (isNaN(val)) val = 2.0;
+            val = Math.min(5, Math.max(0.5, val));
+            operatingFreq = val;
+            nyquistDisplay.textContent = operatingFreq.toFixed(2) + ' GHz';
+            recalculate();
+        });
+
+        // PCLK Calculator
+        const customModeBtns = document.querySelectorAll('.custom-mode-btn');
+        const customInputDirect = document.getElementById('custom-input-direct');
+        const customInputPclk = document.getElementById('custom-input-pclk');
+        const pclkInput = document.getElementById('pclk-input');
+        const payloadBits = document.getElementById('payload-bits');
+        const bitrateDisplay = document.getElementById('bitrate-display');
+        let customInputMode = 'direct'; // 'direct' or 'pclk'
+
+        function calculateNyquistFromPclk() {
+            const pclk = parseFloat(pclkInput.value) || 148.5; // MHz
+            const bits = parseInt(payloadBits.value) || 35;
+
+            // Serial Bit Rate = PCLK × Payload Bits (in Mbps, then convert to Gbps)
+            const bitRateMbps = pclk * bits;
+            const bitRateGbps = bitRateMbps / 1000;
+
+            // Nyquist = Bit Rate / 2
+            const nyquist = bitRateGbps / 2;
+
+            // Update displays
+            bitrateDisplay.textContent = bitRateGbps.toFixed(3) + ' Gbps';
+            operatingFreq = nyquist;
+            nyquistDisplay.textContent = operatingFreq.toFixed(3) + ' GHz';
+            recalculate();
+        }
+
+        // Toggle between direct and PCLK input modes
+        customModeBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                customModeBtns.forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                customInputMode = btn.dataset.input;
+
+                if (customInputMode === 'direct') {
+                    customInputDirect.style.display = 'flex';
+                    customInputPclk.style.display = 'none';
+                    // Use direct frequency value
+                    operatingFreq = parseFloat(customFreqInput.value) || 2.0;
+                    nyquistDisplay.textContent = operatingFreq.toFixed(2) + ' GHz';
+                } else {
+                    customInputDirect.style.display = 'none';
+                    customInputPclk.style.display = 'flex';
+                    // Calculate from PCLK
+                    calculateNyquistFromPclk();
+                }
+                recalculate();
+            });
+        });
+
+        // PCLK and payload bits change handlers
+        pclkInput.addEventListener('input', calculateNyquistFromPclk);
+        payloadBits.addEventListener('change', calculateNyquistFromPclk);
+
+        // AEQ buttons
+        aeqButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                aeqButtons.forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                aeqLimit = parseInt(btn.dataset.aeq);
+                recalculate();
+            });
+        });
+
+        // Temperature slider
+        tempSlider.addEventListener('input', (e) => {
+            tempInput.value = e.target.value;
+            ambientTemp = parseFloat(e.target.value) || 20;
+            recalculate();
+        });
+
+        tempInput.addEventListener('input', (e) => {
+            let val = parseFloat(e.target.value);
+            if (isNaN(val)) val = 20;
+            val = Math.min(120, Math.max(20, val));
+            tempSlider.value = val;
+            ambientTemp = val;
+            recalculate();
+        });
+
+        // PCB Material buttons
+        pcbMaterialBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                pcbMaterialBtns.forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                pcbMaterial = btn.dataset.material;
+                recalculate();
+            });
+        });
+
+        // Connector inputs
+        connectorType.addEventListener('change', recalculate);
+        connectorCount.addEventListener('input', recalculate);
+        pcbLength.addEventListener('input', recalculate);
+
+        // Safety margin
+        safetySlider.addEventListener('input', (e) => {
+            safetyInput.value = e.target.value;
+            recalculate();
+        });
+
+        safetyInput.addEventListener('input', (e) => {
+            let val = parseFloat(e.target.value);
+            if (isNaN(val)) val = 0;
+            val = Math.min(10, Math.max(0, val));
+            safetySlider.value = val;
+            recalculate();
+        });
+
+        // Reference toggle
+        refToggle.addEventListener('click', () => {
+            refToggle.classList.toggle('active');
+            refContent.classList.toggle('visible');
+        });
+
+        // ============================================
+        // Custom Cable Modal Handling
+        // ============================================
+        const customCableModal = document.getElementById('custom-cable-modal');
+        const customCableForm = document.getElementById('custom-cable-form');
+        const addCustomCableBtn = document.getElementById('add-custom-cable-btn');
+        const modalCloseBtn = document.getElementById('modal-close');
+        const modalCancelBtn = document.getElementById('modal-cancel');
+        const singlePointMode = document.getElementById('single-point-mode');
+        const datapoint2Section = document.getElementById('datapoint2-section');
+        const modalWarning = document.getElementById('modal-warning');
+
+        function openCustomCableModal() {
+            customCableModal.classList.add('visible');
+            document.getElementById('custom-cable-name').value = '';
+            document.getElementById('freq1').value = '500';
+            document.getElementById('loss1').value = '0.5';
+            document.getElementById('freq2').value = '2000';
+            document.getElementById('loss2').value = '1.2';
+            singlePointMode.checked = false;
+            datapoint2Section.style.display = 'block';
+            modalWarning.classList.remove('visible');
+            document.getElementById('custom-cable-name').focus();
+        }
+
+        function closeCustomCableModal() {
+            customCableModal.classList.remove('visible');
+        }
+
+        addCustomCableBtn.addEventListener('click', openCustomCableModal);
+        modalCloseBtn.addEventListener('click', closeCustomCableModal);
+        modalCancelBtn.addEventListener('click', closeCustomCableModal);
+
+        // Close modal on backdrop click
+        customCableModal.addEventListener('click', (e) => {
+            if (e.target === customCableModal) {
+                closeCustomCableModal();
+            }
+        });
+
+        // Toggle single point mode
+        singlePointMode.addEventListener('change', (e) => {
+            datapoint2Section.style.display = e.target.checked ? 'none' : 'block';
+        });
+
+        // Form submission
+        customCableForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const name = document.getElementById('custom-cable-name').value.trim();
+            const f1 = parseFloat(document.getElementById('freq1').value);
+            const l1 = parseFloat(document.getElementById('loss1').value);
+            const isSinglePoint = singlePointMode.checked;
+
+            if (!name) {
+                modalWarning.textContent = 'Please enter a cable name.';
+                modalWarning.classList.add('visible');
+                return;
+            }
+
+            let result;
+            let sourceData;
+
+            if (isSinglePoint) {
+                result = solveSinglePoint(f1, l1);
+                sourceData = { f1, l1, singlePoint: true };
+            } else {
+                const f2 = parseFloat(document.getElementById('freq2').value);
+                const l2 = parseFloat(document.getElementById('loss2').value);
+
+                if (f1 === f2) {
+                    modalWarning.textContent = 'Frequencies must be different to solve coefficients.';
+                    modalWarning.classList.add('visible');
+                    return;
+                }
+
+                result = solveCoefficients(f1, l1, f2, l2);
+                sourceData = { f1, l1, f2, l2, singlePoint: false };
+            }
+
+            if (!result.valid) {
+                modalWarning.textContent = result.warning;
+                modalWarning.classList.add('visible');
+                return;
+            }
+
+            // Generate unique key
+            const key = `custom_${customCableIdCounter++}`;
+
+            // Create custom cable entry
+            customCables[key] = {
+                name: `${name} (Custom)`,
+                a: result.a,
+                b: result.b,
+                description: `Custom cable from datasheet`,
+                isCustom: true,
+                sourceData: sourceData,
+                warning: result.warning
+            };
+
+            // Save to localStorage
+            saveCustomCables();
+
+            // Show warning if applicable but still save
+            if (result.warning) {
+                console.info('Custom cable added with warning:', result.warning);
+            }
+
+            // Close modal and refresh UI
+            closeCustomCableModal();
+            renderSegments();
+            recalculate();
+        });
+
+        // ============================================
+        // Initialize
+        // ============================================
+        function init() {
+            // Load custom cables from localStorage
+            loadCustomCables();
+
+            // Set initial Nyquist display
+            nyquistDisplay.textContent = operatingFreq.toFixed(2) + ' GHz';
+
+            // Add initial segment
+            addSegment('coax_foam', 5);
+            updateAeqMarker();
+            recalculate();
+
+            // Draw the spec graphs
+            drawAllGraphs();
+        }
+
+        // ============================================
+        // GMSL2 Spec Insertion Loss Graphs
+        // ============================================
+        function drawAllGraphs() {
+            drawCableGraph();
+            drawPcbGraph();
+        }
+
+        function drawCableGraph() {
+            const canvas = document.getElementById('cable-graph');
+            if (!canvas) return;
+
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+
+            // Get checkbox states
+            const show3G = document.getElementById('show-3g-curves')?.checked ?? true;
+            const show6G = document.getElementById('show-6g-curves')?.checked ?? true;
+            const showUserCables = document.getElementById('show-user-cables')?.checked ?? true;
+
+            // Clear canvas
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+            ctx.fillRect(0, 0, width, height);
+
+            // Graph area
+            const margin = { left: 50, right: 15, top: 15, bottom: 40 };
+            const graphWidth = width - margin.left - margin.right;
+            const graphHeight = height - margin.top - margin.bottom;
+
+            // Scale settings - TOTAL dB, not dB/m
+            const maxFreq = 4; // GHz
+            const maxLoss = 25; // dB total
+
+            // Draw grid
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.lineWidth = 1;
+
+            for (let f = 0; f <= maxFreq; f += 1) {
+                const x = margin.left + (f / maxFreq) * graphWidth;
+                ctx.beginPath();
+                ctx.moveTo(x, margin.top);
+                ctx.lineTo(x, height - margin.bottom);
+                ctx.stroke();
+            }
+
+            for (let l = 0; l <= maxLoss; l += 5) {
+                const y = margin.top + (l / maxLoss) * graphHeight;
+                ctx.beginPath();
+                ctx.moveTo(margin.left, y);
+                ctx.lineTo(width - margin.right, y);
+                ctx.stroke();
+            }
+
+            // Draw axes
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(margin.left, margin.top);
+            ctx.lineTo(margin.left, height - margin.bottom);
+            ctx.lineTo(width - margin.right, height - margin.bottom);
+            ctx.stroke();
+
+            // Axis labels
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '10px -apple-system, sans-serif';
+            ctx.textAlign = 'center';
+
+            for (let f = 0; f <= maxFreq; f += 1) {
+                const x = margin.left + (f / maxFreq) * graphWidth;
+                ctx.fillText(f + ' GHz', x, height - margin.bottom + 15);
+            }
+
+            ctx.textAlign = 'right';
+            for (let l = 0; l <= maxLoss; l += 5) {
+                const y = margin.top + (l / maxLoss) * graphHeight;
+                ctx.fillText(l + ' dB', margin.left - 5, y + 3);
+            }
+
+            // Helper functions
+            const toX = (f) => margin.left + (f / maxFreq) * graphWidth;
+            const toY = (l) => margin.top + (Math.min(l, maxLoss) / maxLoss) * graphHeight;
+
+            // GMSL2 SPEC MAXIMUM CABLE INSERTION LOSS (total dB)
+            // 3G: IL = 1.7 + 0.27*sqrt(f_MHz) + 2.2*f_GHz
+            const specMax3G = (fGHz) => {
+                const fMHz = fGHz * 1000;
+                return 1.7 + 0.27 * Math.sqrt(fMHz) + 2.2 * fGHz;
+            };
+
+            // 6G: IL = 1.5 + 0.25*sqrt(f_MHz) + 0.64*f_GHz
+            const specMax6G = (fGHz) => {
+                const fMHz = fGHz * 1000;
+                return 1.5 + 0.25 * Math.sqrt(fMHz) + 0.64 * fGHz;
+            };
+
+            // Draw curve helper
+            const drawCurve = (fn, maxF, color, lineWidth = 2, dashed = false) => {
+                ctx.strokeStyle = color;
+                ctx.lineWidth = lineWidth;
+                ctx.setLineDash(dashed ? [6, 4] : []);
+                ctx.beginPath();
+                let started = false;
+                for (let f = 0.01; f <= maxF; f += 0.02) {
+                    const loss = fn(f);
+                    const x = toX(f);
+                    const y = toY(loss);
+                    if (!started) { ctx.moveTo(x, y); started = true; }
+                    else { ctx.lineTo(x, y); }
+                }
+                ctx.stroke();
+                ctx.setLineDash([]);
+            };
+
+            // Draw GMSL2 spec max curves
+            if (show3G) drawCurve(specMax3G, 2.0, '#22c55e', 2.5);
+            if (show6G) drawCurve(specMax6G, 3.5, '#38bdf8', 2.5);
+
+            // Draw user's actual cable module loss (cable + inline connectors)
+            // Per GMSL2 spec, cable module includes cable + inline/cable connectors (not PCB connectors)
+            if (showUserCables && segments.length > 0) {
+                const allCables = getCombinedCableTypes();
+                let totalLength = 0;
+                let weightedA = 0, weightedB = 0;
+
+                // Calculate weighted average coefficients based on all segments
+                segments.forEach(seg => {
+                    if (seg.cableType === 'manual') return;
+                    const cable = allCables[seg.cableType];
+                    if (!cable || !cable.a) return;
+                    totalLength += seg.length;
+                    weightedA += cable.a * seg.length;
+                    weightedB += cable.b * seg.length;
+                });
+
+                // Get connector info from the UI
+                const connCount = parseInt(document.getElementById('connector-count')?.value) || 0;
+                const connTypeKey = document.getElementById('connector-type')?.value || 'fakra';
+                const conn = CONNECTOR_TYPES[connTypeKey];
+
+                if (totalLength > 0) {
+                    // User's total cable module loss = cable loss + connector loss (inline + 2 end connectors)
+                    const userCableFn = (fGHz) => {
+                        const avgA = weightedA / totalLength;
+                        const avgB = weightedB / totalLength;
+                        const cableLoss = totalLength * (avgA * Math.sqrt(fGHz) + avgB * fGHz);
+
+                        // Add connector loss (scales with sqrt of frequency)
+                        let connLoss = 0;
+                        if (conn) {
+                            // "Cable Connector Module" includes inline + 2 cable-end connectors
+                            const totalConns = connCount + 2;
+                            const freqScale = Math.sqrt(fGHz / conn.refFreq);
+                            connLoss = totalConns * conn.baseLoss * freqScale;
+                        }
+
+                        return cableLoss + connLoss;
+                    };
+                    drawCurve(userCableFn, 4.0, '#f59e0b', 2.5);
+                }
+            }
+
+            // Legend
+            ctx.font = '9px -apple-system, sans-serif';
+            ctx.textAlign = 'left';
+            let legendY = margin.top + 12;
+
+            if (show3G) {
+                ctx.fillStyle = '#22c55e';
+                ctx.fillText('3G Spec Max', margin.left + 5, legendY);
+                legendY += 12;
+            }
+            if (show6G) {
+                ctx.fillStyle = '#38bdf8';
+                ctx.fillText('6G Spec Max', margin.left + 5, legendY);
+                legendY += 12;
+            }
+            if (showUserCables && segments.length > 0) {
+                ctx.fillStyle = '#f59e0b';
+                const totalLen = segments.reduce((sum, s) => sum + s.length, 0);
+                const connCount = parseInt(document.getElementById('connector-count')?.value) || 0;
+                let label = 'Your Cable (' + totalLen.toFixed(0) + 'm, ' + (connCount + 2) + ' conn)';
+                ctx.fillText(label, margin.left + 5, legendY);
+            }
+
+            // Draw Nyquist markers
+            ctx.setLineDash([3, 3]);
+            ctx.lineWidth = 1;
+            if (show3G) {
+                ctx.strokeStyle = 'rgba(34, 197, 94, 0.4)';
+                ctx.beginPath();
+                ctx.moveTo(toX(1.5), margin.top);
+                ctx.lineTo(toX(1.5), height - margin.bottom);
+                ctx.stroke();
+            }
+            if (show6G) {
+                ctx.strokeStyle = 'rgba(56, 189, 248, 0.4)';
+                ctx.beginPath();
+                ctx.moveTo(toX(3.0), margin.top);
+                ctx.lineTo(toX(3.0), height - margin.bottom);
+                ctx.stroke();
+            }
+            ctx.setLineDash([]);
+        }
+
+        function drawPcbGraph() {
+            const canvas = document.getElementById('pcb-graph');
+            if (!canvas) return;
+
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+
+            const show3G = document.getElementById('show-3g-curves')?.checked ?? true;
+            const show6G = document.getElementById('show-6g-curves')?.checked ?? true;
+
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+            ctx.fillRect(0, 0, width, height);
+
+            const margin = { left: 50, right: 15, top: 15, bottom: 40 };
+            const graphWidth = width - margin.left - margin.right;
+            const graphHeight = height - margin.top - margin.bottom;
+
+            const maxFreq = 4; // GHz
+            const maxLoss = 4; // dB (PCB scale smaller)
+
+            // Draw grid
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.lineWidth = 1;
+
+            for (let f = 0; f <= maxFreq; f += 1) {
+                const x = margin.left + (f / maxFreq) * graphWidth;
+                ctx.beginPath();
+                ctx.moveTo(x, margin.top);
+                ctx.lineTo(x, height - margin.bottom);
+                ctx.stroke();
+            }
+
+            for (let l = 0; l <= maxLoss; l += 1) {
+                const y = margin.top + (l / maxLoss) * graphHeight;
+                ctx.beginPath();
+                ctx.moveTo(margin.left, y);
+                ctx.lineTo(width - margin.right, y);
+                ctx.stroke();
+            }
+
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(margin.left, margin.top);
+            ctx.lineTo(margin.left, height - margin.bottom);
+            ctx.lineTo(width - margin.right, height - margin.bottom);
+            ctx.stroke();
+
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '10px -apple-system, sans-serif';
+            ctx.textAlign = 'center';
+
+            for (let f = 0; f <= maxFreq; f += 1) {
+                const x = margin.left + (f / maxFreq) * graphWidth;
+                ctx.fillText(f + ' GHz', x, height - margin.bottom + 15);
+            }
+
+            ctx.textAlign = 'right';
+            for (let l = 0; l <= maxLoss; l += 1) {
+                const y = margin.top + (l / maxLoss) * graphHeight;
+                ctx.fillText(l.toFixed(0), margin.left - 5, y + 3);
+            }
+
+            const toX = (f) => margin.left + (f / maxFreq) * graphWidth;
+            const toY = (l) => margin.top + (l / maxLoss) * graphHeight;
+
+            // PCB formulas from spec (per module)
+            // 3G: -3 dB (2-5 MHz), -2 dB (5 MHz - 2 GHz)
+            const pcb3G = (fGHz) => (fGHz < 0.005) ? 3 : 2;
+
+            // 6G: -0.85 (2-500 MHz), -0.62 - 0.46*f_GHz (500 MHz - 3.5 GHz)
+            const pcb6G = (fGHz) => (fGHz < 0.5) ? 0.85 : (0.62 + 0.46 * fGHz);
+
+            const drawCurve = (fn, maxF, color) => {
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 2.5;
+                ctx.setLineDash([]);
+                ctx.beginPath();
+                let started = false;
+                for (let f = 0.002; f <= maxF; f += 0.02) {
+                    const loss = fn(f);
+                    if (loss <= maxLoss) {
+                        const x = toX(f);
+                        const y = toY(loss);
+                        if (!started) { ctx.moveTo(x, y); started = true; }
+                        else { ctx.lineTo(x, y); }
+                    }
+                }
+                ctx.stroke();
+            };
+
+            if (show3G) drawCurve(pcb3G, 2.0, '#22c55e');
+            if (show6G) drawCurve(pcb6G, 3.5, '#38bdf8');
+
+            // Draw user's PCB loss
+            const showUserCables = document.getElementById('show-user-cables')?.checked ?? true;
+            if (showUserCables) {
+                const pcbLen = parseFloat(document.getElementById('pcb-length')?.value) || 0;
+                const pcbMatKey = pcbMaterial; // Use global state variable
+                const material = PCB_MATERIALS[pcbMatKey];
+
+                if (pcbLen > 0 && material) {
+                    let userPcbFn;
+
+                    if (material.useSpecFormula) {
+                        // If user selected "GMSL2 Spec", plotting it would just overlay the spec lines...
+                        // But let's show what "Spec Max" looks like for this *mode*
+                        // Since spec is per-module, "length" input might be irrelevant or confusing if we strictly follow spec "per module" logic
+                        // However, the tool calculates pcbLoss = getPcbLoss(len).
+                        // getPcbLoss for 'gmsl2_spec': returns 2.0 or appropriate value *independent* of length?
+                        // Let's check getPcbLoss specific logic for 'gmsl2_spec'.
+                        // It returns fixed value per module.
+
+                        // For normal materials (FR4 etc):
+                        userPcbFn = (fGHz) => {
+                            return pcbLen * material.loss * Math.sqrt(fGHz / material.refFreq);
+                        };
+                        drawCurve(userPcbFn, 4.0, '#f59e0b');
+                    } else {
+                        userPcbFn = (fGHz) => {
+                            return pcbLen * material.loss * Math.sqrt(fGHz / material.refFreq);
+                        };
+                        drawCurve(userPcbFn, 4.0, '#f59e0b');
+                    }
+                }
+            }
+
+            // Legend
+            ctx.font = '9px -apple-system, sans-serif';
+            ctx.textAlign = 'left';
+            let legendY = margin.top + 12;
+
+            if (show3G) {
+                ctx.fillStyle = '#22c55e';
+                ctx.fillText('3G: -2 dB', margin.left + 5, legendY);
+                legendY += 12;
+            }
+            if (show6G) {
+                ctx.fillStyle = '#38bdf8';
+                ctx.fillText('6G: varies', margin.left + 5, legendY);
+                legendY += 12;
+            }
+
+            if (showUserCables) {
+                const pcbLen = parseFloat(document.getElementById('pcb-length')?.value) || 0;
+                ctx.fillStyle = '#f59e0b';
+                ctx.fillText('Your PCB (' + pcbLen + '")', margin.left + 5, legendY);
+            }
+        }
+
+        init();
+    </script>
+
+</body>
+
+</html>
