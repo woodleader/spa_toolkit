@@ -231,6 +231,78 @@
             border-radius: 4px;
             display: none;
         }
+
+        .progress-container {
+            margin-top: 15px;
+            display: none;
+        }
+
+        .progress-container.visible {
+            display: block;
+        }
+
+        .progress-bar-wrapper {
+            width: 100%;
+            height: 24px;
+            background: var(--bg-code);
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-color), #60a5fa);
+            border-radius: 12px;
+            transition: width 0.15s ease-out;
+            position: relative;
+        }
+
+        .progress-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg,
+                    transparent,
+                    rgba(255, 255, 255, 0.2),
+                    transparent);
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+            0% {
+                transform: translateX(-100%);
+            }
+
+            100% {
+                transform: translateX(100%);
+            }
+        }
+
+        .progress-funny {
+            font-style: italic;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            font-size: 0.95rem;
+            text-align: center;
+            min-height: 1.4em;
+        }
+
+        .progress-text {
+            margin-top: 8px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .progress-percentage {
+            font-weight: 600;
+            color: var(--accent-color);
+        }
     </style>
 </head>
 
@@ -273,6 +345,17 @@
 
         <div id="loading" class="loading">Calculating Hash...</div>
 
+        <div id="progress-container" class="progress-container">
+            <div id="progress-funny" class="progress-funny">Reticulating splines...</div>
+            <div class="progress-bar-wrapper">
+                <div id="progress-bar" class="progress-bar" style="width: 0%"></div>
+            </div>
+            <div class="progress-text">
+                <span id="progress-status">Reading file...</span>
+                <span id="progress-percentage" class="progress-percentage">0%</span>
+            </div>
+        </div>
+
         <div id="result" class="result-box">
             <div class="label">File Name:</div>
             <div id="file-name" class="value"></div>
@@ -288,6 +371,290 @@
     </div>
 
     <script>
+        // --- 0. Funny Loading Messages ---
+        const funnyMessages = [
+            "Reticulating splines...",
+            "Generating witty dialog...",
+            "Swapping time and space...",
+            "Spinning violently around the y-axis...",
+            "Tokenizing real life...",
+            "Bending the spoon...",
+            "Filtering morale...",
+            "Don't think of purple hippos...",
+            "We need a new fuse...",
+            "Have a good day.",
+            "Upgrading Windows, your PC will restart several times. Sit back and relax.",
+            "640K ought to be enough for anybody",
+            "The architects are still drafting",
+            "The bits are breeding",
+            "We're building the buildings as fast as we can",
+            "Would you prefer chicken, steak, or tofu?",
+            "(Pay no attention to the man behind the curtain)",
+            "...and enjoy the elevator music...",
+            "Please wait while the little elves draw your map",
+            "Don't worry - a few bits tried to escape, but we caught them",
+            "Would you like fries with that?",
+            "Checking the gravitational constant in your locale...",
+            "Go ahead -- hold your breath!",
+            "...at least you're not on hold...",
+            "Hum something loud while others stare",
+            "You're not in Kansas any more",
+            "The server is powered by a lemon and two electrodes.",
+            "Please wait while a larger software vendor in Seattle takes over the world",
+            "We're testing your patience",
+            "As if you had any other choice",
+            "Follow the white rabbit",
+            "Why don't you order a sandwich?",
+            "While the satellite moves into position",
+            "keep calm and npm install",
+            "The bits are flowing slowly today",
+            "Dig on the 'X' for buried treasure... ARRR!",
+            "It's still faster than you could draw it",
+            "The last time I tried this the monkey didn't survive. Let's hope it works better this time.",
+            "I should have had a V8 this morning.",
+            "My other loading screen is much faster.",
+            "Testing on Timmy... We're going to need another Timmy.",
+            "Reconfoobling energymotron...",
+            "(Insert quarter)",
+            "Are we there yet?",
+            "Have you lost weight?",
+            "Just count to 10",
+            "Why so serious?",
+            "It's not you. It's me.",
+            "Counting backwards from Infinity",
+            "Don't panic...",
+            "Embiggening Prototypes",
+            "Do not run! We are your friends!",
+            "Do you come here often?",
+            "Warning: Don't set yourself on fire.",
+            "We're making you a cookie.",
+            "Creating time-loop inversion field",
+            "Spinning the wheel of fortune...",
+            "Loading the enchanted bunny...",
+            "Computing chance of success",
+            "I'm sorry Dave, I can't do that.",
+            "Looking for exact change",
+            "All your web browser are belong to us",
+            "All I really need is a kilobit.",
+            "I feel like im supposed to be loading something. . .",
+            "What do you call 8 Hobbits? A Hobbyte.",
+            "Should have used a compiled language...",
+            "Is this Windows?",
+            "Adjusting flux capacitor...",
+            "Please wait until the sloth starts moving.",
+            "Don't break your screen yet!",
+            "I swear it's almost done.",
+            "Let's take a mindfulness minute...",
+            "Unicorns are at the end of this road, I promise.",
+            "Listening for the sound of one hand clapping...",
+            "Keeping all the 1's and removing all the 0's...",
+            "Putting the icing on the cake. The cake is not a lie...",
+            "Cleaning off the cobwebs...",
+            "Making sure all the i's have dots...",
+            "We need more dilithium crystals",
+            "Where did all the internets go",
+            "Connecting Neurotoxin Storage Tank...",
+            "Granting wishes...",
+            "Time flies when you're having fun.",
+            "Get some coffee and come back in ten minutes..",
+            "Spinning the hamster…",
+            "99 bottles of beer on the wall..",
+            "Stay awhile and listen..",
+            "Be careful not to step in the git-gui",
+            "You shall not pass! yet..",
+            "Load it and they will come",
+            "Convincing AI not to turn evil..",
+            "There is no spoon. Because we are not done loading it",
+            "Your left thumb points to the right and your right thumb points to the left.",
+            "How did you get here?",
+            "Wait, do you smell something burning?",
+            "Computing the secret to life, the universe, and everything.",
+            "When nothing is going right, go left!!...",
+            "I love my job only when I'm on vacation...",
+            "i'm not lazy, I'm just relaxed!!",
+            "Never steal. The government hates competition....",
+            "Why are they called apartments if they are all stuck together?",
+            "Life is Short – Talk Fast!!!!",
+            "Optimism – is a lack of information.....",
+            "Save water and shower together",
+            "Whenever I find the key to success, someone changes the lock.",
+            "Sometimes I think war is God's way of teaching us geography.",
+            "I've got problem for your solution…..",
+            "Where there's a will, there's a relative.",
+            "User: the word computer professionals use when they mean !!idiot!!",
+            "Adults are just kids with money.",
+            "I think I am, therefore, I am. I think.",
+            "A kiss is like a fight, with mouths.",
+            "You don't pay taxes—they take taxes.",
+            "Coffee, Chocolate, Men. The richer the better!",
+            "I am free of all prejudices. I hate everyone equally.",
+            "git happens",
+            "May the forks be with you",
+            "A commit a day keeps the mobs away",
+            "This is not a joke, it's a commit.",
+            "Constructing additional pylons...",
+            "Roping some seaturtles...",
+            "Locating Jebediah Kerman...",
+            "We are not liable for any broken screens as a result of waiting.",
+            "Hello IT, have you tried turning it off and on again?",
+            "If you type Google into Google you can break the internet",
+            "Well, this is embarrassing.",
+            "What is the airspeed velocity of an unladen swallow?",
+            "Hello, IT... Have you tried forcing an unexpected reboot?",
+            "They just toss us away like yesterday's jam.",
+            "They're fairly regular, the beatings, yes. I'd say we're on a bi-weekly beating.",
+            "The Elders of the Internet would never stand for it.",
+            "Space is invisible mind dust, and stars are but wishes.",
+            "Didn't know paint dried so quickly.",
+            "Everything sounds the same",
+            "I'm going to walk the dog",
+            "I didn't choose the engineering life. The engineering life chose me.",
+            "Dividing by zero...",
+            "Spawn more Overlord!",
+            "If I'm not back in five minutes, just wait longer.",
+            "Some days, you just can't get rid of a bug!",
+            "We're going to need a bigger boat.",
+            "Chuck Norris never git push. The repo pulls before.",
+            "Web developers do it with <style>",
+            "I need to git pull --my-life-together",
+            "Java developers never RIP. They just get Garbage Collected.",
+            "Cracking military-grade encryption...",
+            "Simulating traveling salesman...",
+            "Proving P=NP...",
+            "Entangling superstrings...",
+            "Twiddling thumbs...",
+            "Searching for plot device...",
+            "Trying to sort in O(n)...",
+            "Laughing at your pictures-i mean, loading...",
+            "Sending data to NS-i mean, our servers.",
+            "Looking for sense of humour, please hold on.",
+            "Please wait while the intern refills his coffee.",
+            "A different error message? Finally, some progress!",
+            "Hold on while we wrap up our git together...sorry",
+            "Please hold on as we reheat our coffee",
+            "Kindly hold on as we convert this bug to a feature...",
+            "Kindly hold on as our intern quits vim...",
+            "Winter is coming...",
+            "Installing dependencies",
+            "Switching to the latest JS framework...",
+            "Distracted by cat gifs",
+            "Finding someone to hold my beer",
+            "BRB, working on my side project",
+            "@todo Insert witty loading message",
+            "Let's hope it's worth the wait",
+            "Aw, snap! Not..",
+            "Ordering 1s and 0s...",
+            "Updating dependencies...",
+            "Whatever you do, don't look behind you...",
+            "Please wait... Consulting the manual...",
+            "It is dark. You're likely to be eaten by a grue.",
+            "Loading funny message...",
+            "It's 10:00pm. Do you know where your children are?",
+            "Waiting Daenerys say all her titles...",
+            "Feel free to spin in your chair",
+            "What the what?",
+            "format C: ...",
+            "Forget you saw that password I just typed into the IM ...",
+            "What's under there?",
+            "Your computer has a virus, its name is Windows!",
+            "Go ahead, hold your breath and do an ironman plank till loading complete",
+            "Bored of slow loading spinner, buy more RAM!",
+            "Help, I'm trapped in a loader!",
+            "What is the difference btwn a hippo and a zippo? One is really heavy, the other is a little lighter",
+            "Please wait, while we purge the Decepticons for you. Yes, You can thanks us later!",
+            "Chuck Norris once urinated in a semi truck's gas tank as a joke....that truck is now known as Optimus Prime.",
+            "Chuck Norris doesn't wear a watch. HE decides what time it is.",
+            "Mining some bitcoins...",
+            "Downloading more RAM..",
+            "Updating to Windows Vista...",
+            "Deleting System32 folder",
+            "Hiding all ;'s in your code",
+            "Alt-F4 speeds things up.",
+            "Initializing the initializer...",
+            "When was the last time you dusted around here?",
+            "Optimizing the optimizer...",
+            "Last call for the data bus! All aboard!",
+            "Running swag sticker detection...",
+            "Never let a computer know you're in a hurry.",
+            "A computer will do what you tell it to do, but that may be much different from what you had in mind.",
+            "Some things man was never meant to know. For everything else, there's Google.",
+            "Unix is user-friendly. It's just very selective about who its friends are.",
+            "Shovelling coal into the server",
+            "Pushing pixels...",
+            "How about this weather, eh?",
+            "Building a wall...",
+            "Everything in this universe is either a potato or not a potato",
+            "The severity of your issue is always lower than you expected.",
+            "Updating Updater...",
+            "Downloading Downloader...",
+            "Debugging Debugger...",
+            "Reading Terms and Conditions for you.",
+            "Digested cookies being baked again.",
+            "Live long and prosper.",
+            "There is no cow level, but there's a goat one!",
+            "Deleting all your hidden porn...",
+            "Running with scissors...",
+            "Definitely not a virus...",
+            "You may call me Steve.",
+            "You seem like a nice person...",
+            "Coffee at my place, tommorow at 10A.M. - don't be late!",
+            "Work, work...",
+            "Patience! This is difficult, you know...",
+            "Discovering new ways of making you wait...",
+            "Your time is very important to us. Please wait while we ignore you...",
+            "Time flies like an arrow; fruit flies like a banana",
+            "Two men walked into a bar; the third ducked...",
+            "Sooooo... Have you seen my vacation photos yet?",
+            "Sorry we are busy catching em' all, we're done soon",
+            "TODO: Insert elevator music",
+            "Still faster than Windows update",
+            "Composer hack: Waiting for reqs to be fetched is less frustrating if you add -vvv to your command.",
+            "Please wait while the minions do their work",
+            "Grabbing extra minions",
+            "Doing the heavy lifting",
+            "We're working very Hard .... Really",
+            "Waking up the minions",
+            "You are number 2843684714 in the queue",
+            "Please wait while we serve other customers...",
+            "Our premium plan is faster",
+            "Feeding unicorns...",
+            "Rupturing the subspace barrier",
+            "Creating an anti-time reaction",
+            "Converging tachyon pulses",
+            "Bypassing control of the matter-antimatter integrator",
+            "Adjusting the dilithium crystal converter assembly",
+            "Reversing the shield polarity",
+            "Disrupting warp fields with an inverse graviton burst",
+            "Up, Up, Down, Down, Left, Right, Left, Right, B, A.",
+            "Do you like my loading animation? I made it myself",
+            "Whoah, look at it go!",
+            "No, I'm awake. I was just resting my eyes.",
+            "One mississippi, two mississippi...",
+            "Don't panic... AHHHHH!",
+            "Ensuring Gnomes are still short.",
+            "Baking ice cream...",
+            "TODO: Take out the trash.",
+            "Do you like my loading animation? I made it myself :)",
+            "Uhhh, it's doing stuff right?",
+            "Enjoy this useless loading animation",
+            "While you wait, try licking your elbow and watch this screen at the same time...",
+            "Have you tried the elbow thing yet?",
+            "DANGER: High Voltage.",
+            "(Insert 3 Tokens)",
+            "It's not me. It's you.",
+            "*gulp*...",
+            "All your search history are belong to us.",
+            "After Tuesday, even the calander is saying \"WTF\".",
+            "Loading... Don't wait if you don't want to.",
+            "Bored? Mash F5.",
+            "Grrr. Bark. Bark. Grrr"
+        ];
+
+        let messageInterval = null;
+        function getRandomMessage() {
+            return funnyMessages[Math.floor(Math.random() * funnyMessages.length)];
+        }
+
         // --- 1. MD5 Algorithm Implementation ---
         // Adapted for ArrayBuffer support to handle binary files locally
         var MD5 = function (inputString) {
@@ -412,6 +779,11 @@
         const loading = document.getElementById('loading');
         const expectedHashInput = document.getElementById('expected-hash');
         const comparisonResult = document.getElementById('comparison-result');
+        const progressContainer = document.getElementById('progress-container');
+        const progressBar = document.getElementById('progress-bar');
+        const progressStatus = document.getElementById('progress-status');
+        const progressPercentage = document.getElementById('progress-percentage');
+        const progressFunny = document.getElementById('progress-funny');
 
         // Click to upload support
         dropZone.addEventListener('click', () => fileInput.click());
@@ -435,55 +807,161 @@
             }
         });
 
-        function handleFile(file) {
+        function updateProgress(percent, status) {
+            progressBar.style.width = percent + '%';
+            progressPercentage.textContent = Math.round(percent) + '%';
+            if (status) {
+                progressStatus.textContent = status;
+            }
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+            return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+        }
+
+        // Chunked file reading with progress for SHA-256 (using Web Crypto streaming)
+        async function calculateSHA256WithProgress(file, onProgress) {
+            const chunkSize = 2 * 1024 * 1024; // 2MB chunks
+            const totalSize = file.size;
+            let processedSize = 0;
+
+            // For SHA-256, we can use the SubtleCrypto incremental approach
+            // by reading chunks and building an ArrayBuffer
+            const chunks = [];
+            const reader = file.stream().getReader();
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                chunks.push(value);
+                processedSize += value.length;
+
+                const percent = (processedSize / totalSize) * 50; // Reading is 0-50%
+                onProgress(percent, `Reading file... ${formatFileSize(processedSize)} / ${formatFileSize(totalSize)}`);
+
+                // Yield to the browser to prevent freezing
+                await new Promise(resolve => setTimeout(resolve, 0));
+            }
+
+            onProgress(50, 'Computing SHA-256 hash...');
+            await new Promise(resolve => setTimeout(resolve, 0));
+
+            // Combine chunks into single ArrayBuffer
+            const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
+            const combined = new Uint8Array(totalLength);
+            let offset = 0;
+            for (const chunk of chunks) {
+                combined.set(chunk, offset);
+                offset += chunk.length;
+            }
+
+            // Calculate SHA-256
+            const hashBuffer = await crypto.subtle.digest('SHA-256', combined);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+            onProgress(75, 'Computing MD5 hash...');
+            await new Promise(resolve => setTimeout(resolve, 0));
+
+            return { sha256: hashHex, arrayBuffer: combined };
+        }
+
+        // Chunked MD5 calculation with progress
+        async function calculateMD5WithProgress(uint8Array, startPercent, onProgress) {
+            const length = uint8Array.byteLength;
+            const chunkSize = 1024 * 1024; // 1MB chunks for string conversion
+            let binary = "";
+
+            for (let i = 0; i < length; i += chunkSize) {
+                const end = Math.min(i + chunkSize, length);
+                for (let j = i; j < end; j++) {
+                    binary += String.fromCharCode(uint8Array[j]);
+                }
+
+                const percent = startPercent + ((i / length) * 25); // MD5 is 75-100%
+                onProgress(percent, `Computing MD5 hash... ${Math.round((i / length) * 100)}%`);
+
+                // Yield to browser
+                await new Promise(resolve => setTimeout(resolve, 0));
+            }
+
+            onProgress(99, 'Finalizing...');
+            await new Promise(resolve => setTimeout(resolve, 0));
+
+            return MD5(binary);
+        }
+
+        async function handleFile(file) {
             if (!file) return;
 
             // Reset UI
             resultBox.style.display = 'none';
-            loading.style.display = 'block';
+            loading.style.display = 'none';
+            comparisonResult.style.display = 'none';
+            progressContainer.classList.add('visible');
+            progressFunny.textContent = getRandomMessage();
+            updateProgress(0, 'Starting...');
             fileNameDisplay.textContent = file.name;
 
-            // Use FileReader to read file locally
-            const reader = new FileReader();
+            // Start cycling random messages every 2 seconds
+            if (messageInterval) clearInterval(messageInterval);
+            messageInterval = setInterval(() => {
+                progressFunny.textContent = getRandomMessage();
+            }, 2000);
 
-            reader.onload = async function (event) {
-                try {
-                    const arrayBuffer = event.target.result;
-                    // Calculate Hashes
-                    const md5Hash = calculateMD5(arrayBuffer);
-                    const sha256Hash = await calculateSHA256(arrayBuffer);
+            try {
+                // Calculate hashes with progress
+                const { sha256, arrayBuffer } = await calculateSHA256WithProgress(file, updateProgress);
+                const md5Hash = await calculateMD5WithProgress(arrayBuffer, 75, updateProgress);
 
-                    // Update UI
-                    hashOutput.textContent = md5Hash;
-                    sha256Output.textContent = sha256Hash;
-                    loading.style.display = 'none';
-                    resultBox.style.display = 'block';
-
-                    // Compare if expected hash is provided
-                    const expected = expectedHashInput.value.trim().toLowerCase();
-                    if (expected) {
-                        comparisonResult.style.display = 'block';
-                        if (expected === md5Hash || expected === sha256Hash) {
-                            comparisonResult.textContent = "✅ Success: Hashes Match!";
-                            comparisonResult.style.backgroundColor = "var(--success-bg)";
-                            comparisonResult.style.color = "var(--success-text)";
-                            comparisonResult.style.border = "1px solid var(--success-border)";
-                        } else {
-                            comparisonResult.textContent = "❌ Error: Hash Mismatch!";
-                            comparisonResult.style.backgroundColor = "var(--error-bg)";
-                            comparisonResult.style.color = "var(--error-text)";
-                            comparisonResult.style.border = "1px solid var(--error-border)";
-                        }
-                    } else {
-                        comparisonResult.style.display = 'none';
-                    }
-                } catch (err) {
-                    alert("Error reading file: " + err);
-                    loading.style.display = 'none';
+                // Stop the message cycling
+                if (messageInterval) {
+                    clearInterval(messageInterval);
+                    messageInterval = null;
                 }
-            };
 
-            reader.readAsArrayBuffer(file);
+                updateProgress(100, '✨ Complete!');
+
+                // Brief pause to show 100%
+                await new Promise(resolve => setTimeout(resolve, 300));
+
+                // Update UI
+                hashOutput.textContent = md5Hash;
+                sha256Output.textContent = sha256;
+                progressContainer.classList.remove('visible');
+                resultBox.style.display = 'block';
+
+                // Compare if expected hash is provided
+                const expected = expectedHashInput.value.trim().toLowerCase();
+                if (expected) {
+                    comparisonResult.style.display = 'block';
+                    if (expected === md5Hash || expected === sha256) {
+                        comparisonResult.textContent = "✅ Success: Hashes Match!";
+                        comparisonResult.style.backgroundColor = "var(--success-bg)";
+                        comparisonResult.style.color = "var(--success-text)";
+                        comparisonResult.style.border = "1px solid var(--success-border)";
+                    } else {
+                        comparisonResult.textContent = "❌ Error: Hash Mismatch!";
+                        comparisonResult.style.backgroundColor = "var(--error-bg)";
+                        comparisonResult.style.color = "var(--error-text)";
+                        comparisonResult.style.border = "1px solid var(--error-border)";
+                    }
+                } else {
+                    comparisonResult.style.display = 'none';
+                }
+            } catch (err) {
+                // Stop the message cycling on error
+                if (messageInterval) {
+                    clearInterval(messageInterval);
+                    messageInterval = null;
+                }
+                alert("Error reading file: " + err);
+                progressContainer.classList.remove('visible');
+            }
         }
     </script>
 
