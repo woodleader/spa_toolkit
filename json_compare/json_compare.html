@@ -1,0 +1,1587 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON Compare</title>
+    <style>
+        :root {
+            --bg-primary: #f4f4f9;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #fafafa;
+            --bg-code: #f8f9fa;
+            --text-primary: #333;
+            --text-secondary: #666;
+            --border-color: #ddd;
+            --shadow: rgba(0, 0, 0, 0.1);
+            --accent-color: #3b82f6;
+            --accent-bg: #eff6ff;
+            --success-bg: #d1fae5;
+            --success-text: #065f46;
+            --success-border: #34d399;
+            --error-bg: #fee2e2;
+            --error-text: #991b1b;
+            --error-border: #f87171;
+            --warning-bg: #fef3c7;
+            --warning-text: #92400e;
+            --warning-border: #fbbf24;
+            --diff-added: #dcfce7;
+            --diff-removed: #fee2e2;
+            --diff-changed: #fef9c3;
+            --diff-added-border: #22c55e;
+            --diff-removed-border: #ef4444;
+            --diff-changed-border: #eab308;
+            --line-num-color: #9ca3af;
+            --line-num-bg: #f3f4f6;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-primary: #0f172a;
+                --bg-secondary: #1e293b;
+                --bg-tertiary: #334155;
+                --bg-code: #1e293b;
+                --text-primary: #f8fafc;
+                --text-secondary: #94a3b8;
+                --border-color: #475569;
+                --shadow: rgba(0, 0, 0, 0.3);
+                --accent-color: #38bdf8;
+                --accent-bg: #0c4a6e;
+                --success-bg: #064e3b;
+                --success-text: #6ee7b7;
+                --success-border: #10b981;
+                --error-bg: #7f1d1d;
+                --error-text: #fca5a5;
+                --error-border: #ef4444;
+                --warning-bg: #78350f;
+                --warning-text: #fde68a;
+                --warning-border: #f59e0b;
+                --diff-added: #14532d;
+                --diff-removed: #7f1d1d;
+                --diff-changed: #713f12;
+                --diff-added-border: #22c55e;
+                --diff-removed-border: #ef4444;
+                --diff-changed-border: #eab308;
+                --line-num-color: #64748b;
+                --line-num-bg: #1e293b;
+            }
+        }
+
+        [data-theme="dark"] {
+            /* Full Dark Theme overrides */
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --bg-code: #1e293b;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --border-color: #475569;
+            --shadow: rgba(0, 0, 0, 0.3);
+            --accent-color: #38bdf8;
+            --accent-bg: #0c4a6e;
+            --success-bg: #064e3b;
+            --success-text: #6ee7b7;
+            --success-border: #10b981;
+            --error-bg: #7f1d1d;
+            --error-text: #fca5a5;
+            --error-border: #ef4444;
+            --warning-bg: #78350f;
+            --warning-text: #fde68a;
+            --warning-border: #f59e0b;
+            --diff-added: #14532d;
+            --diff-removed: #7f1d1d;
+            --diff-changed: #713f12;
+            --diff-added-border: #22c55e;
+            --diff-removed-border: #ef4444;
+            --diff-changed-border: #eab308;
+            --line-num-color: #64748b;
+            --line-num-bg: #1e293b;
+        }
+
+        [data-theme="light"] {
+            --bg-primary: #f4f4f9;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #fafafa;
+            --bg-code: #f8f9fa;
+            --text-primary: #333;
+            --text-secondary: #666;
+            --border-color: #ddd;
+            --shadow: rgba(0, 0, 0, 0.1);
+            --accent-color: #3b82f6;
+            --accent-bg: #eff6ff;
+            --success-bg: #d1fae5;
+            --success-text: #065f46;
+            --success-border: #34d399;
+            --error-bg: #fee2e2;
+            --error-text: #991b1b;
+            --error-border: #f87171;
+            --warning-bg: #fef3c7;
+            --warning-text: #92400e;
+            --warning-border: #fbbf24;
+            --diff-added: #dcfce7;
+            --diff-removed: #fee2e2;
+            --diff-changed: #fef9c3;
+            --diff-added-border: #22c55e;
+            --diff-removed-border: #ef4444;
+            --diff-changed-border: #eab308;
+            --line-num-color: #9ca3af;
+            --line-num-bg: #f3f4f6;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-primary);
+            margin: 0;
+            padding: 20px;
+            color: var(--text-primary);
+            min-height: 100vh;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-color), #818cf8);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .theme-toggle {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            width: 40px;
+            height: 40px;
+        }
+
+        .theme-toggle:hover {
+            background: var(--bg-code);
+            transform: scale(1.05);
+        }
+
+        .theme-toggle svg {
+            width: 20px;
+            height: 20px;
+            stroke: var(--text-primary);
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* Input Section */
+        .input-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            max-height: 1000px;
+            /* arbitrary large value for transition */
+            opacity: 1;
+            overflow: hidden;
+        }
+
+        .input-section.collapsed {
+            max-height: 0;
+            margin-bottom: 0;
+            opacity: 0;
+            padding: 0;
+            /* Remove padding if any to ensure full collapse */
+        }
+
+        .input-panel {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 2px 8px var(--shadow);
+            transition: all 0.3s ease;
+        }
+
+        .input-panel.drag-active {
+            border-color: var(--accent-color);
+            background: var(--accent-bg);
+            box-shadow: 0 4px 12px var(--shadow);
+            transform: scale(1.01);
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .panel-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 1rem;
+        }
+
+        .panel-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-primary {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            filter: brightness(1.1);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-code);
+        }
+
+        .toggle-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: var(--text-primary);
+            cursor: pointer;
+            user-select: none;
+            background: var(--bg-tertiary);
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            transition: all 0.2s ease;
+        }
+
+        .toggle-label:hover {
+            background: var(--bg-code);
+        }
+
+        .toggle-label input {
+            accent-color: var(--accent-color);
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .json-textarea {
+            width: 100%;
+            height: 250px;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.85rem;
+            resize: vertical;
+            background: var(--bg-code);
+            color: var(--text-primary);
+            transition: border-color 0.2s ease;
+        }
+
+        .json-textarea:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        .error-message {
+            color: var(--error-text);
+            background: var(--error-bg);
+            border: 1px solid var(--error-border);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            margin-top: 8px;
+            display: none;
+        }
+
+        .error-message.visible {
+            display: block;
+        }
+
+        /* Controls Bar (Visible when comparison active) */
+        .controls-bar {
+            display: none;
+            /* hidden by default */
+            justify-content: center;
+            margin-bottom: 16px;
+            gap: 12px;
+        }
+
+        .controls-bar.visible {
+            display: flex;
+        }
+
+        .compare-section {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 24px;
+        }
+
+        .compare-section.hidden {
+            display: none;
+        }
+
+        /* Results Section */
+        .results-section {
+            display: none;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .results-section.visible {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .diff-summary {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 16px;
+            padding: 12px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+        }
+
+        .diff-count {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-color);
+        }
+
+        .diff-label {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .no-diff {
+            color: var(--success-text);
+        }
+
+        .diff-legend {
+            display: flex;
+            gap: 16px;
+            margin-left: auto;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+        }
+
+        .legend-added {
+            background: var(--diff-added);
+            border: 1px solid var(--diff-added-border);
+        }
+
+        .legend-removed {
+            background: var(--diff-removed);
+            border: 1px solid var(--diff-removed-border);
+        }
+
+        .legend-changed {
+            background: var(--diff-changed);
+            border: 1px solid var(--diff-changed-border);
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 350px;
+            gap: 16px;
+            height: calc(100vh - 250px);
+            /* Taller since input is collapsed */
+            min-height: 400px;
+        }
+
+        .json-view {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .json-view-header {
+            padding: 12px 16px;
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .json-view-content {
+            flex: 1;
+            overflow: auto;
+            padding: 0;
+            /* Padding inside lines now */
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.8rem;
+            line-height: 1.6;
+        }
+
+        .diff-line {
+            display: flex;
+            width: 100%;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            /* Changed to pointer to indicate clickability for future features? Or text for select? */
+        }
+
+        .diff-line:hover {
+            background-color: var(--bg-tertiary);
+        }
+
+        .line-num {
+            width: 45px;
+            min-width: 45px;
+            text-align: right;
+            padding-right: 12px;
+            color: var(--line-num-color);
+            background-color: var(--line-num-bg);
+            user-select: none;
+            border-right: 1px solid var(--border-color);
+            margin-right: 10px;
+            font-size: 0.75rem;
+            padding-top: 2px;
+            line-height: 1.6;
+        }
+
+        .line-content {
+            white-space: pre;
+            padding-top: 2px;
+            flex: 1;
+            line-height: 1.6;
+        }
+
+        .diff-line.added .line-content {
+            background: var(--diff-added);
+        }
+
+        .diff-line.added .line-num {
+            background: var(--diff-added);
+            border-right-color: var(--diff-added-border);
+            color: var(--diff-added-border);
+        }
+
+        .diff-line.removed .line-content {
+            background: var(--diff-removed);
+        }
+
+        .diff-line.removed .line-num {
+            background: var(--diff-removed);
+            border-right-color: var(--diff-removed-border);
+            color: var(--diff-removed-border);
+        }
+
+        .diff-line.changed .line-content {
+            background: var(--diff-changed);
+        }
+
+        .diff-line.changed .line-num {
+            background: var(--diff-changed);
+            border-right-color: var(--diff-changed-border);
+            color: var(--diff-changed-border);
+        }
+
+        .diff-line.highlight .line-content {
+            box-shadow: inset 0 0 0 2px var(--accent-color);
+            border-radius: 4px;
+        }
+
+        /* Diff Explanations Panel */
+        .diff-explanations {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .diff-explanations-header {
+            padding: 12px 16px;
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .diff-explanations-content {
+            flex: 1;
+            overflow: auto;
+            padding: 12px;
+        }
+
+        .diff-card {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .diff-card:hover {
+            border-color: var(--accent-color);
+            transform: translateX(4px);
+        }
+
+        .diff-card.active {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px var(--accent-bg);
+        }
+
+        .diff-card-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .diff-card-number {
+            background: var(--accent-color);
+            color: white;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .diff-card-type {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        .diff-card-type.added {
+            background: var(--diff-added);
+            color: var(--diff-added-border);
+        }
+
+        .diff-card-type.removed {
+            background: var(--diff-removed);
+            color: var(--diff-removed-border);
+        }
+
+        .diff-card-type.changed {
+            background: var(--diff-changed);
+            color: var(--diff-changed-border);
+        }
+
+        .diff-card-path {
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+            word-break: break-all;
+        }
+
+        .diff-card-description {
+            font-size: 0.85rem;
+            color: var(--text-primary);
+            line-height: 1.4;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .results-grid {
+                grid-template-columns: 1fr 1fr;
+                grid-template-rows: 1fr auto;
+                height: auto;
+                min-height: auto;
+            }
+
+            .diff-explanations {
+                grid-column: 1 / -1;
+                max-height: 300px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .input-section {
+                grid-template-columns: 1fr;
+            }
+
+            .results-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .json-view {
+                max-height: 300px;
+            }
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        [data-theme="dark"] .loading-overlay {
+            background: rgba(15, 23, 42, 0.8);
+        }
+
+        .loading-overlay.visible {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--border-color);
+            border-top: 4px solid var(--accent-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 16px;
+        }
+
+        .loading-text {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>JSON Compare</h1>
+            <div class="header-controls">
+                <a href="../index.html" class="btn btn-secondary home-btn"
+                    style="text-decoration: none; display: inline-flex; height: 40px; align-items: center; gap: 8px;">
+                    <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                    </svg>
+                    Home
+                </a>
+                <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">
+                    <svg id="sun-icon" viewBox="0 0 24 24" style="display: none;">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                    <svg id="moon-icon" viewBox="0 0 24 24">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Input Section -->
+        <div class="input-section" id="input-section">
+            <div class="input-panel" id="panel-left">
+                <div class="panel-header">
+                    <span class="panel-title">Left JSON</span>
+                    <div class="panel-actions">
+                        <button class="btn btn-secondary" onclick="document.getElementById('file-left').click()">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            Upload
+                        </button>
+                        <button class="btn btn-secondary" onclick="clearInput('left')">
+                            <svg viewBox="0 0 24 24">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                            Clear
+                        </button>
+                        <input type="file" id="file-left" class="file-input" accept=".json,application/json"
+                            onchange="handleFileUpload(this, 'left')">
+                    </div>
+                </div>
+                <textarea id="json-left" class="json-textarea" placeholder="Paste JSON here or drop file..."></textarea>
+                <div id="error-left" class="error-message"></div>
+            </div>
+
+            <div class="input-panel" id="panel-right">
+                <div class="panel-header">
+                    <span class="panel-title">Right JSON</span>
+                    <div class="panel-actions">
+                        <button class="btn btn-secondary" onclick="document.getElementById('file-right').click()">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            Upload
+                        </button>
+                        <button class="btn btn-secondary" onclick="clearInput('right')">
+                            <svg viewBox="0 0 24 24">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                            Clear
+                        </button>
+                        <input type="file" id="file-right" class="file-input" accept=".json,application/json"
+                            onchange="handleFileUpload(this, 'right')">
+                    </div>
+                </div>
+                <textarea id="json-right" class="json-textarea"
+                    placeholder="Paste JSON here or drop file..."></textarea>
+                <div id="error-right" class="error-message"></div>
+            </div>
+        </div>
+
+        <!-- Controls Bar for toggling inputs -->
+        <div class="controls-bar" id="controls-bar">
+            <button class="btn btn-secondary" onclick="toggleInputs()">
+                <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+                Edit JSON Inputs
+            </button>
+            <label class="toggle-label">
+                <input type="checkbox" id="sync-scroll" checked>
+                <span>Sync Scrolling</span>
+            </label>
+        </div>
+
+        <!-- Compare Button (Initial) -->
+        <div class="compare-section" id="compare-section">
+            <button class="btn btn-primary btn-compare" onclick="compareJSON()">
+                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 17H4M4 17l4 4M4 17l4-4M4 7h16M20 7l-4-4M20 7l-4 4" />
+                </svg>
+                Compare JSON
+            </button>
+        </div>
+
+        <!-- Results Section -->
+        <div id="results-section" class="results-section">
+            <div class="diff-summary">
+                <span class="diff-count" id="diff-count">0</span>
+                <span class="diff-label" id="diff-label">differences found</span>
+                <div class="diff-legend">
+                    <div class="legend-item">
+                        <div class="legend-color legend-removed"></div>
+                        <span>Only in left</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color legend-added"></div>
+                        <span>Only in right</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color legend-changed"></div>
+                        <span>Different value</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="results-grid">
+                <div class="json-view">
+                    <div class="json-view-header">Left JSON (formatted)</div>
+                    <div class="json-view-content" id="view-left"></div>
+                </div>
+
+                <div class="json-view">
+                    <div class="json-view-header">Right JSON (formatted)</div>
+                    <div class="json-view-content" id="view-right"></div>
+                </div>
+
+                <div class="diff-explanations">
+                    <div class="diff-explanations-header">Differences</div>
+                    <div class="diff-explanations-content" id="diff-cards"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="spinner"></div>
+        <div class="loading-text">Processing archive...</div>
+    </div>
+
+    <script>
+        // Theme Toggle and Back Button
+        const themeToggle = document.getElementById('theme-toggle');
+        const sunIcon = document.getElementById('sun-icon');
+        const moonIcon = document.getElementById('moon-icon');
+        const loadingOverlay = document.getElementById('loading-overlay');
+
+        // Worker Code
+        const workerScript = `
+        self.onmessage = async (e) => {
+            const file = e.data;
+            try {
+                const ds = new DecompressionStream('gzip');
+                const stream = file.stream().pipeThrough(ds);
+                const reader = stream.getReader();
+
+                let buffer = new Uint8Array(0);
+
+                const readBytes = async (n) => {
+                    while (buffer.length < n) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+                        const newBuffer = new Uint8Array(buffer.length + value.length);
+                        newBuffer.set(buffer);
+                        newBuffer.set(value, buffer.length);
+                        buffer = newBuffer;
+                    }
+                    if (buffer.length < n) return null; // EOF or partial
+                    const chunk = buffer.slice(0, n);
+                    buffer = buffer.slice(n);
+                    return chunk;
+                };
+
+                const skipBytes = async (n) => {
+                    if (n <= buffer.length) {
+                        buffer = buffer.slice(n);
+                        return true;
+                    }
+                    n -= buffer.length;
+                    buffer = new Uint8Array(0);
+                    
+                    while (n > 0) {
+                        const { done, value } = await reader.read();
+                        if (done) return false;
+                        if (value.length > n) {
+                            buffer = value.slice(n);
+                            n = 0;
+                        } else {
+                            n -= value.length;
+                        }
+                    }
+                    return true;
+                };
+
+                while (true) {
+                    const header = await readBytes(512);
+                    if (!header) break;
+
+                    if (header.every(b => b === 0)) continue;
+
+                    let nameEnd = 0;
+                    while (nameEnd < 100 && header[nameEnd] !== 0) nameEnd++;
+                    const name = new TextDecoder().decode(header.slice(0, nameEnd));
+
+                    // Size is at offset 124, 12 bytes
+                    let sizeStr = new TextDecoder().decode(header.slice(124, 136));
+                    sizeStr = sizeStr.replace(/\\0/g, '').trim();
+                    const size = parseInt(sizeStr, 8);
+                    
+                    if (isNaN(size)) {
+                         // Attempt recovery or just fail? For now, break.
+                         break;
+                    }
+
+                    // Check if JSON and not a hidden/resource file (OS specific)
+                    if (name.toLowerCase().endsWith('.json') && !name.split('/').pop().startsWith('._')) {
+                        const content = await readBytes(size);
+                        if (!content) throw new Error('Incomplete file content');
+                        const jsonStr = new TextDecoder().decode(content);
+                        self.postMessage({ success: true, data: jsonStr, filename: name });
+                        return;
+                    }
+                    
+                    const padding = Math.ceil(size / 512) * 512;
+                    await skipBytes(padding);
+                }
+                
+                self.postMessage({ success: false, error: 'No .json file found in archive' });
+            } catch (err) {
+                self.postMessage({ success: false, error: err.message });
+            }
+        };
+        `;
+
+        const workerBlob = new Blob([workerScript], {
+            type: 'application/javascript'
+        });
+        const workerUrl = URL.createObjectURL(workerBlob);
+
+        function showLoading() {
+            loadingOverlay.classList.add('visible');
+        }
+
+        function hideLoading() {
+            loadingOverlay.classList.remove('visible');
+        }
+
+        function getSystemTheme() {
+            return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+
+        function applyTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            if (theme === 'dark') {
+                sunIcon.style.display = 'block';
+                moonIcon.style.display = 'none';
+            } else {
+                sunIcon.style.display = 'none';
+                moonIcon.style.display = 'block';
+            }
+        }
+
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme') || getSystemTheme();
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            localStorage.setItem('theme', newTheme);
+            applyTheme(newTheme);
+        }
+
+        themeToggle.addEventListener('click', toggleTheme);
+
+        // Initialize theme
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+            applyTheme(savedTheme);
+        } else {
+            applyTheme(getSystemTheme());
+        }
+
+        // Drag and Drop Logic
+        ['left', 'right'].forEach(side => {
+            const panel = document.getElementById(`panel-${side}`);
+            const textarea = document.getElementById(`json-${side}`);
+
+            // Prevent default drag behaviors
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                panel.addEventListener(eventName, preventDefaults, false);
+                textarea.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            // Highlight drop zone
+            ['dragenter', 'dragover'].forEach(eventName => {
+                panel.addEventListener(eventName, () => panel.classList.add('drag-active'), false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                panel.addEventListener(eventName, () => panel.classList.remove('drag-active'), false);
+            });
+
+            // Handle dropped file
+            panel.addEventListener('drop', (e) => {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                if (files.length > 0) {
+                    handleFile(files[0], side);
+                }
+            }, false);
+        });
+
+        // File upload handler
+        function handleFileUpload(input, side) {
+            const file = input.files[0];
+            if (!file) return;
+            handleFile(file, side);
+            input.value = ''; // Reset for re-upload
+        }
+
+        function handleFile(file, side) {
+            if (!file) return;
+
+            const isTarGz = file.name.endsWith('.tar.gz') || file.name.endsWith('.tgz');
+
+            if (isTarGz) {
+                showLoading();
+                const worker = new Worker(workerUrl);
+
+                worker.onmessage = (e) => {
+                    hideLoading();
+                    if (e.data.success) {
+                        document.getElementById(`json-${side}`).value = e.data.data;
+                        hideError(side);
+                        // Optional: Could notify user which file was loaded
+                        // console.log('Loaded:', e.data.filename);
+                    } else {
+                        showError(side, e.data.error || 'Failed to process archive');
+                    }
+                    worker.terminate();
+                };
+
+                worker.onerror = (e) => {
+                    hideLoading();
+                    showError(side, 'Worker error: ' + e.message);
+                    worker.terminate();
+                };
+
+                worker.postMessage(file);
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById(`json-${side}`).value = e.target.result;
+                hideError(side);
+            };
+            reader.readAsText(file);
+        }
+
+        // Clear input
+        function clearInput(side) {
+            document.getElementById(`json-${side}`).value = '';
+            hideError(side);
+        }
+
+        // Error handling
+        function showError(side, message) {
+            const errorEl = document.getElementById(`error-${side}`);
+            errorEl.textContent = message;
+            errorEl.classList.add('visible');
+        }
+
+        function hideError(side) {
+            document.getElementById(`error-${side}`).classList.remove('visible');
+        }
+
+        function toggleInputs() {
+            const section = document.getElementById('input-section');
+            const compareBtn = document.getElementById('compare-section');
+            const controls = document.getElementById('controls-bar');
+
+            if (section.classList.contains('collapsed')) {
+                section.classList.remove('collapsed');
+                compareBtn.classList.remove('hidden');
+                controls.classList.remove('visible');
+            } else {
+                section.classList.add('collapsed');
+                compareBtn.classList.add('hidden');
+                controls.classList.add('visible');
+            }
+        }
+
+        // Deep sort object keys recursively
+        function sortObjectKeys(obj) {
+            if (Array.isArray(obj)) {
+                return obj.map(sortObjectKeys);
+            } else if (obj !== null && typeof obj === 'object') {
+                const sorted = {};
+                Object.keys(obj).sort().forEach(key => {
+                    sorted[key] = sortObjectKeys(obj[key]);
+                });
+                return sorted;
+            }
+            return obj;
+        }
+
+        // Compare two JSON objects and find differences
+        function findDifferences(left, right, path = '') {
+            const diffs = [];
+
+            // Handle null/undefined
+            if (left === right) return diffs;
+
+            // Handle nulls explicitly
+            if (left === null || right === null) {
+                if (left !== right) {
+                    diffs.push({
+                        path: path || 'root',
+                        type: left === null ? 'added' : (right === null ? 'removed' : 'changed'),
+                        description: left === null
+                            ? `Value is null on left, but defined on right`
+                            : (right === null ? `Value is defined on left, but null on right` : 'Changed')
+                    });
+                }
+                return diffs;
+            }
+
+            const leftType = Array.isArray(left) ? 'array' : typeof left;
+            const rightType = Array.isArray(right) ? 'array' : typeof right;
+
+            if (leftType !== rightType) {
+                diffs.push({
+                    path: path || 'root',
+                    type: 'changed',
+                    leftValue: left,
+                    rightValue: right,
+                    description: `Type mismatch: ${leftType} vs ${rightType}`
+                });
+                return diffs;
+            }
+
+            if (leftType === 'array') {
+                const maxLen = Math.max(left.length, right.length);
+                for (let i = 0; i < maxLen; i++) {
+                    const itemPath = `${path}[${i}]`;
+                    if (i >= left.length) {
+                        diffs.push({
+                            path: itemPath,
+                            type: 'added',
+                            rightValue: right[i],
+                            description: `Item at index ${i} added on right`
+                        });
+                    } else if (i >= right.length) {
+                        diffs.push({
+                            path: itemPath,
+                            type: 'removed',
+                            leftValue: left[i],
+                            description: `Item at index ${i} removed from right`
+                        });
+                    } else {
+                        diffs.push(...findDifferences(left[i], right[i], itemPath));
+                    }
+                }
+            } else if (leftType === 'object') {
+                const keys = new Set([...Object.keys(left), ...Object.keys(right)]);
+                for (const key of keys) {
+                    const segment = /^[a-zA-Z0-9_$]+$/.test(key) ? `.${key}` : `["${key}"]`;
+                    const keyPath = path ? `${path}${segment}` : key;
+
+                    if (!(key in left)) {
+                        diffs.push({
+                            path: keyPath,
+                            type: 'added',
+                            rightValue: right[key],
+                            description: `Property "${key}" missing on left`
+                        });
+                    } else if (!(key in right)) {
+                        diffs.push({
+                            path: keyPath,
+                            type: 'removed',
+                            leftValue: left[key],
+                            description: `Property "${key}" missing on right`
+                        });
+                    } else {
+                        diffs.push(...findDifferences(left[key], right[key], keyPath));
+                    }
+                }
+            } else {
+                if (left !== right) {
+                    diffs.push({
+                        path: path || 'root',
+                        type: 'changed',
+                        leftValue: left,
+                        rightValue: right,
+                        description: `Value changed: "${left}" → "${right}"`
+                    });
+                }
+            }
+
+            return diffs;
+        }
+
+        // Recursive renderer with Line Numbers and Data Attributes
+        function simpleRender(val, diffMap, side, lineCounter, path = '', level = 0, suffix = '') {
+            const indent = '  '.repeat(level);
+
+            const diff = diffMap.get(path);
+            const cls = getDiffClass(diff, side);
+            const idAttr = getDiffIdAttr(diff, side);
+
+            // Helper to generate line markup with data-path
+            const createLine = (content) => {
+                const num = lineCounter.val++;
+                // escape path for attribute
+                const safePath = path.replace(/"/g, '&quot;');
+                return `<div class="diff-line ${cls}" ${idAttr} data-path="${safePath}" data-side="${side}"><span class="line-num">${num}</span><span class="line-content">${indent}${content}</span></div>`;
+            };
+
+            if (val === null) return createLine(`null${suffix}`);
+            if (typeof val === 'number' || typeof val === 'boolean') return createLine(`${val}${suffix}`);
+            if (typeof val === 'string') return createLine(`"${val}"${suffix}`);
+
+            if (Array.isArray(val)) {
+                if (val.length === 0) return createLine(`[]${suffix}`);
+
+                let html = createLine(`[`);
+                // For array items, we pass the current path + index
+                val.forEach((item, i) => {
+                    const itemPath = `${path}[${i}]`;
+                    const itemSuffix = (i < val.length - 1) ? ',' : '';
+                    html += simpleRender(item, diffMap, side, lineCounter, itemPath, level + 1, itemSuffix);
+                });
+                const num = lineCounter.val++;
+                html += `<div class="diff-line"><span class="line-num">${num}</span><span class="line-content">${indent}]${suffix}</span></div>`;
+                return html;
+            }
+
+            if (typeof val === 'object') {
+                const keys = Object.keys(val); // Keys sorted
+                if (keys.length === 0) return createLine(`{}${suffix}`);
+
+                let html = createLine(`{`);
+                keys.forEach((key, i) => {
+                    const segment = /^[a-zA-Z0-9_$]+$/.test(key) ? `.${key}` : `["${key}"]`;
+                    const keyPath = path ? `${path}${segment}` : key;
+                    const itemSuffix = (i < keys.length - 1) ? ',' : '';
+
+                    html += keyValueRender(key, val[key], diffMap, side, lineCounter, keyPath, level + 1, itemSuffix);
+                });
+
+                const num = lineCounter.val++;
+                html += `<div class="diff-line"><span class="line-num">${num}</span><span class="line-content">${indent}}${suffix}</span></div>`;
+                return html;
+            }
+        }
+
+        function keyValueRender(key, val, diffMap, side, lineCounter, path, level, suffix) {
+            const indent = '  '.repeat(level);
+            const keyStr = `"${key}": `;
+
+            const diff = diffMap.get(path);
+            const cls = getDiffClass(diff, side);
+            const idAttr = getDiffIdAttr(diff, side);
+
+            const createLine = (content) => {
+                const num = lineCounter.val++;
+                const safePath = path.replace(/"/g, '&quot;');
+                return `<div class="diff-line ${cls}" ${idAttr} data-path="${safePath}" data-side="${side}"><span class="line-num">${num}</span><span class="line-content">${indent}${content}</span></div>`;
+            };
+
+            if (val === null || typeof val !== 'object') {
+                const valStr = JSON.stringify(val);
+                return createLine(`${keyStr}${valStr}${suffix}`);
+            }
+
+            const isArray = Array.isArray(val);
+            const empty = Object.keys(val).length === 0;
+            const startChar = isArray ? '[' : '{';
+            const endChar = isArray ? ']' : '}';
+
+            if (empty) {
+                return createLine(`${keyStr}${startChar}${endChar}${suffix}`);
+            }
+
+            // Start line
+            let html = createLine(`${keyStr}${startChar}`);
+
+            if (isArray) {
+                val.forEach((item, i) => {
+                    const itemPath = `${path}[${i}]`;
+                    const itemSuffix = (i < val.length - 1) ? ',' : '';
+                    html += simpleRender(item, diffMap, side, lineCounter, itemPath, level + 1, itemSuffix);
+                });
+            } else {
+                const keys = Object.keys(val);
+                keys.forEach((k, i) => {
+                    const seg = /^[a-zA-Z0-9_$]+$/.test(k) ? `.${k}` : `["${k}"]`;
+                    const p = `${path}${seg}`;
+                    const s = i < keys.length - 1 ? ',' : '';
+                    html += keyValueRender(k, val[k], diffMap, side, lineCounter, p, level + 1, s);
+                });
+            }
+
+            // End line
+            const num = lineCounter.val++;
+            html += `<div class="diff-line"><span class="line-num">${num}</span><span class="line-content">${indent}${endChar}${suffix}</span></div>`;
+            return html;
+        }
+
+        function getDiffClass(diff, side) {
+            if (!diff) return '';
+            if (side === 'left') {
+                if (diff.type === 'removed') return 'removed';
+                if (diff.type === 'changed') return 'changed';
+            } else {
+                if (diff.type === 'added') return 'added';
+                if (diff.type === 'changed') return 'changed';
+            }
+            return '';
+        }
+
+        function getDiffIdAttr(diff, side) {
+            if (!diff) return '';
+            if ((side === 'left' && (diff.type === 'removed' || diff.type === 'changed')) ||
+                (side === 'right' && (diff.type === 'added' || diff.type === 'changed'))) {
+                return `id="diff-${side}-${diff.index}"`;
+            }
+            return '';
+        }
+
+        // Main compare function
+        function compareJSON() {
+            hideError('left');
+            hideError('right');
+
+            const leftText = document.getElementById('json-left').value.trim();
+            const rightText = document.getElementById('json-right').value.trim();
+
+            if (!leftText) {
+                showError('left', 'Please enter or upload JSON');
+                return;
+            }
+            if (!rightText) {
+                showError('right', 'Please enter or upload JSON');
+                return;
+            }
+
+            let leftObj, rightObj;
+
+            try {
+                leftObj = JSON.parse(leftText);
+            } catch (e) {
+                showError('left', `Invalid JSON: ${e.message}`);
+                return;
+            }
+
+            try {
+                rightObj = JSON.parse(rightText);
+            } catch (e) {
+                showError('right', `Invalid JSON: ${e.message}`);
+                return;
+            }
+
+            // Collapse inputs
+            document.getElementById('input-section').classList.add('collapsed');
+            document.getElementById('compare-section').classList.add('hidden');
+            document.getElementById('controls-bar').classList.add('visible');
+
+            // Sort objects for semantic comparison
+            const sortedLeft = sortObjectKeys(leftObj);
+            const sortedRight = sortObjectKeys(rightObj);
+
+            // Find differences
+            const diffs = findDifferences(sortedLeft, sortedRight);
+
+            // Build Map for rendering
+            const diffMap = new Map();
+            diffs.forEach((diff, index) => {
+                diff.index = index;
+                diffMap.set(diff.path, diff);
+            });
+
+            // Update UI
+            const resultsSection = document.getElementById('results-section');
+            const diffCount = document.getElementById('diff-count');
+            const diffLabel = document.getElementById('diff-label');
+            const viewLeft = document.getElementById('view-left');
+            const viewRight = document.getElementById('view-right');
+            const diffCards = document.getElementById('diff-cards');
+
+            diffCount.textContent = diffs.length;
+            diffLabel.textContent = diffs.length === 1 ? 'difference found' : 'differences found';
+
+            if (diffs.length === 0) {
+                diffCount.classList.add('no-diff');
+                diffLabel.textContent = '— JSON documents are identical';
+            } else {
+                diffCount.classList.remove('no-diff');
+            }
+
+            // Render formatted JSON with highlights using new renderer
+            // Reset line counters for each view
+            viewLeft.innerHTML = simpleRender(sortedLeft, diffMap, 'left', { val: 1 });
+            viewRight.innerHTML = simpleRender(sortedRight, diffMap, 'right', { val: 1 });
+
+            // Render diff cards
+            diffCards.innerHTML = diffs.map((diff, index) => `
+                <div class="diff-card" data-index="${index}" onclick="scrollToDiff(${index})">
+                    <div class="diff-card-header">
+                        <span class="diff-card-number">${index + 1}</span>
+                        <span class="diff-card-type ${diff.type}">
+                            ${diff.type === 'added' ? 'Only Right' : diff.type === 'removed' ? 'Only Left' : 'Changed'}
+                        </span>
+                    </div>
+                    <div class="diff-card-path">${diff.path}</div>
+                    <div class="diff-card-description">${diff.description}</div>
+                </div>
+            `).join('');
+
+            resultsSection.classList.add('visible');
+            // Also store diffs globally or on DOM for scroll access (we can just pull from card data)
+        }
+
+        // Helper to find element by path or nearest parent
+        function findBestElement(side, path) {
+            const view = document.getElementById(`view-${side}`);
+            if (!view) return null;
+
+            // Try exact match
+            // We need to query selectors inside the specific view
+            let el = view.querySelector(`[data-path="${path.replace(/"/g, '\\"')}"]`);
+            if (el) return el;
+
+            // Try searching up the path hierarchy
+            let currentPath = path;
+            while (currentPath.includes('.') || currentPath.includes('[')) {
+                // Remove last segment to find parent
+                if (currentPath.endsWith(']')) {
+                    currentPath = currentPath.substring(0, currentPath.lastIndexOf('['));
+                } else {
+                    currentPath = currentPath.substring(0, currentPath.lastIndexOf('.'));
+                }
+
+                if (!currentPath) break;
+
+                el = view.querySelector(`[data-path="${currentPath.replace(/"/g, '\\"')}"]`);
+                if (el) return el; // Found a parent!
+            }
+
+            // Fallback to searching first segment if all else fails
+            return null;
+        }
+
+        // Scroll to diff and highlight
+        function scrollToDiff(index) {
+            // Remove previous highlights
+            document.querySelectorAll('.diff-line.highlight').forEach(el => {
+                el.classList.remove('highlight');
+            });
+            document.querySelectorAll('.diff-card.active').forEach(el => {
+                el.classList.remove('active');
+            });
+
+            // Highlight card
+            const card = document.querySelector(`.diff-card[data-index="${index}"]`);
+            if (card) card.classList.add('active');
+
+            const pathText = card.querySelector('.diff-card-path').textContent;
+
+            const leftEl = findBestElement('left', pathText);
+            const rightEl = findBestElement('right', pathText);
+
+            if (leftEl) {
+                // If ID matches index, we know it's the exact element
+                if (leftEl.id === `diff-left-${index}`) leftEl.classList.add('highlight');
+                leftEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+
+            if (rightEl) {
+                if (rightEl.id === `diff-right-${index}`) rightEl.classList.add('highlight');
+                rightEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        // Sync Scrolling
+        const viewLeft = document.getElementById('view-left');
+        const viewRight = document.getElementById('view-right');
+        const syncCheckbox = document.getElementById('sync-scroll');
+        let isSyncingLeft = false;
+        let isSyncingRight = false;
+
+        viewLeft.addEventListener('scroll', function () {
+            if (!syncCheckbox || !syncCheckbox.checked || isSyncingLeft) return;
+            isSyncingRight = true;
+            // Strict Line Number Sync
+            viewRight.scrollTop = this.scrollTop;
+            requestAnimationFrame(() => isSyncingRight = false);
+        });
+
+        viewRight.addEventListener('scroll', function () {
+            if (!syncCheckbox || !syncCheckbox.checked || isSyncingRight) return;
+            isSyncingLeft = true;
+            // Strict Line Number Sync
+            viewLeft.scrollTop = this.scrollTop;
+            requestAnimationFrame(() => isSyncingLeft = false);
+        });
+    </script>
+</body>
+
+</html>
