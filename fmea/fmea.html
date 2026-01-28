@@ -966,6 +966,10 @@
                         <th class="rating-cell" style="width: 50px;">D</th>
                         <th style="width: 50px;">AP</th>
                         <th style="width: 160px;">Recommended Actions</th>
+                        <th class="rating-cell" style="width: 50px;">S₂</th>
+                        <th class="rating-cell" style="width: 50px;">O₂</th>
+                        <th class="rating-cell" style="width: 50px;">D₂</th>
+                        <th style="width: 50px;">AP₂</th>
                         <th style="width: 100px;">Status</th>
                         <th style="width: 60px;"></th>
                     </tr>
@@ -1398,6 +1402,9 @@
                 controls: '',
                 detection: 5,
                 actions: '',
+                severity2: 5,
+                occurrence2: 5,
+                detection2: 5,
                 status: 'Open'
             };
         }
@@ -1441,6 +1448,13 @@
             const ap = calculateAP(row.severity, row.occurrence, row.detection);
             const apClass = ap === 'H' ? 'high' : ap === 'M' ? 'medium' : 'low';
 
+            // Calculate AP2 from post-action ratings (use original values as fallback for legacy data)
+            const s2 = row.severity2 !== undefined ? row.severity2 : row.severity;
+            const o2 = row.occurrence2 !== undefined ? row.occurrence2 : row.occurrence;
+            const d2 = row.detection2 !== undefined ? row.detection2 : row.detection;
+            const ap2 = calculateAP(s2, o2, d2);
+            const ap2Class = ap2 === 'H' ? 'high' : ap2 === 'M' ? 'medium' : 'low';
+
             // Determine visibility based on filter
             const hidden = currentFilter !== 'all' && currentFilter !== apClass;
 
@@ -1476,6 +1490,18 @@
                     </td>
                     <td>
                         <textarea class="editable" data-field="actions" placeholder="Recommended actions">${row.actions}</textarea>
+                    </td>
+                    <td class="rating-cell">
+                        <input type="number" class="rating-input" data-field="severity2" min="1" max="10" value="${s2}">
+                    </td>
+                    <td class="rating-cell">
+                        <input type="number" class="rating-input" data-field="occurrence2" min="1" max="10" value="${o2}">
+                    </td>
+                    <td class="rating-cell">
+                        <input type="number" class="rating-input" data-field="detection2" min="1" max="10" value="${d2}">
+                    </td>
+                    <td>
+                        <span class="ap-badge ${ap2Class}">${ap2}</span>
                     </td>
                     <td>
                         <select class="status-select" data-field="status">
@@ -1533,8 +1559,8 @@
             const field = e.target.dataset.field;
             let value = e.target.value;
 
-            // Clamp rating values
-            if (['severity', 'occurrence', 'detection'].includes(field)) {
+            // Clamp rating values (including post-action ratings)
+            if (['severity', 'occurrence', 'detection', 'severity2', 'occurrence2', 'detection2'].includes(field)) {
                 value = Math.max(1, Math.min(10, parseInt(value) || 1));
                 e.target.value = value;
             }
@@ -1546,7 +1572,7 @@
                 saveToLocalStorage();
 
                 // Re-render to update AP and colors
-                if (['severity', 'occurrence', 'detection'].includes(field)) {
+                if (['severity', 'occurrence', 'detection', 'severity2', 'occurrence2', 'detection2'].includes(field)) {
                     render();
                 }
             }
@@ -1649,13 +1675,17 @@
         function exportCSV() {
             const headers = [
                 '#', 'Item/Function', 'Failure Mode', 'Effects', 'S',
-                'Causes', 'O', 'Controls', 'D', 'AP', 'Actions', 'Status'
+                'Causes', 'O', 'Controls', 'D', 'AP', 'Actions', 'S2', 'O2', 'D2', 'AP2', 'Status'
             ];
 
             const csvRows = [headers.join(',')];
 
             rows.forEach((row, idx) => {
                 const ap = calculateAP(row.severity, row.occurrence, row.detection);
+                const s2 = row.severity2 !== undefined ? row.severity2 : row.severity;
+                const o2 = row.occurrence2 !== undefined ? row.occurrence2 : row.occurrence;
+                const d2 = row.detection2 !== undefined ? row.detection2 : row.detection;
+                const ap2 = calculateAP(s2, o2, d2);
                 const values = [
                     idx + 1,
                     `"${(row.item || '').replace(/"/g, '""')}"`,
@@ -1668,6 +1698,10 @@
                     row.detection,
                     ap,
                     `"${(row.actions || '').replace(/"/g, '""')}"`,
+                    s2,
+                    o2,
+                    d2,
+                    ap2,
                     row.status
                 ];
                 csvRows.push(values.join(','));
