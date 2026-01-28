@@ -292,9 +292,11 @@
             border-radius: 4px;
             width: 100%;
             min-height: 32px;
-            resize: vertical;
+            resize: none;
             font-family: inherit;
-            transition: all 0.2s;
+            transition: border-color 0.2s, background 0.2s;
+            overflow: hidden;
+            line-height: 1.4;
         }
 
         .editable:hover {
@@ -308,7 +310,8 @@
         }
 
         textarea.editable {
-            min-height: 60px;
+            min-height: 48px;
+            field-sizing: content;
         }
 
         /* Rating Inputs */
@@ -710,6 +713,198 @@
         .ap-header-row th {
             background: rgba(255, 255, 255, 0.05);
         }
+
+        /* Print Styles for Landscape A4 PDF */
+        @media print {
+            @page {
+                size: A4 landscape;
+                margin: 10mm;
+            }
+
+            body {
+                background: white !important;
+                color: black !important;
+                font-size: 9pt;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .container {
+                max-width: none !important;
+                padding: 0 !important;
+            }
+
+            /* Hide non-essential UI elements */
+            header,
+            .controls-bar,
+            .reference-section,
+            .confirm-modal,
+            .tooltip,
+            .back-link,
+            .mode-toggle,
+            .row-actions,
+            .row-btn,
+            .empty-state,
+            footer {
+                display: none !important;
+            }
+
+            .worksheet-container {
+                overflow: visible !important;
+                border: none !important;
+                background: transparent !important;
+            }
+
+            .worksheet {
+                width: 100% !important;
+                min-width: auto !important;
+                border-collapse: collapse;
+                font-size: 8pt;
+            }
+
+            .worksheet th,
+            .worksheet td {
+                border: 1px solid #333 !important;
+                padding: 4px 6px !important;
+                background: white !important;
+                color: black !important;
+                vertical-align: top;
+            }
+
+            .worksheet th {
+                background: #e0e0e0 !important;
+                font-weight: bold;
+                text-transform: uppercase;
+                font-size: 7pt;
+            }
+
+            .worksheet tbody tr {
+                background: white !important;
+            }
+
+            .worksheet tbody tr.priority-high {
+                background: #ffebee !important;
+            }
+
+            .worksheet tbody tr.priority-medium {
+                background: #fff8e1 !important;
+            }
+
+            .worksheet tbody tr.priority-low {
+                background: #e8f5e9 !important;
+            }
+
+            .worksheet tbody tr.hidden {
+                display: none !important;
+            }
+
+            /* Hide the last column (actions) */
+            .worksheet th:last-child,
+            .worksheet td:last-child {
+                display: none !important;
+            }
+
+            /* Convert editable fields to plain text for printing */
+            .editable {
+                border: none !important;
+                background: transparent !important;
+                padding: 2px 0 !important;
+                resize: none !important;
+                overflow: visible !important;
+                height: auto !important;
+                min-height: 0 !important;
+                color: black !important;
+                font-size: 8pt;
+                line-height: 1.3;
+                white-space: pre-wrap;
+                word-wrap: break-word;
+            }
+
+            textarea.editable {
+                height: auto !important;
+                min-height: 0 !important;
+            }
+
+            .rating-input {
+                border: none !important;
+                background: transparent !important;
+                color: black !important;
+                font-weight: bold;
+                text-align: center;
+                font-size: 9pt;
+            }
+
+            .status-select {
+                border: none !important;
+                background: transparent !important;
+                color: black !important;
+                font-size: 8pt;
+                -webkit-appearance: none;
+                -moz-appearance: none;
+                appearance: none;
+            }
+
+            .ap-badge {
+                display: inline-block !important;
+                width: 20px !important;
+                height: 20px !important;
+                line-height: 20px !important;
+                text-align: center;
+                border-radius: 4px;
+                font-weight: bold;
+                font-size: 9pt;
+            }
+
+            .ap-badge.high {
+                background: #ef4444 !important;
+                color: white !important;
+            }
+
+            .ap-badge.medium {
+                background: #f59e0b !important;
+                color: black !important;
+            }
+
+            .ap-badge.low {
+                background: #22c55e !important;
+                color: black !important;
+            }
+
+            /* Column widths for print */
+            .worksheet th:nth-child(1),
+            .worksheet td:nth-child(1) {
+                width: 20px !important;
+            }
+
+            .worksheet th:nth-child(5),
+            .worksheet td:nth-child(5),
+            .worksheet th:nth-child(7),
+            .worksheet td:nth-child(7),
+            .worksheet th:nth-child(9),
+            .worksheet td:nth-child(9),
+            .worksheet th:nth-child(10),
+            .worksheet td:nth-child(10) {
+                width: 30px !important;
+                text-align: center !important;
+            }
+
+            /* Ensure content doesn't overflow */
+            .worksheet td {
+                max-width: 150px;
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+            }
+
+            /* Add title before print - on container to avoid overlapping table */
+            .worksheet-container::before {
+                content: 'FMEA Analysis';
+                display: block;
+                font-size: 14pt;
+                font-weight: bold;
+                margin-bottom: 12px;
+                text-align: center;
+            }
+        }
     </style>
 </head>
 
@@ -747,9 +942,12 @@
 
             <div class="control-group">
                 <button class="btn" id="add-row-btn">+ Add Row</button>
-                <button class="btn btn-secondary" id="copy-btn">📋 Copy</button>
+                <button class="btn btn-secondary" id="print-btn" onclick="printPDF()">🖨️ Print PDF</button>
+                <button class="btn btn-secondary" id="import-btn" onclick="triggerImportCSV()">⬆️ Import CSV</button>
                 <button class="btn btn-secondary" id="export-btn">⬇️ Export CSV</button>
                 <button class="btn btn-secondary" id="clear-btn">🗑️ Clear All</button>
+                <input type="file" id="csv-import-input" accept=".csv" style="display: none;"
+                    onchange="importCSV(event)">
             </div>
         </div>
 
@@ -1308,6 +1506,8 @@
                 worksheetContainer.style.display = 'block';
                 emptyState.style.display = 'none';
                 tbody.innerHTML = rows.map((row, idx) => renderRow(row, idx)).join('');
+                // Auto-resize all textareas after rendering
+                setTimeout(resizeAllTextareas, 0);
             }
 
             // Update mode toggle
@@ -1483,40 +1683,25 @@
             URL.revokeObjectURL(url);
         }
 
-        function copyToClipboard() {
-            const headers = [
-                '#', 'Item/Function', 'Failure Mode', 'Effects', 'S',
-                'Causes', 'O', 'Controls', 'D', 'AP', 'Actions', 'Status'
-            ];
+        // ============================================
+        // Auto-resize Textareas (fallback for field-sizing: content)
+        // ============================================
 
-            const lines = [headers.join('\t')];
+        function autoResizeTextarea(e) {
+            if (e.target.tagName === 'TEXTAREA' && e.target.classList.contains('editable')) {
+                resizeTextarea(e.target);
+            }
+        }
 
-            rows.forEach((row, idx) => {
-                const ap = calculateAP(row.severity, row.occurrence, row.detection);
-                const values = [
-                    idx + 1,
-                    row.item || '',
-                    row.failureMode || '',
-                    row.effects || '',
-                    row.severity,
-                    row.causes || '',
-                    row.occurrence,
-                    row.controls || '',
-                    row.detection,
-                    ap,
-                    row.actions || '',
-                    row.status
-                ];
-                lines.push(values.join('\t'));
-            });
+        function resizeTextarea(textarea) {
+            // Reset height to auto to get the correct scrollHeight
+            textarea.style.height = 'auto';
+            // Set height to scrollHeight to fit content
+            textarea.style.height = textarea.scrollHeight + 'px';
+        }
 
-            const text = lines.join('\n');
-            navigator.clipboard.writeText(text).then(() => {
-                const btn = document.getElementById('copy-btn');
-                const original = btn.innerHTML;
-                btn.innerHTML = '✓ Copied!';
-                setTimeout(() => btn.innerHTML = original, 2000);
-            });
+        function resizeAllTextareas() {
+            document.querySelectorAll('textarea.editable').forEach(resizeTextarea);
         }
 
         // ============================================
@@ -1540,6 +1725,12 @@
             tbody.addEventListener('change', handleCellChange);
             tbody.addEventListener('click', handleRowAction);
 
+            // Auto-resize textareas (fallback for browsers without field-sizing support)
+            tbody.addEventListener('input', autoResizeTextarea);
+
+            // Initial resize of all textareas after render
+            setTimeout(resizeAllTextareas, 100);
+
             // Mode toggle
             document.querySelectorAll('.mode-btn').forEach(btn => {
                 btn.addEventListener('click', () => setMode(btn.dataset.mode));
@@ -1552,7 +1743,6 @@
 
             // Control buttons
             document.getElementById('add-row-btn').addEventListener('click', addRow);
-            document.getElementById('copy-btn').addEventListener('click', copyToClipboard);
             document.getElementById('export-btn').addEventListener('click', exportCSV);
             document.getElementById('clear-btn').addEventListener('click', clearAll);
 
@@ -1663,6 +1853,174 @@
                 if (activeTooltip) updateTooltipPosition(activeTooltip);
             }, { passive: true });
         });
+
+        // ============================================
+        // Print PDF Functionality
+        // ============================================
+        function printPDF() {
+            window.print();
+        }
+
+        // ============================================
+        // Import CSV Functionality
+        // ============================================
+        function triggerImportCSV() {
+            document.getElementById('csv-import-input').click();
+        }
+
+        function importCSV(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                try {
+                    const text = e.target.result;
+                    const lines = parseCSV(text);
+
+                    if (lines.length < 2) {
+                        alert('CSV file is empty or has no data rows.');
+                        return;
+                    }
+
+                    // Find column indices from header
+                    const header = lines[0].map(h => h.toLowerCase().trim());
+                    const colMap = {
+                        item: findColumnIndex(header, ['item', 'item/function', 'function', 'requirement']),
+                        failureMode: findColumnIndex(header, ['failure mode', 'failuremode', 'failure_mode', 'potential failure mode']),
+                        effects: findColumnIndex(header, ['effects', 'potential effects', 'effect']),
+                        severity: findColumnIndex(header, ['s', 'severity', 'sev']),
+                        causes: findColumnIndex(header, ['causes', 'potential causes', 'cause']),
+                        occurrence: findColumnIndex(header, ['o', 'occurrence', 'occ']),
+                        controls: findColumnIndex(header, ['controls', 'current controls', 'control']),
+                        detection: findColumnIndex(header, ['d', 'detection', 'det']),
+                        actions: findColumnIndex(header, ['actions', 'recommended actions', 'action']),
+                        status: findColumnIndex(header, ['status'])
+                    };
+
+                    const importedRows = [];
+                    for (let i = 1; i < lines.length; i++) {
+                        const cols = lines[i];
+                        if (cols.length === 0 || (cols.length === 1 && cols[0].trim() === '')) continue;
+
+                        const newRow = {
+                            id: generateId(),
+                            item: getColValue(cols, colMap.item, ''),
+                            failureMode: getColValue(cols, colMap.failureMode, ''),
+                            effects: getColValue(cols, colMap.effects, ''),
+                            severity: parseInt(getColValue(cols, colMap.severity, '5')) || 5,
+                            causes: getColValue(cols, colMap.causes, ''),
+                            occurrence: parseInt(getColValue(cols, colMap.occurrence, '5')) || 5,
+                            controls: getColValue(cols, colMap.controls, ''),
+                            detection: parseInt(getColValue(cols, colMap.detection, '5')) || 5,
+                            actions: getColValue(cols, colMap.actions, ''),
+                            status: getColValue(cols, colMap.status, 'Open') || 'Open'
+                        };
+
+                        // Clamp rating values
+                        newRow.severity = Math.max(1, Math.min(10, newRow.severity));
+                        newRow.occurrence = Math.max(1, Math.min(10, newRow.occurrence));
+                        newRow.detection = Math.max(1, Math.min(10, newRow.detection));
+
+                        // Validate status
+                        if (!['Open', 'In Progress', 'Closed'].includes(newRow.status)) {
+                            newRow.status = 'Open';
+                        }
+
+                        importedRows.push(newRow);
+                    }
+
+                    if (importedRows.length === 0) {
+                        alert('No valid rows found in CSV.');
+                        return;
+                    }
+
+                    // Replace existing rows with imported data
+                    rows = importedRows;
+                    saveToLocalStorage();
+                    render();
+
+                    const btn = document.getElementById('import-btn');
+                    const original = btn.innerHTML;
+                    btn.innerHTML = '✓ Imported ' + importedRows.length + ' rows';
+                    setTimeout(() => btn.innerHTML = original, 2000);
+
+                } catch (err) {
+                    console.error('CSV Import Error:', err);
+                    alert('Failed to parse CSV file. Please check the format.');
+                }
+            };
+            reader.readAsText(file);
+
+            // Reset input so same file can be selected again
+            event.target.value = '';
+        }
+
+        function parseCSV(text) {
+            const lines = [];
+            let currentLine = [];
+            let currentField = '';
+            let inQuotes = false;
+
+            for (let i = 0; i < text.length; i++) {
+                const char = text[i];
+                const nextChar = text[i + 1];
+
+                if (inQuotes) {
+                    if (char === '"') {
+                        if (nextChar === '"') {
+                            currentField += '"';
+                            i++; // Skip escaped quote
+                        } else {
+                            inQuotes = false;
+                        }
+                    } else {
+                        currentField += char;
+                    }
+                } else {
+                    if (char === '"') {
+                        inQuotes = true;
+                    } else if (char === ',') {
+                        currentLine.push(currentField.trim());
+                        currentField = '';
+                    } else if (char === '\n' || (char === '\r' && nextChar === '\n')) {
+                        currentLine.push(currentField.trim());
+                        lines.push(currentLine);
+                        currentLine = [];
+                        currentField = '';
+                        if (char === '\r') i++; // Skip \n after \r
+                    } else if (char === '\r') {
+                        currentLine.push(currentField.trim());
+                        lines.push(currentLine);
+                        currentLine = [];
+                        currentField = '';
+                    } else {
+                        currentField += char;
+                    }
+                }
+            }
+
+            // Handle last field/line
+            if (currentField || currentLine.length > 0) {
+                currentLine.push(currentField.trim());
+                lines.push(currentLine);
+            }
+
+            return lines;
+        }
+
+        function findColumnIndex(header, possibleNames) {
+            for (const name of possibleNames) {
+                const idx = header.indexOf(name.toLowerCase());
+                if (idx !== -1) return idx;
+            }
+            return -1;
+        }
+
+        function getColValue(cols, index, defaultVal) {
+            if (index === -1 || index >= cols.length) return defaultVal;
+            return cols[index] || defaultVal;
+        }
     </script>
 </body>
 
