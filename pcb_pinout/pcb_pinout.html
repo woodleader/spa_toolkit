@@ -1,0 +1,1823 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PCB Pinout Marker</title>
+    <style>
+        :root {
+            --bg-deep: #0f172a;
+            --bg-card: #1e293b;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --border: rgba(255, 255, 255, 0.1);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent: #38bdf8;
+            --accent-secondary: #818cf8;
+            --danger: #ef4444;
+            --success: #22c55e;
+            --warning: #f59e0b;
+
+            /* Pin Colors Palette */
+            --pin-colors: #ef4444, #f97316, #f59e0b, #84cc16, #22c55e, #14b8a6, #06b6d4, #0ea5e9, #3b82f6, #6366f1, #8b5cf6, #a855f7, #d946ef, #ec4899, #f43f5e;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, var(--bg-deep) 0%, #1a1a2e 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            margin: 0;
+            background: linear-gradient(to right, var(--accent), var(--accent-secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .back-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.85rem;
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .back-link:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .btn {
+            background: var(--accent);
+            color: var(--bg-deep);
+            border: none;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 0.75rem;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        /* Main Layout */
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 24px;
+        }
+
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Card Styling */
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin: 0;
+            color: var(--text-primary);
+        }
+
+        .card-body {
+            padding: 20px;
+            overflow: auto;
+            /* Enable scrolling for zoomed content */
+        }
+
+        .card-header-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        /* Upload Zone */
+        .upload-zone {
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 60px 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .upload-zone:hover,
+        .upload-zone.dragover {
+            border-color: var(--accent);
+            background: rgba(56, 189, 248, 0.05);
+        }
+
+        .upload-zone-icon {
+            font-size: 3rem;
+            margin-bottom: 16px;
+            opacity: 0.6;
+        }
+
+        .upload-zone-text {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .upload-zone-hint {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            opacity: 0.7;
+        }
+
+        .upload-zone.hidden {
+            display: none;
+        }
+
+        /* Canvas Container */
+        .canvas-container {
+            position: relative;
+            display: none;
+            background: #111;
+            border-radius: 12px;
+            overflow: hidden;
+            min-height: 400px;
+        }
+
+        .canvas-container.active {
+            display: block;
+        }
+
+        .canvas-container img {
+            display: block;
+            max-width: 100%;
+            height: auto;
+            pointer-events: none;
+            /* Allow clicks to pass through to the canvas */
+            position: relative;
+            z-index: 1;
+        }
+
+        #pinCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            cursor: crosshair;
+            z-index: 10;
+            /* Ensure canvas is above the image */
+        }
+
+        /* Presets Panel */
+        .presets-section {
+            margin-bottom: 20px;
+        }
+
+        .preset-category {
+            margin-bottom: 16px;
+        }
+
+        .preset-category-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .preset-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .preset-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: ui-monospace, monospace;
+        }
+
+        .preset-btn:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: var(--bg-deep);
+        }
+
+        .preset-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .preset-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: var(--bg-deep);
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+        }
+
+        /* Pin Style Toggle */
+        .style-toggle {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .style-btn {
+            flex: 1;
+            padding: 10px 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .style-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+        }
+
+        .style-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: var(--bg-deep);
+        }
+
+        .style-icon {
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .style-icon svg {
+            width: 16px;
+            height: 16px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
+
+        /* Size Control */
+        .size-control {
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .size-control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .size-value {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--accent);
+            font-family: ui-monospace, monospace;
+        }
+
+        .size-slider {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+            cursor: pointer;
+        }
+
+        .size-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--accent);
+            cursor: pointer;
+            border: 2px solid var(--bg-deep);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+            transition: transform 0.2s;
+        }
+
+        .size-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+        }
+
+        .size-slider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--accent);
+            cursor: pointer;
+            border: 2px solid var(--bg-deep);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Legend Table */
+        .legend-section {
+            margin-top: 20px;
+        }
+
+        .legend-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .legend-table th {
+            text-align: left;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            padding: 8px 10px;
+            border-bottom: 1px solid var(--border);
+            font-weight: 600;
+        }
+
+        .legend-table td {
+            padding: 8px 10px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+
+        .legend-row {
+            transition: background 0.2s;
+        }
+
+        .legend-row:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .legend-row.selected {
+            background: rgba(56, 189, 248, 0.1);
+        }
+
+        .color-swatch {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: white;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+            position: relative;
+            cursor: pointer;
+        }
+
+        .color-picker-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        .color-picker-input {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            cursor: pointer;
+        }
+
+        .legend-input {
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            padding: 6px 8px;
+            border-radius: 4px;
+            width: 100%;
+            font-family: ui-monospace, monospace;
+            transition: all 0.2s;
+        }
+
+        .legend-input:hover {
+            border-color: var(--border);
+        }
+
+        .legend-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .legend-desc {
+            font-family: inherit;
+        }
+
+        .delete-btn {
+            width: 28px;
+            height: 28px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .delete-btn:hover {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+        }
+
+        .empty-legend {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Export Container for html2canvas */
+        #exportContainer {
+            position: absolute;
+            left: -9999px;
+            top: 0;
+            background: white;
+            padding: 20px;
+        }
+
+        #exportContainer.capturing {
+            position: relative;
+            left: 0;
+        }
+
+        /* Print Styles */
+        @media print {
+            @page {
+                size: A4 landscape;
+                margin: 10mm;
+            }
+
+            body {
+                background: white !important;
+                color: black !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            /* Hide non-print elements */
+            .header-actions,
+            .back-link,
+            .presets-section,
+            .card-header-actions,
+            .delete-btn,
+            .style-toggle,
+            #settingsCard,
+            .upload-zone,
+            #toast,
+            .confirm-modal,
+            .btn,
+            #pinCount {
+                display: none !important;
+            }
+
+            /* Show header title but ensure it is compact */
+            header {
+                display: block !important;
+                margin-bottom: 10px;
+                border-bottom: 2px solid #333;
+                padding-bottom: 5px;
+            }
+
+            header h1 {
+                margin: 0;
+                font-size: 1.5rem;
+                background: none;
+                -webkit-text-fill-color: black;
+                color: black;
+            }
+
+            .container {
+                max-width: none !important;
+                padding: 0 !important;
+                width: 100% !important;
+            }
+
+            /* Main Layout for Print - Vertical Stack for safety */
+            .main-content {
+                display: flex !important;
+                flex-wrap: wrap !important;
+                align-items: flex-start !important;
+                gap: 20px !important;
+            }
+
+            /* Image Styling - Ensure it fits within page height and doesn't split */
+            .canvas-container {
+                display: inline-block !important;
+                overflow: visible !important;
+                min-height: auto !important;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+
+                /* Critical for preventing split */
+                page-break-inside: avoid;
+                break-inside: avoid;
+
+                /* Constrain height to leave room for header/margins on Page 1 */
+                max-height: 160mm;
+                margin-bottom: 20px;
+                text-align: center;
+                width: auto !important;
+                position: relative !important;
+            }
+
+            .canvas-container img {
+                max-width: 100% !important;
+                max-height: 160mm !important;
+                /* Match container constraint */
+                width: auto !important;
+                height: auto !important;
+                object-fit: contain !important;
+                display: block !important;
+            }
+
+            #pinCanvas {
+                width: 100% !important;
+                height: 100% !important;
+                max-height: none !important;
+                position: absolute !important;
+                top: 0 !important;
+                left: 0 !important;
+                transform: none !important;
+            }
+
+            #pcbImage {
+                width: 100% !important;
+                height: auto !important;
+                transform: none !important;
+            }
+
+            .canvas-container {
+                /* Ensure container doesn't force a huge size from inline styles */
+                width: auto !important;
+                height: auto !important;
+                transform: none !important;
+            }
+
+            /* Clean Card Styling */
+            .card {
+                background: white !important;
+                border: none !important;
+                box-shadow: none !important;
+                margin: 0 !important;
+                overflow: visible !important;
+                break-inside: avoid;
+            }
+
+            .card-header {
+                background: transparent !important;
+                border-bottom: 2px solid #333 !important;
+                padding: 0 0 5px 0 !important;
+                margin-bottom: 10px !important;
+                display: flex !important;
+                /* Ensure title shows */
+            }
+
+            .card-title {
+                color: black !important;
+                font-size: 1.2rem !important;
+                font-weight: bold !important;
+            }
+
+            .card-body {
+                padding: 0 !important;
+            }
+
+            /* Legend Styling */
+            .sidebar {
+                display: block !important;
+                /* Try to take up remaining space, but wrap if less than ~45% available */
+                flex: 1 0 45% !important;
+                min-width: 300px !important;
+                page-break-before: auto;
+            }
+
+            .legend-scroll {
+                max-height: none !important;
+                overflow: visible !important;
+            }
+
+            /* Improve Legend Readability in Landscape */
+            .legend-table {
+                width: 100%;
+                border-collapse: collapse;
+                page-break-inside: auto;
+            }
+
+            .legend-row {
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+
+            .legend-table th {
+                border-bottom: 2px solid #666 !important;
+                color: #333 !important;
+                font-size: 0.85rem !important;
+                text-align: left;
+                padding: 8px;
+            }
+
+            .legend-table td {
+                border-bottom: 1px solid #ddd !important;
+                padding: 6px 8px !important;
+                font-size: 0.9rem;
+            }
+
+            .legend-input {
+                color: black !important;
+                border: none !important;
+                padding: 0 !important;
+                width: 100% !important;
+                background: transparent !important;
+                font-size: inherit !important;
+            }
+
+            .color-picker-input {
+                display: none !important;
+            }
+
+            .color-swatch {
+                print-color-adjust: exact;
+                border: 1px solid #ccc;
+            }
+
+            /* Hide POS column in print */
+            .legend-table th:nth-child(4),
+            .legend-table td:nth-child(4) {
+                display: none !important;
+            }
+        }
+
+        /* Scrollable legend on small screens */
+        .legend-scroll {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px 20px;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast-icon {
+            font-size: 1.2rem;
+        }
+
+        .toast.success {
+            border-color: var(--success);
+        }
+
+        .toast.success .toast-icon {
+            color: var(--success);
+        }
+
+        /* Confirm Modal */
+        .confirm-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .confirm-modal.active {
+            display: flex;
+        }
+
+        .confirm-dialog {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 28px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .confirm-icon {
+            font-size: 3rem;
+            margin-bottom: 16px;
+        }
+
+        .confirm-message {
+            font-size: 1.1rem;
+            margin-bottom: 24px;
+            line-height: 1.5;
+            color: var(--text-primary);
+        }
+
+        .confirm-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .confirm-buttons .btn {
+            min-width: 100px;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <div class="header-left">
+                <a href="../index.html" class="back-link">← Back</a>
+                <h1>PCB Pinout Marker</h1>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-secondary" onclick="exportAsPNG()" id="exportBtn" disabled>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    Export PNG
+                </button>
+                <button class="btn btn-secondary" onclick="window.print()" id="printBtn" disabled>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                        <rect x="6" y="14" width="12" height="8"></rect>
+                    </svg>
+                    Print
+                </button>
+            </div>
+        </header>
+
+        <div class="main-content" id="mainContent">
+            <!-- Image Panel -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">PCB Image</h2>
+                    <div class="card-header-actions" id="imageControls" style="display: none;">
+                        <button class="btn btn-small btn-secondary" onclick="rotateImage(-90)"
+                            title="Rotate Left">↶</button>
+                        <button class="btn btn-small btn-secondary" onclick="rotateImage(90)"
+                            title="Rotate Right">↷</button>
+                        <button class="btn btn-small btn-secondary" onclick="zoomIn()" title="Zoom In">🔍+</button>
+                        <button class="btn btn-small btn-secondary" onclick="zoomOut()" title="Zoom Out">🔍−</button>
+                        <button class="btn btn-small btn-secondary" onclick="resetZoom()" title="Reset Zoom">⟲</button>
+                        <button class="btn btn-small btn-secondary" onclick="clearImage()" id="clearImgBtn">Clear
+                            Image</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="upload-zone" id="uploadZone">
+                        <div class="upload-zone-icon">📷</div>
+                        <div class="upload-zone-text">Drop PCB image here or click to upload</div>
+                        <div class="upload-zone-hint">Supports PNG, JPG, WebP</div>
+                        <input type="file" id="fileInput" accept="image/*" hidden>
+                    </div>
+                    <div class="canvas-container" id="canvasContainer">
+                        <img id="pcbImage" alt="PCB Image">
+                        <canvas id="pinCanvas"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <!-- Presets Card -->
+                <div class="card" id="settingsCard" style="margin-bottom: 20px;">
+                    <div class="card-header">
+                        <h2 class="card-title">Pin Settings</h2>
+                    </div>
+                    <div class="card-body presets-section">
+                        <!-- Pin Style Toggle -->
+                        <div class="style-toggle">
+                            <button class="style-btn active" id="styleCircle" onclick="setPinStyle('circle')"
+                                title="Filled circle marker">
+                                <span class="style-icon">
+                                    <svg viewBox="0 0 24 24">
+                                        <circle cx="12" cy="12" r="8" fill="currentColor" stroke="none" />
+                                    </svg>
+                                </span>
+                                Circle
+                            </button>
+                            <button class="style-btn" id="styleRect" onclick="setPinStyle('rect')"
+                                title="Hollow rectangle - see through center">
+                                <span class="style-icon">
+                                    <svg viewBox="0 0 24 24">
+                                        <rect x="4" y="4" width="16" height="16" rx="2" fill="none" />
+                                    </svg>
+                                </span>
+                                Rectangle
+                            </button>
+                        </div>
+
+                        <!-- Pin Size Slider -->
+                        <div class="size-control">
+                            <div class="size-control-header">
+                                <span class="preset-category-title">Marker Size</span>
+                                <span class="size-value" id="sizeValue">15 px</span>
+                            </div>
+                            <input type="range" id="pinSizeSlider" class="size-slider" min="5" max="50" value="15"
+                                oninput="setPinSize(this.value)">
+                        </div>
+
+                        <div class="preset-category-title" style="margin-bottom: 12px;">Quick Add Pins</div>
+                        <div class="preset-category">
+                            <div class="preset-category-title">Power</div>
+                            <div class="preset-buttons">
+                                <button class="preset-btn"
+                                    onclick="addPresetPin(this, '3.3V', 'Power supply 3.3V', '#ef4444')">3.3V</button>
+                                <button class="preset-btn"
+                                    onclick="addPresetPin(this, '5V', 'Power supply 5V', '#ef4444')">5V</button>
+                                <button class="preset-btn"
+                                    onclick="addPresetPin(this, 'VCC', 'Positive supply voltage', '#ef4444')">VCC</button>
+                                <button class="preset-btn"
+                                    onclick="addPresetPin(this, 'GND', 'Ground', '#1a1a1a')">GND</button>
+                                <button class="preset-btn"
+                                    onclick="addPresetPin(this, 'VIN', 'Input voltage', '#ef4444')">VIN</button>
+                            </div>
+                        </div>
+                        <div class="preset-category">
+                            <div class="preset-category-title">USB</div>
+                            <div class="preset-buttons">
+                                <button class="preset-btn"
+                                    onclick="addPresetPin(this, 'VBUS', 'USB bus power 5V', '#ef4444')">VBUS</button>
+                                <button class="preset-btn"
+                                    onclick="addPresetPin(this, 'D+', 'USB Data positive', '#22c55e')">D+</button>
+                                <button class="preset-btn"
+                                    onclick="addPresetPin(this, 'D-', 'USB Data negative', '#f5f5f5')">D−</button>
+                                <button class="preset-btn"
+                                    onclick="addPresetPin(this, 'ID', 'USB OTG ID pin', '#6366f1')">ID</button>
+                            </div>
+                        </div>
+                        <div class="preset-category">
+                            <div class="preset-category-title">UART</div>
+                            <div class="preset-buttons">
+                                <button class="preset-btn"
+                                    onclick="addPresetPin(this, 'TX', 'Transmit data')">TX</button>
+                                <button class="preset-btn"
+                                    onclick="addPresetPin(this, 'RX', 'Receive data')">RX</button>
+                                <button class="preset-btn"
+                                    onclick="addPresetPin(this, 'RTS', 'Request to send')">RTS</button>
+                                <button class="preset-btn"
+                                    onclick="addPresetPin(this, 'CTS', 'Clear to send')">CTS</button>
+                            </div>
+                        </div>
+                        <div class="preset-category">
+                            <div class="preset-category-title">SPI</div>
+                            <div class="preset-buttons">
+                                <button class="preset-btn"
+                                    onclick="addPresetPin(this, 'MOSI', 'Master Out Slave In')">MOSI</button>
+                                <button class="preset-btn"
+                                    onclick="addPresetPin(this, 'MISO', 'Master In Slave Out')">MISO</button>
+                                <button class="preset-btn"
+                                    onclick="addPresetPin(this, 'SCK', 'Serial Clock')">SCK</button>
+                                <button class="preset-btn" onclick="addPresetPin(this, 'CS', 'Chip Select')">CS</button>
+                            </div>
+                        </div>
+                        <div class="preset-category">
+                            <div class="preset-category-title">I²C</div>
+                            <div class="preset-buttons">
+                                <button class="preset-btn"
+                                    onclick="addPresetPin(this, 'SDA', 'Serial Data')">SDA</button>
+                                <button class="preset-btn"
+                                    onclick="addPresetPin(this, 'SCL', 'Serial Clock')">SCL</button>
+                            </div>
+                        </div>
+                        <div class="preset-category">
+                            <div class="preset-category-title">JTAG / SWD</div>
+                            <div class="preset-buttons">
+                                <button class="preset-btn"
+                                    onclick="addPresetPin(this, 'SWDIO', 'SWD Data I/O')">SWDIO</button>
+                                <button class="preset-btn"
+                                    onclick="addPresetPin(this, 'SWCLK', 'SWD Clock')">SWCLK</button>
+                                <button class="preset-btn" onclick="addPresetPin(this, 'RST', 'Reset')">RST</button>
+                                <button class="preset-btn"
+                                    onclick="addPresetPin(this, 'TDI', 'Test Data In')">TDI</button>
+                                <button class="preset-btn"
+                                    onclick="addPresetPin(this, 'TDO', 'Test Data Out')">TDO</button>
+                                <button class="preset-btn"
+                                    onclick="addPresetPin(this, 'TCK', 'Test Clock')">TCK</button>
+                                <button class="preset-btn"
+                                    onclick="addPresetPin(this, 'TMS', 'Test Mode Select')">TMS</button>
+                            </div>
+                        </div>
+                        <div class="preset-category"
+                            style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);">
+                            <div class="preset-buttons">
+                                <button class="preset-btn" onclick="addPresetPin(this, '', '')"
+                                    style="background: var(--accent); color: var(--bg-deep); border-color: var(--accent);">+
+                                    Custom Pin</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Legend Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Pin Legend</h2>
+                        <span id="pinCount" style="font-size: 0.8rem; color: var(--text-secondary);">0 pins</span>
+                    </div>
+                    <div class="card-body" style="padding: 0;">
+                        <div class="legend-scroll">
+                            <table class="legend-table" id="legendTable">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 50px;">Color</th>
+                                        <th style="width: 100px;">Label</th>
+                                        <th>Description</th>
+                                        <th style="width: 60px;">Pos</th>
+                                        <th style="width: 40px;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="legendBody">
+                                </tbody>
+                            </table>
+                            <div class="empty-legend" id="emptyLegend">
+                                <div style="font-size: 2rem; margin-bottom: 8px; opacity: 0.5;">📍</div>
+                                Click on the image to place pins<br>or use Quick Add presets
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">
+        <span class="toast-icon">✓</span>
+        <span class="toast-message">Image exported successfully!</span>
+    </div>
+
+    <!-- Confirm Modal -->
+    <div class="confirm-modal" id="confirmModal">
+        <div class="confirm-dialog">
+            <div class="confirm-icon">⚠️</div>
+            <div class="confirm-message" id="confirmMessage">Clear the image and all pins?</div>
+            <div class="confirm-buttons">
+                <button class="btn btn-secondary" onclick="closeConfirmModal()">Cancel</button>
+                <button class="btn btn-danger" id="confirmBtn">Clear</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Pin data storage
+        let pins = [];
+        let currentImage = null;
+        let zoomLevel = 1;
+        let pinStyle = 'circle'; // 'circle' or 'rect'
+        let pinSizePixels = 15; // Pin size in pixels
+        let pendingPin = null; // For preset pins waiting for placement
+        let baseWidth = 0;
+        let baseHeight = 0;
+
+        // Dragging state
+        let isDragging = false;
+        let draggedPinId = null;
+        let wasDragging = false;
+
+        // Color palette for pins
+        const PIN_COLORS = [
+            '#ef4444', '#f97316', '#f59e0b', '#84cc16', '#22c55e',
+            '#14b8a6', '#06b6d4', '#0ea5e9', '#3b82f6', '#6366f1',
+            '#8b5cf6', '#a855f7', '#d946ef', '#ec4899', '#f43f5e'
+        ];
+
+        // DOM Elements
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+        const canvasContainer = document.getElementById('canvasContainer');
+        const pcbImage = document.getElementById('pcbImage');
+        const pinCanvas = document.getElementById('pinCanvas');
+        const ctx = pinCanvas.getContext('2d');
+        const legendBody = document.getElementById('legendBody');
+        const emptyLegend = document.getElementById('emptyLegend');
+        const pinCount = document.getElementById('pinCount');
+        const exportBtn = document.getElementById('exportBtn');
+        const printBtn = document.getElementById('printBtn');
+        const imageControls = document.getElementById('imageControls');
+
+        // Upload Zone Events
+        uploadZone.addEventListener('click', () => fileInput.click());
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        });
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('dragover');
+        });
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                loadImage(file);
+            }
+        });
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) loadImage(file);
+        });
+
+        // Load Image
+        function loadImage(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                currentImage = e.target.result;
+                pcbImage.onload = () => {
+                    setupCanvas();
+                    uploadZone.classList.add('hidden');
+                    canvasContainer.classList.add('active');
+                    imageControls.style.display = 'flex';
+                    exportBtn.disabled = false;
+                    printBtn.disabled = false;
+                };
+                pcbImage.src = currentImage;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Setup Canvas
+        function setupCanvas() {
+            // Reset styles to get natural fit dimensions
+            canvasContainer.style.width = '';
+            canvasContainer.style.height = '';
+            pcbImage.style.transform = 'none';
+            pinCanvas.style.transform = 'none';
+
+            // Capture base dimensions (how the image fits in the layout naturally)
+            baseWidth = pcbImage.offsetWidth;
+            baseHeight = pcbImage.offsetHeight;
+
+            // Set canvas internal resolution to match image natural size
+            pinCanvas.width = pcbImage.naturalWidth;
+            pinCanvas.height = pcbImage.naturalHeight;
+            // Note: CSS handles the display size (100% of container)
+            drawPins();
+
+            // Re-apply current zoom to update container dimensions
+            applyZoom();
+        }
+
+        // Clear Image
+        function clearImage() {
+            showConfirmModal('Clear the image and all pins?', () => {
+                currentImage = null;
+                pins = [];
+                pendingPin = null;
+                document.querySelectorAll('.preset-btn.active').forEach(btn => btn.classList.remove('active'));
+
+                pcbImage.src = '';
+                uploadZone.classList.remove('hidden');
+                canvasContainer.classList.remove('active');
+                imageControls.style.display = 'none';
+                exportBtn.disabled = true;
+                printBtn.disabled = true;
+                updateLegend();
+            });
+        }
+
+        // Custom Confirm Modal
+        let confirmCallback = null;
+
+        function showConfirmModal(message, onConfirm) {
+            document.getElementById('confirmMessage').textContent = message;
+            confirmCallback = onConfirm;
+            document.getElementById('confirmModal').classList.add('active');
+            document.getElementById('confirmBtn').focus();
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirmModal').classList.remove('active');
+            confirmCallback = null;
+        }
+
+        document.getElementById('confirmBtn').addEventListener('click', () => {
+            if (confirmCallback) {
+                confirmCallback();
+            }
+            closeConfirmModal();
+        });
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && document.getElementById('confirmModal').classList.contains('active')) {
+                closeConfirmModal();
+            }
+        });
+
+        // Helper to get canvas coordinates
+        function getCanvasCoordinates(e) {
+            const rect = pinCanvas.getBoundingClientRect();
+            const scaleX = pinCanvas.width / rect.width;
+            const scaleY = pinCanvas.height / rect.height;
+            const x = (e.clientX - rect.left) * scaleX;
+            const y = (e.clientY - rect.top) * scaleY;
+            return { x, y };
+        }
+
+        // Helper to find pin at coordinates
+        function findPinAt(x, y) {
+            // Check in reverse order (topmost first)
+            for (let i = pins.length - 1; i >= 0; i--) {
+                const pin = pins[i];
+                const hitRadius = pinStyle === 'rect' ? pinSizePixels : pinSizePixels;
+
+                // Simple distance check works for both circle and rect (approx for rect)
+                const dx = x - pin.x;
+                const dy = y - pin.y;
+                if (dx * dx + dy * dy <= hitRadius * hitRadius) {
+                    return pin;
+                }
+            }
+            return null;
+        }
+
+        // Canvas Mouse Events
+        pinCanvas.addEventListener('mousedown', (e) => {
+            if (!currentImage) return;
+
+            const coords = getCanvasCoordinates(e);
+            const clickedPin = findPinAt(coords.x, coords.y);
+
+            if (clickedPin) {
+                isDragging = true;
+                draggedPinId = clickedPin.id;
+                wasDragging = false;
+                pinCanvas.style.cursor = 'grabbing';
+            }
+        });
+
+        pinCanvas.addEventListener('mousemove', (e) => {
+            if (!currentImage) return;
+            const coords = getCanvasCoordinates(e);
+
+            if (isDragging && draggedPinId) {
+                const pin = pins.find(p => p.id === draggedPinId);
+                if (pin) {
+                    pin.x = coords.x;
+                    pin.y = coords.y;
+                    wasDragging = true;
+                    drawPins();
+                }
+            } else {
+                // Hover effect
+                const hoveredPin = findPinAt(coords.x, coords.y);
+                pinCanvas.style.cursor = hoveredPin ? 'grab' : 'crosshair';
+            }
+        });
+
+        window.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                draggedPinId = null;
+                pinCanvas.style.cursor = 'crosshair';
+            }
+        });
+
+        // Canvas Click - Place Pin (or finish drag)
+        pinCanvas.addEventListener('click', (e) => {
+            if (!currentImage) return;
+
+            // If we were dragging, don't place a new pin
+            if (wasDragging) {
+                wasDragging = false;
+                return;
+            }
+
+            // Also check if we clicked ON a pin but didn't drag it (to select it, maybe in future)
+            // For now, if we click on a pin without dragging, we prevent adding a new one on top
+            const coords = getCanvasCoordinates(e);
+            if (findPinAt(coords.x, coords.y)) {
+                return;
+            }
+
+            const pin = {
+                id: Date.now(),
+                x: coords.x,
+                y: coords.y,
+                color: pendingPin && pendingPin.color ? pendingPin.color : PIN_COLORS[pins.length % PIN_COLORS.length],
+                label: pendingPin ? pendingPin.label : '',
+                description: pendingPin ? pendingPin.description : '',
+                labelPos: 'tr' // Default top-right
+            };
+
+            pins.push(pin);
+            pendingPin = null;
+
+            // Remove active state from buttons
+            document.querySelectorAll('.preset-btn.active').forEach(btn => btn.classList.remove('active'));
+
+            drawPins();
+            updateLegend();
+        });
+
+        // Calculate contrast text color (black or white)
+        function getContrastYIQ(hexcolor) {
+            hexcolor = hexcolor.replace("#", "");
+            var r = parseInt(hexcolor.substr(0, 2), 16);
+            var g = parseInt(hexcolor.substr(2, 2), 16);
+            var b = parseInt(hexcolor.substr(4, 2), 16);
+            var yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+            return (yiq >= 128) ? 'black' : 'white';
+        }
+
+        // Draw Pins on Canvas
+        // Helper to get label coordinates based on position
+        function getLabelCoordinates(x, y, halfSize, position) {
+            const offset = 6;
+            switch (position) {
+                case 'tl': return { x: x - halfSize - offset, y: y - halfSize + offset };
+                case 'tr': return { x: x + halfSize + offset, y: y - halfSize + offset };
+                case 'bl': return { x: x - halfSize - offset, y: y + halfSize - offset };
+                case 'br': return { x: x + halfSize + offset, y: y + halfSize - offset };
+                case 't': return { x: x, y: y - halfSize - offset };
+                case 'b': return { x: x, y: y + halfSize + offset };
+                case 'l': return { x: x - halfSize - offset, y: y };
+                case 'r': return { x: x + halfSize + offset, y: y };
+                default: return { x: x + halfSize + offset, y: y - halfSize + offset }; // Default 'tr'
+            }
+        }
+
+        // Draw Pins on Canvas
+        function drawPins() {
+            ctx.clearRect(0, 0, pinCanvas.width, pinCanvas.height);
+
+            const pinSize = pinSizePixels;
+
+            pins.forEach((pin, index) => {
+                const textColor = getContrastYIQ(pin.color);
+
+                if (pinStyle === 'rect') {
+                    // Hollow rectangle style - allows seeing underneath
+                    const rectSize = pinSize * 2;
+                    const halfSize = rectSize / 2;
+
+                    // Draw colored rectangle outline
+                    ctx.strokeStyle = pin.color;
+                    ctx.lineWidth = 4;
+                    ctx.strokeRect(pin.x - halfSize, pin.y - halfSize, rectSize, rectSize);
+
+                    // White inner border for visibility
+                    ctx.strokeStyle = 'white';
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(pin.x - halfSize + 2, pin.y - halfSize + 2, rectSize - 4, rectSize - 4);
+
+                    // Pin label position
+                    const labelPos = getLabelCoordinates(pin.x, pin.y, halfSize, pin.labelPos || 'tr');
+
+                    // Background for label
+                    ctx.fillStyle = pin.color;
+                    const labelSize = pinSize * 0.8;
+                    ctx.beginPath();
+                    ctx.arc(labelPos.x, labelPos.y, labelSize, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Label text
+                    ctx.fillStyle = textColor;
+                    ctx.font = `bold ${labelSize * 0.9}px -apple-system, sans-serif`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(index + 1, labelPos.x, labelPos.y);
+                } else {
+                    // Filled circle style (default)
+                    ctx.beginPath();
+                    ctx.arc(pin.x, pin.y, pinSize, 0, Math.PI * 2);
+                    ctx.fillStyle = pin.color;
+                    ctx.fill();
+
+                    // White border
+                    ctx.strokeStyle = 'white';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+
+                    // Pin number
+                    ctx.fillStyle = textColor;
+                    ctx.font = `bold ${pinSize * 0.9}px -apple-system, sans-serif`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(index + 1, pin.x, pin.y);
+                }
+            });
+        }
+
+        // Set Pin Style
+        function setPinStyle(style) {
+            pinStyle = style;
+            document.getElementById('styleCircle').classList.toggle('active', style === 'circle');
+            document.getElementById('styleRect').classList.toggle('active', style === 'rect');
+            drawPins();
+        }
+
+        // Set Pin Size
+        function setPinSize(value) {
+            pinSizePixels = parseInt(value);
+            document.getElementById('sizeValue').textContent = value + ' px';
+            drawPins();
+        }
+
+        // Update Legend Table
+        function updateLegend() {
+            legendBody.innerHTML = '';
+
+            if (pins.length === 0) {
+                emptyLegend.style.display = '';
+            } else {
+                emptyLegend.style.display = 'none';
+            }
+
+            pins.forEach((pin, index) => {
+                const textColor = getContrastYIQ(pin.color);
+                const row = document.createElement('tr');
+                row.className = 'legend-row';
+                row.dataset.pinId = pin.id;
+                row.innerHTML = `
+                    <td>
+                        <div class="color-picker-wrapper">
+                            <div class="color-swatch" style="background: ${pin.color}; color: ${textColor};">${index + 1}</div>
+                            <input type="color" class="color-picker-input" value="${pin.color}" 
+                                   onchange="updatePinColor(${pin.id}, this.value)" title="Change pin color">
+                        </div>
+                    </td>
+                    <td>
+                        <input type="text" class="legend-input" value="${escapeHtml(pin.label)}" 
+                               placeholder="Label" onchange="updatePin(${pin.id}, 'label', this.value)">
+                    </td>
+                    <td>
+                        <input type="text" class="legend-input legend-desc" value="${escapeHtml(pin.description)}" 
+                               placeholder="Description" onchange="updatePin(${pin.id}, 'description', this.value)">
+                    </td>
+                    <td>
+                        <select class="legend-input" style="padding: 2px;" onchange="updatePin(${pin.id}, 'labelPos', this.value)" title="Label Position">
+                            <option value="tr" ${(!pin.labelPos || pin.labelPos === 'tr') ? 'selected' : ''}>↗ TR</option>
+                            <option value="tl" ${pin.labelPos === 'tl' ? 'selected' : ''}>↖ TL</option>
+                            <option value="br" ${pin.labelPos === 'br' ? 'selected' : ''}>↘ BR</option>
+                            <option value="bl" ${pin.labelPos === 'bl' ? 'selected' : ''}>↙ BL</option>
+                            <option value="t" ${pin.labelPos === 't' ? 'selected' : ''}>↑ Top</option>
+                            <option value="b" ${pin.labelPos === 'b' ? 'selected' : ''}>↓ Bot</option>
+                            <option value="r" ${pin.labelPos === 'r' ? 'selected' : ''}>→ Rgt</option>
+                            <option value="l" ${pin.labelPos === 'l' ? 'selected' : ''}>← Lft</option>
+                        </select>
+                    </td>
+                    <td>
+                        <button class="delete-btn" onclick="deletePin(${pin.id})" title="Delete pin">×</button>
+                    </td>
+                `;
+
+                // Highlight on hover
+                row.addEventListener('mouseenter', () => highlightPin(index, true));
+                row.addEventListener('mouseleave', () => highlightPin(index, false));
+
+                legendBody.appendChild(row);
+            });
+
+            pinCount.textContent = `${pins.length} pin${pins.length !== 1 ? 's' : ''}`;
+        }
+
+        // Update Pin Data
+        function updatePin(id, field, value) {
+            const pin = pins.find(p => p.id === id);
+            if (pin) {
+                pin[field] = value;
+            }
+        }
+
+        // Delete Pin
+        function deletePin(id) {
+            pins = pins.filter(p => p.id !== id);
+            // Update colors based on new positions
+            pins.forEach((pin, index) => {
+                pin.color = PIN_COLORS[index % PIN_COLORS.length];
+            });
+            drawPins();
+            updateLegend();
+        }
+
+        // Highlight Pin on Canvas
+        function highlightPin(index, highlight) {
+            drawPins();
+            if (highlight && pins[index]) {
+                const pin = pins[index];
+                const highlightSize = pinStyle === 'rect' ? pinSizePixels * 2 + 6 : pinSizePixels + 6;
+
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 3;
+                ctx.setLineDash([5, 5]);
+
+                if (pinStyle === 'rect') {
+                    const halfSize = highlightSize / 2;
+                    ctx.strokeRect(pin.x - halfSize, pin.y - halfSize, highlightSize, highlightSize);
+                } else {
+                    ctx.beginPath();
+                    ctx.arc(pin.x, pin.y, highlightSize, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+                ctx.setLineDash([]);
+            }
+        }
+
+        // Add Preset Pin
+        function addPresetPin(btnElement, label, description, color = null) {
+            if (!currentImage) {
+                showToast('Please upload an image first', false);
+                return;
+            }
+
+            // Remove active class from all other buttons
+            document.querySelectorAll('.preset-btn').forEach(btn => btn.classList.remove('active'));
+
+            // Add active class to clicked button
+            if (btnElement) {
+                btnElement.classList.add('active');
+            }
+
+            pendingPin = { label, description, color };
+            showToast('Click on the image to place the pin');
+        }
+
+        // Update Pin Color
+        function updatePinColor(id, color) {
+            const pin = pins.find(p => p.id === id);
+            if (pin) {
+                pin.color = color;
+                drawPins();
+                updateLegend();
+            }
+        }
+
+        // Zoom Controls
+        function zoomIn() {
+            zoomLevel = Math.min(zoomLevel + 0.25, 3);
+            applyZoom();
+        }
+
+        function zoomOut() {
+            zoomLevel = Math.max(zoomLevel - 0.25, 0.5);
+            applyZoom();
+        }
+
+        function resetZoom() {
+            zoomLevel = 1;
+            applyZoom();
+        }
+
+        function applyZoom() {
+            pcbImage.style.transform = `scale(${zoomLevel})`;
+            pcbImage.style.transformOrigin = 'top left';
+            pinCanvas.style.transform = `scale(${zoomLevel})`;
+            pinCanvas.style.transformOrigin = 'top left';
+
+            // Adjust container size based on initial fitted size
+            if (baseWidth && baseHeight) {
+                canvasContainer.style.width = (baseWidth * zoomLevel) + 'px';
+                canvasContainer.style.height = (baseHeight * zoomLevel) + 'px';
+            }
+        }
+
+        // Rotate Image
+        function rotateImage(degrees) {
+            if (!currentImage) return;
+
+            // Create a temporary canvas to rotate the image
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+
+            const oldWidth = pcbImage.naturalWidth;
+            const oldHeight = pcbImage.naturalHeight;
+
+            // For 90 or -90 degree rotation, swap dimensions
+            if (degrees === 90 || degrees === -90) {
+                tempCanvas.width = oldHeight;
+                tempCanvas.height = oldWidth;
+            } else {
+                tempCanvas.width = oldWidth;
+                tempCanvas.height = oldHeight;
+            }
+
+            // Rotate
+            tempCtx.translate(tempCanvas.width / 2, tempCanvas.height / 2);
+            tempCtx.rotate(degrees * Math.PI / 180);
+            tempCtx.drawImage(pcbImage, -oldWidth / 2, -oldHeight / 2);
+
+            // Update pin positions
+            pins.forEach(pin => {
+                const oldX = pin.x;
+                const oldY = pin.y;
+
+                if (degrees === 90) {
+                    // Rotate 90° clockwise
+                    pin.x = oldHeight - oldY;
+                    pin.y = oldX;
+                } else if (degrees === -90) {
+                    // Rotate 90° counter-clockwise
+                    pin.x = oldY;
+                    pin.y = oldWidth - oldX;
+                }
+            });
+
+            // Update image
+            currentImage = tempCanvas.toDataURL('image/png');
+            pcbImage.onload = () => {
+                setupCanvas();
+                drawPins();
+            };
+            pcbImage.src = currentImage;
+        }
+
+        // Window Resize Handler
+        window.addEventListener('resize', () => {
+            if (currentImage) {
+                setTimeout(setupCanvas, 100);
+            }
+        });
+
+        // Export as PNG using Canvas
+        async function exportAsPNG() {
+            if (!currentImage || pins.length === 0) {
+                showToast('Add some pins before exporting');
+                return;
+            }
+
+            try {
+                // Create export canvas
+                const exportCanvas = document.createElement('canvas');
+                const legendHeight = 40 + pins.length * 30;
+                const padding = 20;
+
+                exportCanvas.width = pcbImage.naturalWidth + padding * 2;
+                exportCanvas.height = pcbImage.naturalHeight + legendHeight + padding * 3;
+
+                const exportCtx = exportCanvas.getContext('2d');
+
+                // White background
+                exportCtx.fillStyle = 'white';
+                exportCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+
+                // Draw PCB image
+                exportCtx.drawImage(pcbImage, padding, padding);
+
+                // Draw pins on image
+                const pinSize = pinSizePixels;
+                pins.forEach((pin, index) => {
+                    const px = pin.x + padding;
+                    const py = pin.y + padding;
+
+                    if (pinStyle === 'rect') {
+                        // Hollow rectangle style
+                        const rectSize = pinSize * 2;
+                        const halfSize = rectSize / 2;
+
+                        exportCtx.strokeStyle = pin.color;
+                        exportCtx.lineWidth = 4;
+                        exportCtx.strokeRect(px - halfSize, py - halfSize, rectSize, rectSize);
+
+                        exportCtx.strokeStyle = 'white';
+                        exportCtx.lineWidth = 1;
+                        exportCtx.strokeRect(px - halfSize + 2, py - halfSize + 2, rectSize - 4, rectSize - 4);
+
+                        // Label
+                        const labelPos = getLabelCoordinates(px, py, halfSize, pin.labelPos || 'tr');
+                        const labelSize = pinSize * 0.8;
+
+                        exportCtx.fillStyle = pin.color;
+                        exportCtx.beginPath();
+                        exportCtx.arc(labelPos.x, labelPos.y, labelSize, 0, Math.PI * 2);
+                        exportCtx.fill();
+
+                        exportCtx.fillStyle = 'white';
+                        exportCtx.font = `bold ${labelSize * 0.9}px -apple-system, sans-serif`;
+                        exportCtx.textAlign = 'center';
+                        exportCtx.textBaseline = 'middle';
+                        exportCtx.fillText(index + 1, labelPos.x, labelPos.y);
+                    } else {
+                        // Filled circle style
+                        exportCtx.beginPath();
+                        exportCtx.arc(px, py, pinSize, 0, Math.PI * 2);
+                        exportCtx.fillStyle = pin.color;
+                        exportCtx.fill();
+                        exportCtx.strokeStyle = 'white';
+                        exportCtx.lineWidth = 2;
+                        exportCtx.stroke();
+
+                        exportCtx.fillStyle = 'white';
+                        exportCtx.font = `bold ${pinSize * 0.9}px -apple-system, sans-serif`;
+                        exportCtx.textAlign = 'center';
+                        exportCtx.textBaseline = 'middle';
+                        exportCtx.fillText(index + 1, px, py);
+                    }
+                });
+
+                // Draw legend
+                const legendY = pcbImage.naturalHeight + padding * 2;
+                exportCtx.fillStyle = '#333';
+                exportCtx.font = 'bold 14px -apple-system, sans-serif';
+                exportCtx.textAlign = 'left';
+                exportCtx.fillText('Pin Legend', padding, legendY);
+
+                pins.forEach((pin, index) => {
+                    const rowY = legendY + 20 + index * 28;
+
+                    // Color swatch
+                    exportCtx.fillStyle = pin.color;
+                    exportCtx.fillRect(padding, rowY, 20, 20);
+                    exportCtx.fillStyle = 'white';
+                    exportCtx.font = 'bold 10px -apple-system, sans-serif';
+                    exportCtx.textAlign = 'center';
+                    exportCtx.fillText(index + 1, padding + 10, rowY + 13);
+
+                    // Label and description
+                    exportCtx.fillStyle = '#333';
+                    exportCtx.font = 'bold 12px ui-monospace, monospace';
+                    exportCtx.textAlign = 'left';
+                    exportCtx.fillText(pin.label || `Pin ${index + 1}`, padding + 30, rowY + 14);
+
+                    exportCtx.font = '12px -apple-system, sans-serif';
+                    exportCtx.fillStyle = '#666';
+                    exportCtx.fillText(pin.description || '', padding + 120, rowY + 14);
+                });
+
+                // Download using data URL for better compatibility with file:// protocol
+                const dataUrl = exportCanvas.toDataURL('image/png');
+                const link = document.createElement('a');
+                link.href = dataUrl;
+                link.download = 'pcb-pinout.png';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                showToast('Image exported successfully!', true);
+
+            } catch (error) {
+                console.error('Export failed:', error);
+                showToast('Export failed. Please try again.', false);
+            }
+        }
+
+        // Toast Notification
+        function showToast(message, success = true) {
+            const toast = document.getElementById('toast');
+            toast.querySelector('.toast-message').textContent = message;
+            toast.querySelector('.toast-icon').textContent = success ? '✓' : 'ℹ';
+            toast.className = 'toast ' + (success ? 'success' : '');
+            toast.classList.add('show');
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Escape HTML
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        // Initial state
+        updateLegend();
+    </script>
+</body>
+
+</html>
