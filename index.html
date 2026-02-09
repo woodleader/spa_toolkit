@@ -7,200 +7,318 @@
     <title>Toolbox Launcher</title>
     <style>
         :root {
-            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-            --card-bg: rgba(255, 255, 255, 0.05);
-            --card-border: rgba(255, 255, 255, 0.1);
-            --text-primary: #f8fafc;
-            --text-secondary: #94a3b8;
-            --accent-primary: #38bdf8;
-            --accent-secondary: #818cf8;
-            --hover-bg: rgba(255, 255, 255, 0.1);
-            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            /* Neo-Brutalist Palette */
+            --bg-color: #e0e7ff;
+            --panel-bg: #ffffff;
+            --card-bg: #ffffff;
+            --text-primary: #1a1a1a;
+            --text-secondary: #4a4a4a;
+            --border-color: #000000;
+            --border-width: 3px;
+            --shadow-offset: 6px;
+            --shadow-color: #000000;
 
-            /* Tag Colors */
-            --tag-can: #f59e0b;
-            --tag-automotive: #10b981;
-            --tag-verification: #8b5cf6;
-            --tag-visualization: #ec4899;
-            --tag-compliance: #06b6d4;
-            --tag-camera: #f43f5e;
+            /* High Saturation Accents */
+            --accent-primary: #4f46e5;
+            --accent-secondary: #ec4899;
+            --hover-bg: #fdf2f8;
+
+            /* Tag Colors - Bold & Flat */
+            --tag-can: #fbbf24;
+            --tag-automotive: #ef4444;
+            --tag-verification: #3b82f6;
+            --tag-visualization: #10b981;
+            --tag-compliance: #f59e0b;
+            --tag-camera: #8b5cf6;
+        }
+
+        /* Dark Mode Override */
+        body.dark-mode {
+            --bg-color: #0d1320;
+            --panel-bg: #131d31;
+            --card-bg: #19243b;
+            --text-primary: #f8fbff;
+            --text-secondary: #c4d2eb;
+            --border-color: #7db2ff;
+            --shadow-color: #0a0f1d;
+            --hover-bg: #22314f;
+
+            /* High saturation accents pop more on dark */
+            --accent-primary: #6ea8ff;
+            --accent-secondary: #ff7eb8;
+
+            --tag-can: #f4c542;
+            --tag-automotive: #ff6b6b;
+            --tag-verification: #69a8ff;
+            --tag-visualization: #35d3b0;
+            --tag-compliance: #f9a83b;
+            --tag-camera: #a98dff;
+        }
+
+        body.dark-mode .app-card,
+        body.dark-mode .controls,
+        body.dark-mode header,
+        body.dark-mode footer,
+        body.dark-mode .view-btn,
+        body.dark-mode .sort-select,
+        body.dark-mode .filter-chip {
+            box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--shadow-color);
+        }
+
+        body.dark-mode .app-card {
+            background: #19243b;
+        }
+
+        body.dark-mode .app-card:hover {
+            background: #22314f;
+        }
+
+        body.dark-mode .app-tag {
+            border-color: #0a0f1d;
+            box-shadow: 2px 2px 0 #0a0f1d;
+        }
+
+        body.dark-mode .control-label {
+            background: #6ea8ff;
+            color: #0d1320;
+        }
+
+        body.dark-mode .filter-chip.active {
+            background: #2c4169;
+            color: #f8fbff;
+            border-color: #7db2ff;
+        }
+
+        body.dark-mode .filter-chip.active .chip-dot {
+            border-color: #f8fbff;
+        }
+
+        body.dark-mode .group-header {
+            color: #d9e7ff;
+        }
+
+        body.dark-mode .theme-toggle {
+            background: #6ea8ff;
+            border-color: #0a0f1d;
+            box-shadow: 4px 4px 0 #f8fbff;
         }
 
         body {
             margin: 0;
-            padding: env(safe-area-inset-top, 0) env(safe-area-inset-right, 0) env(safe-area-inset-bottom, 0) env(safe-area-inset-left, 0);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background: var(--bg-gradient);
+            padding: 20px;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            /* Clean, bold sans */
+            background: var(--bg-color);
             color: var(--text-primary);
             min-height: 100vh;
-            min-height: -webkit-fill-available;
             display: flex;
             flex-direction: column;
             align-items: center;
-            overflow-x: hidden;
-            -webkit-overflow-scrolling: touch;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
 
         .container {
-            max-width: 1000px;
-            width: 90%;
+            max-width: 1200px;
+            width: 95%;
             padding: 40px 20px;
             text-align: center;
         }
 
         header {
-            margin-bottom: 30px;
-            animation: fadeInDown 0.8s ease-out;
+            margin-bottom: 50px;
+            background: var(--panel-bg);
+            border: var(--border-width) solid var(--border-color);
+            box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--shadow-color);
+            padding: 30px;
+            transform: rotate(-1deg);
+            position: relative;
+            /* Context for toggle button */
+            transition: background-color 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
         }
 
+        /* Theme Toggle "Tacked On" */
+        .theme-toggle {
+            position: absolute;
+            top: -15px;
+            right: -15px;
+            width: 48px;
+            height: 48px;
+            background: var(--accent-primary);
+            border: var(--border-width) solid var(--border-color);
+            box-shadow: 4px 4px 0 var(--shadow-color);
+            transform: rotate(10deg);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .theme-toggle:hover {
+            transform: rotate(0deg) scale(1.1);
+        }
+
+        .theme-toggle:active {
+            transform: rotate(0deg) scale(0.95);
+        }
+
+        .theme-toggle svg {
+            width: 24px;
+            height: 24px;
+            stroke: #fff;
+            stroke-width: 2.5;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* Show/Hide icons based on theme */
+        .theme-toggle .icon-sun {
+            display: none;
+        }
+
+        .theme-toggle .icon-moon {
+            display: block;
+        }
+
+        body.dark-mode .theme-toggle .icon-sun {
+            display: block;
+            stroke: #000;
+        }
+
+        body.dark-mode .theme-toggle .icon-moon {
+            display: none;
+        }
+
+        
         h1 {
-            font-size: 3rem;
-            font-weight: 800;
-            margin-bottom: 16px;
-            background: linear-gradient(to right, var(--accent-primary), var(--accent-secondary));
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-            letter-spacing: -0.02em;
+            font-size: 4rem;
+            font-weight: 900;
+            margin: 0 0 10px 0;
+            text-transform: uppercase;
+            letter-spacing: -2px;
+            line-height: 0.9;
+            color: var(--text-primary);
+            text-shadow: 2px 2px 0 var(--accent-secondary);
         }
 
         p.subtitle {
-            font-size: 1.2rem;
-            color: var(--text-secondary);
-            font-weight: 400;
+            font-size: 1.5rem;
+            color: var(--text-primary);
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+            margin: 0;
         }
 
-        /* Filter & Sort Controls */
+        /* Controls */
         .controls {
             display: flex;
             flex-wrap: wrap;
-            gap: 12px;
+            gap: 20px;
             justify-content: center;
             align-items: center;
-            margin-bottom: 40px;
-            animation: fadeInDown 0.8s ease-out 0.1s both;
+            margin-bottom: 60px;
+            background: var(--panel-bg);
+            padding: 20px;
+            border: var(--border-width) solid var(--border-color);
+            box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--shadow-color);
+            transition: background-color 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
         }
 
         .control-group {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 15px;
         }
 
         .control-label {
-            color: var(--text-secondary);
-            font-size: 0.85rem;
-            font-weight: 500;
+            font-weight: 800;
+            text-transform: uppercase;
+            font-size: 1rem;
+            background: var(--text-primary);
+            color: var(--bg-color);
+            /* Inverted for contrast */
+            padding: 5px 10px;
         }
 
         .filter-chips {
             display: flex;
             flex-wrap: wrap;
-            gap: 8px;
+            gap: 12px;
             justify-content: center;
         }
 
         .filter-chip {
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            color: var(--text-secondary);
-            padding: 6px 14px;
-            border-radius: 20px;
+            background: var(--panel-bg);
+            border: var(--border-width) solid var(--border-color);
+            color: var(--text-primary);
+            padding: 10px 20px;
+            font-weight: 700;
+            font-size: 0.9rem;
             cursor: pointer;
-            font-size: 0.8rem;
-            font-weight: 500;
-            transition: var(--transition);
+            box-shadow: 4px 4px 0 var(--shadow-color);
+            transition: all 0.1s ease;
+            text-transform: uppercase;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
         }
 
         .filter-chip:hover {
-            background: var(--hover-bg);
-            color: var(--text-primary);
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0 var(--shadow-color);
+            background: var(--accent-primary);
+            color: #fff;
+            border-color: var(--border-color);
+        }
+
+        .filter-chip:active {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0 var(--shadow-color);
         }
 
         .filter-chip.active {
-            background: var(--chip-color, var(--accent-primary));
-            border-color: var(--chip-color, var(--accent-primary));
-            color: #0f172a;
+            background: var(--text-primary);
+            color: var(--bg-color);
+            box-shadow: 2px 2px 0 var(--shadow-color);
+            transform: translate(2px, 2px);
+            border-color: var(--border-color);
         }
 
-        .filter-chip .chip-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
+        .chip-dot {
+            width: 12px;
+            height: 12px;
+            border: 2px solid var(--border-color);
             background: var(--chip-color);
+            display: inline-block;
         }
 
         .filter-chip.active .chip-dot {
-            background: #0f172a;
+            border-color: var(--bg-color);
         }
 
-        /* Sort/Group Dropdown */
         .sort-select {
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
+            background: var(--panel-bg);
+            border: var(--border-width) solid var(--border-color);
             color: var(--text-primary);
-            padding: 8px 14px;
-            border-radius: 8px;
-            font-size: 0.85rem;
+            padding: 10px 40px 10px 20px;
+            font-weight: bold;
+            font-size: 1rem;
             cursor: pointer;
-            transition: var(--transition);
+            box-shadow: 4px 4px 0 var(--shadow-color);
             appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='4'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
             background-repeat: no-repeat;
-            background-position: right 10px center;
-            padding-right: 32px;
+            background-position: right 15px center;
         }
 
-        .sort-select:hover {
-            background-color: var(--hover-bg);
-            border-color: rgba(255, 255, 255, 0.2);
-        }
-
-        .sort-select:focus {
-            outline: none;
-            border-color: var(--accent-primary);
-        }
-
-        /* Group Header */
-        .group-header {
-            width: 100%;
-            text-align: left;
-            margin: 24px 0 16px 0;
-            padding-bottom: 8px;
-            border-bottom: 1px solid var(--card-border);
-            color: var(--text-primary);
-            font-size: 1.1rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .group-header:first-child {
-            margin-top: 0;
-        }
-
-        .group-header .group-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-        }
-
-        .group-header .group-count {
-            color: var(--text-secondary);
-            font-weight: 400;
-            font-size: 0.9rem;
-        }
-
+        /* Grid */
         .launcher-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 32px;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
             width: 100%;
-            animation: fadeInUp 0.8s ease-out 0.2s both;
         }
 
         .launcher-grid.grouped {
@@ -209,191 +327,128 @@
             gap: 0;
         }
 
-        .launcher-grid.grouped .group-section {
+        .group-section {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 24px;
-            margin-bottom: 32px;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+            margin-bottom: 40px;
+            width: 100%;
         }
 
+        /* Group Headers */
+        .group-header {
+            width: 100%;
+            font-size: 2rem;
+            font-weight: 900;
+            border-bottom: 4px solid var(--border-color);
+            padding-bottom: 10px;
+            margin: 40px 0 20px 0;
+            text-align: left;
+            text-transform: uppercase;
+        }
+
+        /* Cards */
         .app-card {
             background: var(--card-bg);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid var(--card-border);
-            border-radius: 24px;
-            padding: 40px 30px 30px;
+            border: var(--border-width) solid var(--border-color);
+            padding: 30px;
             text-decoration: none;
             color: inherit;
-            transition: var(--transition);
             display: flex;
             flex-direction: column;
-            align-items: center;
+            align-items: flex-start;
             position: relative;
-            overflow: hidden;
+            box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--shadow-color);
+            transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .app-card:hover {
+            transform: translate(-4px, -4px);
+            box-shadow: calc(var(--shadow-offset) + 4px) calc(var(--shadow-offset) + 4px) 0 var(--shadow-color);
+            background: var(--panel-bg);
+        }
+
+        .app-card:active {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0 var(--shadow-color);
         }
 
         .app-card.hidden {
             display: none;
         }
 
-        .app-card:hover {
-            transform: translateY(-10px);
-            background: var(--hover-bg);
-            border-color: rgba(255, 255, 255, 0.2);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-        }
-
-        .app-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(to right, var(--accent-primary), var(--accent-secondary));
-            opacity: 0;
-            transition: var(--transition);
-        }
-
-        .app-card:hover::before {
-            opacity: 1;
-        }
-
-        /* Tags on Cards */
+        /* Tags */
         .app-tags {
             display: flex;
             flex-wrap: wrap;
-            gap: 6px;
-            justify-content: center;
-            margin-bottom: 16px;
+            gap: 8px;
+            margin-bottom: 20px;
+            width: 100%;
         }
 
         .app-tag {
-            font-size: 0.65rem;
-            font-weight: 600;
+            font-size: 0.75rem;
+            font-weight: 800;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
-            padding: 3px 8px;
-            border-radius: 4px;
-            background: rgba(255, 255, 255, 0.1);
-            color: var(--tag-color, var(--text-secondary));
+            padding: 4px 8px;
+            border: 2px solid var(--border-color);
+            background: var(--tag-color, #eee);
+            color: #000;
+            box-shadow: 2px 2px 0 var(--shadow-color);
         }
 
+        /* Icons */
         .icon-wrapper {
             width: 80px;
             height: 80px;
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 20px;
+            background: var(--panel-bg);
+            border: 3px solid var(--border-color);
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 24px;
-            transition: var(--transition);
-        }
-
-        .app-card:hover .icon-wrapper {
-            background: rgba(255, 255, 255, 0.08);
-            transform: scale(1.1);
+            margin-bottom: 20px;
+            box-shadow: 4px 4px 0 var(--shadow-color);
         }
 
         .icon-wrapper svg {
             width: 40px;
             height: 40px;
-            stroke: var(--accent-primary);
-            stroke-width: 2;
-            fill: none;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-            transition: var(--transition);
-        }
-
-        .app-card:hover .icon-wrapper svg {
             stroke: var(--text-primary);
+            stroke-width: 2.5;
+            fill: none;
+            stroke-linecap: square;
+            stroke-linejoin: miter;
         }
 
         .app-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin-bottom: 12px;
+            font-size: 1.8rem;
+            font-weight: 900;
+            margin-bottom: 10px;
+            line-height: 1.1;
+            border-bottom: 3px solid var(--accent-secondary);
+            display: inline-block;
         }
 
         .app-desc {
-            font-size: 1rem;
+            font-size: 1.1rem;
             color: var(--text-secondary);
-            line-height: 1.5;
+            line-height: 1.4;
+            font-weight: 500;
+            text-align: left;
+            margin-top: auto;
         }
 
-        @keyframes fadeInDown {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
+        /* Footer */
         footer {
             margin-top: 80px;
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-            animation: fadeIn 1.5s ease-in;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-            }
-
-            to {
-                opacity: 1;
-            }
-        }
-
-        @media (max-width: 640px) {
-            h1 {
-                font-size: 2.2rem;
-            }
-
-            .launcher-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .launcher-grid.grouped .group-section {
-                grid-template-columns: 1fr;
-            }
-
-            .container {
-                padding: 20px 16px;
-            }
-
-            header {
-                margin-bottom: 20px;
-            }
-
-            .controls {
-                flex-direction: column;
-                gap: 16px;
-            }
-
-            .filter-chips {
-                max-width: 100%;
-            }
+            padding: 20px;
+            border-top: 4px solid var(--border-color);
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+            background: var(--panel-bg);
+            width: 100%;
+            text-align: center;
+            box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--shadow-color);
         }
 
         /* View Toggle */
@@ -402,74 +457,50 @@
             top: 20px;
             right: 20px;
             display: flex;
-            gap: 6px;
+            gap: 10px;
             z-index: 100;
         }
 
-        @media (max-width: 640px) {
-            .view-toggle {
-                position: static;
-                justify-content: center;
-                margin-top: 24px;
-                margin-bottom: 16px;
-                padding: 0 16px;
-            }
-
-            .view-btn {
-                flex: 1;
-                justify-content: center;
-                padding: 12px;
-                min-height: 44px;
-            }
-
-            .view-btn-text {
-                display: none;
-            }
-
-            .view-btn svg {
-                width: 20px;
-                height: 20px;
-            }
-        }
-
         .view-btn {
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            color: var(--text-secondary);
-            padding: 8px 16px;
-            border-radius: 8px;
+            background: var(--panel-bg);
+            border: 3px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 10px 15px;
             cursor: pointer;
-            font-size: 0.85rem;
+            font-weight: 800;
+            box-shadow: 4px 4px 0 var(--shadow-color);
+            transition: all 0.1s;
             display: flex;
             align-items: center;
-            gap: 6px;
-            transition: var(--transition);
+            gap: 5px;
         }
 
         .view-btn:hover {
-            background: var(--hover-bg);
-            color: var(--text-primary);
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0 var(--shadow-color);
         }
 
         .view-btn.active {
-            background: var(--accent-primary);
-            border-color: var(--accent-primary);
-            color: #0f172a;
+            background: var(--text-primary);
+            color: var(--bg-color);
+            box-shadow: 2px 2px 0 var(--shadow-color);
+            transform: translate(2px, 2px);
+            border-color: var(--border-color);
         }
 
         .view-btn svg {
-            width: 16px;
-            height: 16px;
+            width: 20px;
+            height: 20px;
             stroke: currentColor;
-            stroke-width: 2;
+            stroke-width: 3;
             fill: none;
         }
 
-        /* List View Styles */
+        /* List View */
         .launcher-grid.list-view {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 20px;
         }
 
         .launcher-grid.list-view.grouped {
@@ -479,68 +510,69 @@
         .launcher-grid.list-view .group-section {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 20px;
         }
 
         .launcher-grid.list-view .app-card {
-            flex-direction: row;
-            padding: 16px 24px;
-            border-radius: 12px;
+            display: grid;
+            grid-template-columns: 80px 1fr auto;
+            grid-template-rows: auto auto;
+            grid-template-areas:
+                "icon title tags"
+                "icon desc  tags";
+            align-items: center;
+            gap: 5px 30px;
+            padding: 20px;
             text-align: left;
         }
 
-        .launcher-grid.list-view .app-tags {
-            position: absolute;
-            top: 8px;
-            right: 12px;
-            margin-bottom: 0;
-        }
-
         .launcher-grid.list-view .icon-wrapper {
-            width: 48px;
-            height: 48px;
-            margin-bottom: 0;
-            margin-right: 20px;
-            border-radius: 12px;
-            flex-shrink: 0;
-        }
-
-        .launcher-grid.list-view .icon-wrapper svg {
-            width: 24px;
-            height: 24px;
+            grid-area: icon;
+            margin: 0;
+            width: 60px;
+            height: 60px;
+            justify-self: center;
+            /* Center horizontally in the icon column */
         }
 
         .launcher-grid.list-view .app-title {
-            font-size: 1.1rem;
-            margin-bottom: 4px;
-            margin-right: 8px;
+            grid-area: title;
+            margin: 0;
+            align-self: end;
+            border-bottom: none;
         }
 
         .launcher-grid.list-view .app-desc {
-            font-size: 0.85rem;
-            margin-left: 4px;
+            grid-area: desc;
+            margin: 0;
+            align-self: start;
         }
 
-        .launcher-grid.list-view .app-card:hover {
-            transform: translateX(8px);
+        .launcher-grid.list-view .app-tags {
+            grid-area: tags;
+            width: auto;
+            margin: 0;
+            flex-direction: column;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 5px;
         }
 
-        .launcher-grid.list-view .app-card:hover .icon-wrapper {
-            transform: scale(1.05);
-        }
+        @media (max-width: 640px) {
+            h1 {
+                font-size: 2.5rem;
+            }
 
-        /* No results message */
-        .no-results {
-            text-align: center;
-            color: var(--text-secondary);
-            padding: 60px 20px;
-            font-size: 1.1rem;
-        }
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
 
-        .no-results-icon {
-            font-size: 3rem;
-            margin-bottom: 16px;
-            opacity: 0.5;
+            .view-toggle {
+                position: static;
+                justify-content: center;
+                margin-bottom: 20px;
+            }
         }
     </style>
 </head>
@@ -572,8 +604,26 @@
 
     <div class="container">
         <header>
-            <h1>Toolbox</h1>
-            <p class="subtitle">Select a tool to get started</p>
+            <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" aria-label="Toggle Dark Mode">
+                <!-- Moon Icon -->
+                <svg class="icon-moon" viewBox="0 0 24 24">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                </svg>
+                <!-- Sun Icon -->
+                <svg class="icon-sun" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="5"></circle>
+                    <line x1="12" y1="1" x2="12" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="23"></line>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                    <line x1="1" y1="12" x2="3" y2="12"></line>
+                    <line x1="21" y1="12" x2="23" y2="12"></line>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                </svg>
+            </button>
+            <h1>Toolbox Launcher</h1>
+            <p class="subtitle">Engineering Tools</p>
         </header>
 
         <!-- Filter and Sort Controls -->
@@ -586,16 +636,16 @@
                         <span class="chip-dot"></span>CAN
                     </button>
                     <button class="filter-chip" data-tag="automotive" style="--chip-color: var(--tag-automotive)">
-                        <span class="chip-dot"></span>Automotive
+                        <span class="chip-dot"></span>Auto
                     </button>
                     <button class="filter-chip" data-tag="verification" style="--chip-color: var(--tag-verification)">
-                        <span class="chip-dot"></span>Verification
+                        <span class="chip-dot"></span>Verify
                     </button>
                     <button class="filter-chip" data-tag="visualization" style="--chip-color: var(--tag-visualization)">
-                        <span class="chip-dot"></span>Visualization
+                        <span class="chip-dot"></span>Visual
                     </button>
                     <button class="filter-chip" data-tag="compliance" style="--chip-color: var(--tag-compliance)">
-                        <span class="chip-dot"></span>Compliance
+                        <span class="chip-dot"></span>Comply
                     </button>
                     <button class="filter-chip" data-tag="camera" style="--chip-color: var(--tag-camera)">
                         <span class="chip-dot"></span>Camera
@@ -603,11 +653,11 @@
                 </div>
             </div>
             <div class="control-group">
-                <span class="control-label">Group by:</span>
+                <span class="control-label">Group:</span>
                 <select class="sort-select" id="group-select">
                     <option value="none">None</option>
                     <option value="tag">Category</option>
-                    <option value="alpha">Alphabetical</option>
+                    <option value="alpha">A-Z</option>
                 </select>
             </div>
         </div>
@@ -1001,30 +1051,47 @@
         </main>
 
         <div class="no-results" id="no-results" style="display: none;">
-            <div class="no-results-icon">🔍</div>
-            <div>No tools match the selected filter.</div>
+            <div class="no-results-icon">=!=</div>
+            <div>NULL RESULT</div>
         </div>
 
         <footer>
-            Last Update: 02.02.2026
+            // SYSTEM STATUS: OK // LAST UPDATE: 09.02.2026 //
         </footer>
     </div>
 </body>
 
 <script>
-    // Tag configuration with colors
+    // Tag configuration 
     const tagConfig = {
-        can: { label: 'CAN', color: 'var(--tag-can)' },
-        automotive: { label: 'Automotive', color: 'var(--tag-automotive)' },
-        verification: { label: 'Verification', color: 'var(--tag-verification)' },
-        visualization: { label: 'Visualization', color: 'var(--tag-visualization)' },
-        compliance: { label: 'Compliance', color: 'var(--tag-compliance)' },
-        camera: { label: 'Camera', color: 'var(--tag-camera)' }
+        can: { label: 'CAN', color: '#000' },
+        automotive: { label: 'Automotive', color: '#000' },
+        verification: { label: 'Verification', color: '#000' },
+        visualization: { label: 'Visualization', color: '#000' },
+        compliance: { label: 'Compliance', color: '#000' },
+        camera: { label: 'Camera', color: '#000' }
     };
 
     let currentFilter = 'all';
     let currentGroup = 'none';
     let currentView = 'grid';
+
+    // Theme Toggle Logic
+    const toggleBtn = document.getElementById('theme-toggle');
+
+    // Check local storage or system preference
+    const savedTheme = localStorage.getItem('toolboxTheme');
+    const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+    if (savedTheme === 'dark' || (!savedTheme && systemDark)) {
+        document.body.classList.add('dark-mode');
+    }
+
+    function toggleTheme() {
+        document.body.classList.toggle('dark-mode');
+        const isDark = document.body.classList.contains('dark-mode');
+        localStorage.setItem('toolboxTheme', isDark ? 'dark' : 'light');
+    }
 
     // View toggle
     function setView(view) {
@@ -1121,11 +1188,7 @@
 
                 const header = document.createElement('div');
                 header.className = 'group-header';
-                header.innerHTML = `
-                    <span class="group-dot" style="background: ${config.color}"></span>
-                    ${config.label}
-                    <span class="group-count">(${groups[tag].length})</span>
-                `;
+                header.innerHTML = `${config.label}`;
                 grid.appendChild(header);
 
                 const section = document.createElement('div');
@@ -1151,7 +1214,7 @@
             sortedLetters.forEach(letter => {
                 const header = document.createElement('div');
                 header.className = 'group-header';
-                header.innerHTML = `${letter} <span class="group-count">(${groups[letter].length})</span>`;
+                header.innerHTML = `${letter}`;
                 grid.appendChild(header);
 
                 const section = document.createElement('div');
