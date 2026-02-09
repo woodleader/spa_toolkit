@@ -59,7 +59,7 @@
         body.dark-mode .controls,
         body.dark-mode header,
         body.dark-mode footer,
-        body.dark-mode .view-btn,
+        body.dark-mode .view-mode-toggle,
         body.dark-mode .sort-select,
         body.dark-mode .filter-chip {
             box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--shadow-color);
@@ -451,49 +451,63 @@
             box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--shadow-color);
         }
 
-        /* View Toggle */
-        .view-toggle {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            display: flex;
-            gap: 10px;
-            z-index: 100;
-        }
-
-        .view-btn {
-            background: var(--panel-bg);
+        /* View Mode Toggle */
+        .view-mode-toggle {
+            position: absolute;
+            bottom: -15px;
+            right: -15px;
+            width: 48px;
+            height: 48px;
+            background: #fde047;
             border: 3px solid var(--border-color);
-            color: var(--text-primary);
-            padding: 10px 15px;
+            color: #000;
+            padding: 0;
             cursor: pointer;
             font-weight: 800;
             box-shadow: 4px 4px 0 var(--shadow-color);
-            transition: all 0.1s;
+            transform: rotate(-9deg);
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.1s ease;
             display: flex;
             align-items: center;
-            gap: 5px;
+            justify-content: center;
+            z-index: 10;
         }
 
-        .view-btn:hover {
-            transform: translate(-2px, -2px);
+        .view-mode-toggle:hover {
+            transform: rotate(0deg) scale(1.08);
             box-shadow: 6px 6px 0 var(--shadow-color);
         }
 
-        .view-btn.active {
-            background: var(--text-primary);
-            color: var(--bg-color);
+        .view-mode-toggle:active {
+            transform: rotate(0deg) scale(0.95);
             box-shadow: 2px 2px 0 var(--shadow-color);
-            transform: translate(2px, 2px);
-            border-color: var(--border-color);
         }
 
-        .view-btn svg {
-            width: 20px;
-            height: 20px;
+        .view-mode-toggle svg {
+            width: 24px;
+            height: 24px;
             stroke: currentColor;
             stroke-width: 3;
             fill: none;
+        }
+
+        .view-mode-toggle .icon-grid {
+            display: none;
+        }
+
+        .view-mode-toggle.show-grid .icon-grid {
+            display: block;
+        }
+
+        .view-mode-toggle.show-grid .icon-list {
+            display: none;
+        }
+
+        body.dark-mode .view-mode-toggle {
+            background: #f4c542;
+            border-color: #0a0f1d;
+            box-shadow: 4px 4px 0 #f8fbff;
+            color: #0a0f1d;
         }
 
         /* List View */
@@ -515,7 +529,7 @@
 
         .launcher-grid.list-view .app-card {
             display: grid;
-            grid-template-columns: 80px 1fr auto;
+            grid-template-columns: 80px minmax(0, 1fr) auto;
             grid-template-rows: auto auto;
             grid-template-areas:
                 "icon title tags"
@@ -524,6 +538,10 @@
             gap: 5px 30px;
             padding: 20px;
             text-align: left;
+        }
+
+        .launcher-grid.list-view .app-card.hidden {
+            display: none;
         }
 
         .launcher-grid.list-view .icon-wrapper {
@@ -540,17 +558,19 @@
             margin: 0;
             align-self: end;
             border-bottom: none;
+            min-width: 0;
         }
 
         .launcher-grid.list-view .app-desc {
             grid-area: desc;
             margin: 0;
             align-self: start;
+            min-width: 0;
         }
 
         .launcher-grid.list-view .app-tags {
             grid-area: tags;
-            width: auto;
+            width: 100%;
             margin: 0;
             flex-direction: column;
             align-items: flex-end;
@@ -561,6 +581,7 @@
         @media (max-width: 640px) {
             h1 {
                 font-size: 2.5rem;
+                margin-top: 10px;
             }
 
             .controls {
@@ -568,40 +589,55 @@
                 align-items: stretch;
             }
 
-            .view-toggle {
-                position: static;
-                justify-content: center;
-                margin-bottom: 20px;
+            header {
+                padding: 54px 20px 24px;
+            }
+
+            .theme-toggle {
+                top: 10px;
+                right: 10px;
+                width: 42px;
+                height: 42px;
+                transform: rotate(0deg);
+            }
+
+            .view-mode-toggle {
+                bottom: -10px;
+                right: -10px;
+                width: 42px;
+                height: 42px;
+            }
+
+            .launcher-grid.list-view .app-card {
+                grid-template-columns: 56px minmax(0, 1fr);
+                grid-template-rows: auto auto auto;
+                grid-template-areas:
+                    "icon title"
+                    "icon desc"
+                    "tags tags";
+                gap: 8px 14px;
+            }
+
+            .launcher-grid.list-view .icon-wrapper {
+                width: 48px;
+                height: 48px;
+                align-self: start;
+            }
+
+            .launcher-grid.list-view .app-tags {
+                width: 100%;
+                flex-direction: row;
+                flex-wrap: wrap;
+                align-items: flex-start;
+                justify-content: flex-start;
+                gap: 8px;
+                margin-top: 6px;
             }
         }
     </style>
 </head>
 
 <body>
-    <!-- View Toggle (fixed top-right) -->
-    <div class="view-toggle">
-        <button class="view-btn active" id="grid-view-btn" onclick="setView('grid')">
-            <svg viewBox="0 0 24 24">
-                <rect x="3" y="3" width="7" height="7"></rect>
-                <rect x="14" y="3" width="7" height="7"></rect>
-                <rect x="3" y="14" width="7" height="7"></rect>
-                <rect x="14" y="14" width="7" height="7"></rect>
-            </svg>
-            <span class="view-btn-text">Cards</span>
-        </button>
-        <button class="view-btn" id="list-view-btn" onclick="setView('list')">
-            <svg viewBox="0 0 24 24">
-                <line x1="8" y1="6" x2="21" y2="6"></line>
-                <line x1="8" y1="12" x2="21" y2="12"></line>
-                <line x1="8" y1="18" x2="21" y2="18"></line>
-                <line x1="3" y1="6" x2="3.01" y2="6"></line>
-                <line x1="3" y1="12" x2="3.01" y2="12"></line>
-                <line x1="3" y1="18" x2="3.01" y2="18"></line>
-            </svg>
-            <span class="view-btn-text">List</span>
-        </button>
-    </div>
-
     <div class="container">
         <header>
             <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" aria-label="Toggle Dark Mode">
@@ -620,6 +656,23 @@
                     <line x1="21" y1="12" x2="23" y2="12"></line>
                     <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
                     <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                </svg>
+            </button>
+            <button class="view-mode-toggle" id="view-mode-toggle" onclick="toggleView()"
+                aria-label="Switch to list view">
+                <svg class="icon-list" viewBox="0 0 24 24">
+                    <line x1="8" y1="6" x2="21" y2="6"></line>
+                    <line x1="8" y1="12" x2="21" y2="12"></line>
+                    <line x1="8" y1="18" x2="21" y2="18"></line>
+                    <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                    <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                    <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                </svg>
+                <svg class="icon-grid" viewBox="0 0 24 24">
+                    <rect x="3" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="3" width="7" height="7"></rect>
+                    <rect x="3" y="14" width="7" height="7"></rect>
+                    <rect x="14" y="14" width="7" height="7"></rect>
                 </svg>
             </button>
             <h1>Toolbox Launcher</h1>
@@ -1093,22 +1146,30 @@
         localStorage.setItem('toolboxTheme', isDark ? 'dark' : 'light');
     }
 
-    // View toggle
+    function updateViewToggleButton() {
+        const viewToggleBtn = document.getElementById('view-mode-toggle');
+        if (!viewToggleBtn) return;
+        const nextView = currentView === 'list' ? 'grid' : 'list';
+        viewToggleBtn.classList.toggle('show-grid', nextView === 'grid');
+        viewToggleBtn.setAttribute('aria-label', `Switch to ${nextView} view`);
+        viewToggleBtn.title = `Switch to ${nextView} view`;
+    }
+
+    function toggleView() {
+        setView(currentView === 'list' ? 'grid' : 'list');
+    }
+
+    // View mode
     function setView(view) {
         currentView = view;
         const grid = document.getElementById('launcher-grid');
-        const gridBtn = document.getElementById('grid-view-btn');
-        const listBtn = document.getElementById('list-view-btn');
 
         if (view === 'list') {
             grid.classList.add('list-view');
-            listBtn.classList.add('active');
-            gridBtn.classList.remove('active');
         } else {
             grid.classList.remove('list-view');
-            gridBtn.classList.add('active');
-            listBtn.classList.remove('active');
         }
+        updateViewToggleButton();
         localStorage.setItem('toolboxView', view);
         applyGrouping();
     }
@@ -1254,7 +1315,7 @@
         currentGroup = savedGroup;
 
         // Apply saved view
-        if (savedView === 'list') setView('list');
+        setView(savedView);
 
         // Apply saved filter
         document.querySelectorAll('.filter-chip').forEach(chip => {
