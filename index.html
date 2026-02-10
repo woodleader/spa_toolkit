@@ -1149,6 +1149,7 @@
     let currentFilter = 'all';
     let currentGroup = 'none';
     let currentView = 'grid';
+    let allCards = [];
 
     // Theme Toggle Logic
     const toggleBtn = document.getElementById('theme-toggle');
@@ -1216,8 +1217,7 @@
     }
 
     function applyFilterAndGroup() {
-        const grid = document.getElementById('launcher-grid');
-        const cards = Array.from(document.querySelectorAll('.app-card'));
+        const cards = allCards;
         const noResults = document.getElementById('no-results');
 
         // Filter cards
@@ -1236,15 +1236,20 @@
 
     function applyGrouping(visibleCards) {
         const grid = document.getElementById('launcher-grid');
-        const cards = visibleCards || Array.from(document.querySelectorAll('.app-card:not(.hidden)'));
+        const cards = (visibleCards || allCards.filter(card => !card.classList.contains('hidden')))
+            .slice()
+            .sort((a, b) => Number(a.dataset.order) - Number(b.dataset.order));
 
         // Remove existing group headers and sections
         document.querySelectorAll('.group-header, .group-section').forEach(el => el.remove());
 
         if (currentGroup === 'none') {
             grid.classList.remove('grouped');
-            // Re-append cards directly to grid
-            cards.forEach(card => grid.appendChild(card));
+            // Keep canonical card order stable regardless of filter toggles.
+            allCards
+                .slice()
+                .sort((a, b) => Number(a.dataset.order) - Number(b.dataset.order))
+                .forEach(card => grid.appendChild(card));
         } else if (currentGroup === 'tag') {
             grid.classList.add('grouped');
 
@@ -1327,6 +1332,12 @@
 
     // Initialize from saved preferences
     document.addEventListener('DOMContentLoaded', () => {
+        // Capture and preserve original card order for stable filtering/grouping.
+        allCards = Array.from(document.querySelectorAll('.app-card'));
+        allCards.forEach((card, index) => {
+            card.dataset.order = String(index);
+        });
+
         const savedView = localStorage.getItem('toolboxView') || 'grid';
         const savedFilter = localStorage.getItem('toolboxFilter') || 'all';
         const savedGroup = localStorage.getItem('toolboxGroup') || 'none';
