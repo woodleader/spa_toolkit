@@ -51,8 +51,8 @@
 
             --tag-can: #f4c542;
             --tag-automotive: #ff6b6b;
-            --tag-verification: #69a8ff;
-            --tag-visualization: #35d3b0;
+            --tag-verification: #5cc8ff;
+            --tag-visualization: #7dff6b;
             --tag-compliance: #f9a83b;
             --tag-camera: #a98dff;
         }
@@ -91,8 +91,18 @@
             border-color: #7db2ff;
         }
 
+        body.dark-mode .filter-chip.active[data-tag]:not([data-tag="all"]) {
+            background: var(--chip-color);
+            color: #000;
+            border-color: #0a0f1d;
+        }
+
         body.dark-mode .filter-chip.active .chip-dot {
             border-color: #f8fbff;
+        }
+
+        body.dark-mode .filter-chip.active[data-tag]:not([data-tag="all"]) .chip-dot {
+            border-color: #000;
         }
 
         body.dark-mode .group-header {
@@ -288,6 +298,11 @@
             border-color: var(--border-color);
         }
 
+        .filter-chip.active[data-tag]:not([data-tag="all"]) {
+            background: var(--chip-color);
+            color: #000;
+        }
+
         .chip-dot {
             width: 12px;
             height: 12px;
@@ -298,6 +313,10 @@
 
         .filter-chip.active .chip-dot {
             border-color: var(--bg-color);
+        }
+
+        .filter-chip.active[data-tag]:not([data-tag="all"]) .chip-dot {
+            border-color: #000;
         }
 
         .sort-select {
@@ -596,11 +615,11 @@
             }
 
             .theme-toggle {
-                top: 10px;
-                right: 10px;
+                top: -10px;
+                right: -10px;
                 width: 42px;
                 height: 42px;
-                transform: rotate(0deg);
+                transform: rotate(10deg);
             }
 
             .view-mode-toggle {
