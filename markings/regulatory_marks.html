@@ -417,7 +417,7 @@
                 options: [
                     {
                         label: "YES (Vehicle Specific)",
-                        sub: "ELV applies",
+                        sub: "Likely ELV context; CE/WEEE marking can be route-dependent",
                         value: true,
                         action: (s) => s.data.isVehicleSpecific = true,
                         next: "finish"
@@ -455,7 +455,7 @@
                 options: [
                     {
                         label: "YES (Vehicle Specific)",
-                        sub: "ELV applies (Exempt from WEEE/RoHS labeling)",
+                        sub: "Vehicle-specific: CE/E-mark outcome can depend on approval route",
                         value: true,
                         action: (s) => s.data.isVehicleSpecific = true,
                         next: "q4_safety"
@@ -481,7 +481,7 @@
                     },
                     {
                         label: "NO (Comfort / Accessory)",
-                        sub: "ECE R10 Optional",
+                        sub: "R10 may still be needed in vehicle approval contexts",
                         value: false,
                         action: (s) => s.data.isSafetyCritical = false,
                         next: "finish"
@@ -575,8 +575,8 @@
                 // R10: Not Needed
                 // WEEE: Required (Standard Cable is EEE) unless Vehicle Specific (ELV)
                 return {
-                    ce: isVehicleSpecific ? "NO" : "REQUIRED (RoHS)",
-                    weee: isVehicleSpecific ? "NO" : "REQUIRED",
+                    ce: isVehicleSpecific ? "CHECK (Route-dependent)" : "REQUIRED (RoHS)",
+                    weee: isVehicleSpecific ? "CHECK (ELV exclusion)" : "REQUIRED",
                     fcc: "Exempt",
                     ece: "NO"
                 };
@@ -585,13 +585,10 @@
             // Master Decision Matrix Logic (Active Cables & Units)
 
             // E-Mark (R10)
-            if (isSafetyCritical) {
-                result.ece = "REQUIRED";
+            if (isVehicleSpecific) {
+                result.ece = isSafetyCritical ? "REQUIRED" : "CHECK (Vehicle-route dependent)";
             } else {
-                // Comfort / Accessory
-                // If Dual-Use/Generic, E-Mark is Optional but CE is mandatory via EMCD.
-                // If Not Safety Critical (Comfort), E-Mark optional.
-                result.ece = "OPTIONAL";
+                result.ece = "NO";
             }
 
             // Custom Cable exception for ECE?
@@ -613,10 +610,7 @@
             } else {
                 // Not Wireless
                 if (isVehicleSpecific) {
-                    // ELV applies, Exempt from WEEE/RoHS labeling.
-                    // If Safety Critical (R10 applies), CE is NOT applied for EMC.
-                    // If Not Safety Critical (Comfort), E-Mark optional.
-                    result.ce = "NO";
+                    result.ce = "CHECK (Route-dependent)";
                 } else {
                     // Dual-Use / Generic
                     result.ce = "REQUIRED";
@@ -658,7 +652,7 @@
             } else {
                 // Non-wireless
                 if (isVehicleSpecific) {
-                    result.fcc = "Exempt*";
+                    result.fcc = "Exempt";
                 } else {
                     result.fcc = "SDoC";
                 }
@@ -672,8 +666,7 @@
 
             // WEEE Bin
             if (isVehicleSpecific) {
-                // ELV applies -> Exempt from WEEE labeling
-                result.weee = "NO";
+                result.weee = "CHECK (ELV exclusion)";
             } else {
                 // Dual-Use / Generic -> WEEE Required
                 result.weee = "REQUIRED";
@@ -698,6 +691,7 @@
                 let statusClass = 'inactive';
                 if (status.includes('REQUIRED') || status === 'FCC ID') statusClass = 'active';
                 if (status === 'SDoC') statusClass = 'warning';
+                if (status.startsWith('CHECK')) statusClass = 'warning';
                 if (status === 'OPTIONAL') statusClass = 'optional';
 
                 return `
@@ -711,14 +705,17 @@
 
             // Generate Notes
             let notesHtml = '';
-            if (marks.fcc === 'Exempt*') {
-                notesHtml += `*FCC Exempt: Digital devices used exclusively in vehicles are exempt from specific technical standards under FCC 15.103(a) if they don't transmit.<br>`;
+            if (marks.fcc === 'Exempt') {
+                notesHtml += `FCC Exempt: Digital devices used exclusively in vehicles are exempt from specific technical standards under FCC 15.103(a) if they don't transmit.<br>`;
             }
             if (marks.fcc === 'SDoC') {
-                notesHtml += `*SDoC: Supplier's Declaration of Conformity. No physical marking required.<br>`;
+                notesHtml += `SDoC: Supplier's Declaration of Conformity. No physical marking required.<br>`;
             }
             if (state.data.formFactor === 'finished_cable') {
-                notesHtml += `*ZVEI Guidance: Cables and pigtails (even with open wires) are considered EEE products. If sold separately or used in a generic way, RoHS compliance and CE marking (usually on packaging) are required.<br>`;
+                notesHtml += `ZVEI Guidance: Cables and pigtails (even with open wires) are considered EEE products. If sold separately or used in a generic way, RoHS compliance and CE marking (usually on packaging) are required.<br>`;
+            }
+            if ([marks.ce, marks.weee, marks.ece].some(v => v.startsWith('CHECK'))) {
+                notesHtml += `Route-dependent: For vehicle-specific aftermarket parts, final marking may depend on whether you market the part under a vehicle type-approval route (e.g., UN R10) or as a general aftermarket product.<br>`;
             }
 
             const notesSection = notesHtml ? `
