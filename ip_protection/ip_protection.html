@@ -600,6 +600,55 @@
             color: var(--water-color);
         }
 
+        .iec-test-description {
+            margin-top: 0.75rem;
+        }
+
+        .iec-test-collapse {
+            margin-top: 0.75rem;
+            padding: 0.75rem 1rem;
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 10px;
+        }
+
+        .iec-test-toggle {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            background: transparent;
+            border: none;
+            color: #a78bfa;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            padding: 0;
+        }
+
+        .iec-test-toggle svg {
+            stroke: #a78bfa;
+            transition: transform 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .iec-test-collapse.collapsed .iec-test-toggle svg {
+            transform: rotate(-90deg);
+        }
+
+        .iec-test-content {
+            margin-top: 0.6rem;
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        .iec-test-collapse.collapsed .iec-test-content {
+            display: none;
+        }
+
         /* Test Description */
         .test-description {
             display: grid;
@@ -997,6 +1046,21 @@
 
                 <!-- Test Descriptions -->
                 <div class="test-description" id="testDescription"></div>
+
+                <!-- IEC 60529 Test Parameters -->
+                <div class="iec-test-description">
+                    <div class="iec-test-collapse" id="iecTestCollapse">
+                        <button type="button" class="iec-test-toggle" id="iecTestToggle" aria-expanded="true"
+                            aria-controls="iecTestParameters">
+                            <span>IEC 60529 Test Parameters (Equivalent Levels)</span>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M6 9l6 6 6-6" />
+                            </svg>
+                        </button>
+                        <div class="iec-test-content" id="iecTestParameters"></div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -1159,6 +1223,30 @@
             '9K': { iec: '9', type: 'Close Functional', note: 'ISO 9K uses pressure measurement (8-10 MPa); IEC 9 uses impact force. Nozzle distance differs.' }
         };
 
+        // IEC 60529 baseline test parameters
+        const iecDustTests = {
+            '0': { test: 'No dust protection test', params: ['No ingress requirement'] },
+            '1': { test: 'Access probe test', params: ['50 mm sphere', 'No full penetration'] },
+            '2': { test: 'Access probe test', params: ['12.5 mm sphere', 'No full penetration'] },
+            '3': { test: 'Access probe test', params: ['2.5 mm probe', 'No penetration'] },
+            '4': { test: 'Access probe test', params: ['1.0 mm probe', 'No penetration'] },
+            '5': { test: 'Dust-protected test', params: ['Dust chamber', 'Limited dust ingress'] },
+            '6': { test: 'Dust-tight test', params: ['Dust chamber', 'No dust ingress'] }
+        };
+
+        const iecWaterTests = {
+            '0': { test: 'No water protection test', params: ['No ingress requirement'] },
+            '1': { test: 'Drip test', params: ['Vertical drips', '10 min'] },
+            '2': { test: 'Drip test (tilted)', params: ['15° tilt positions', '10 min'] },
+            '3': { test: 'Spray test', params: ['Up to 60° from vertical', 'Oscillating tube or nozzle'] },
+            '4': { test: 'Splash test', params: ['All directions', 'Oscillating tube or spray nozzle'] },
+            '5': { test: 'Jet test', params: ['6.3 mm nozzle', '12.5 L/min'] },
+            '6': { test: 'Powerful jet test', params: ['12.5 mm nozzle', '100 L/min'] },
+            '7': { test: 'Temporary immersion test', params: ['1 m depth', '30 min'] },
+            '8': { test: 'Continuous immersion test', params: ['Severity agreed by manufacturer', 'More severe than IPX7'] },
+            '9': { test: 'High-pressure / high-temperature jet test', params: ['80°C water', 'High-pressure jet from multiple angles'] }
+        };
+
         // DOM Elements
         const dustDigit = document.getElementById('dustDigit');
         const waterDigit = document.getElementById('waterDigit');
@@ -1172,6 +1260,9 @@
         const vizLabel = document.getElementById('vizLabel');
         const iecCode = document.getElementById('iecCode');
         const iecNotes = document.getElementById('iecNotes');
+        const iecTestParameters = document.getElementById('iecTestParameters');
+        const iecTestCollapse = document.getElementById('iecTestCollapse');
+        const iecTestToggle = document.getElementById('iecTestToggle');
 
         let animationInterval = null;
 
@@ -1210,13 +1301,22 @@
             }
         });
 
-        document.getElementById('suffixButtons').addEventListener('click', (e) => {
-            if (e.target.classList.contains('suffix-btn')) {
-                state.suffix = e.target.dataset.suffix;
-                updateButtonStates();
-                updateDisplay();
-            }
-        });
+        const suffixButtons = document.getElementById('suffixButtons');
+        if (suffixButtons) {
+            suffixButtons.addEventListener('click', (e) => {
+                if (e.target.classList.contains('suffix-btn')) {
+                    state.suffix = e.target.dataset.suffix;
+                    updateButtonStates();
+                    updateDisplay();
+                }
+            });
+        }
+        if (iecTestToggle) {
+            iecTestToggle.addEventListener('click', () => {
+                const isCollapsed = iecTestCollapse.classList.toggle('collapsed');
+                iecTestToggle.setAttribute('aria-expanded', String(!isCollapsed));
+            });
+        }
 
         function updateButtonStates() {
             // Dust buttons
@@ -1230,9 +1330,11 @@
             });
 
             // Suffix buttons
-            document.querySelectorAll('#suffixButtons .suffix-btn').forEach(btn => {
-                btn.classList.toggle('selected', btn.dataset.suffix === state.suffix);
-            });
+            if (suffixButtons) {
+                document.querySelectorAll('#suffixButtons .suffix-btn').forEach(btn => {
+                    btn.classList.toggle('selected', btn.dataset.suffix === state.suffix);
+                });
+            }
 
             // Update device card IP display
             document.querySelectorAll('.device-card').forEach(card => {
@@ -1259,6 +1361,7 @@
 
             // Update IEC 60529 equivalence
             updateIECEquivalence();
+            updateIECTestParameters();
 
             // Update label
             vizLabel.innerHTML = `
@@ -1316,6 +1419,55 @@
             }
 
             iecNotes.innerHTML = notes.join('<br>');
+        }
+
+        function updateIECTestParameters() {
+            const dustEquiv = iecDustEquivalence[state.dustLevel];
+            const waterEquiv = iecWaterEquivalence[state.waterLevel];
+            let html = '';
+
+            if (dustEquiv.iec) {
+                const testData = iecDustTests[dustEquiv.iec];
+                html += `
+                    <div class="test-item dust-test">
+                        <div class="test-title">Dust Test: IEC IP${dustEquiv.iec}X</div>
+                        <div class="test-details">${testData.test}</div>
+                        <div class="test-params">
+                            ${testData.params.map(param => `<span class="test-param">${param}</span>`).join('')}
+                        </div>
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div class="test-item" style="border-left-color: var(--warning-color);">
+                        <div class="test-title">Dust Test: No IEC equivalent</div>
+                        <div class="test-details">No direct IEC 60529 equivalent for this ISO dust level.</div>
+                    </div>
+                `;
+            }
+
+            if (waterEquiv.iec) {
+                const testData = iecWaterTests[waterEquiv.iec];
+                html += `
+                    <div class="test-item water-test">
+                        <div class="test-title">Water Test: IEC IPX${waterEquiv.iec}</div>
+                        <div class="test-details">${testData.test}</div>
+                        <div class="test-params">
+                            ${testData.params.map(param => `<span class="test-param">${param}</span>`).join('')}
+                        </div>
+                        ${waterEquiv.type === 'Close Functional' ? '<div class="test-details">Functional match only. IEC and ISO procedures differ.</div>' : ''}
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div class="test-item" style="border-left-color: var(--warning-color);">
+                        <div class="test-title">Water Test: No IEC equivalent</div>
+                        <div class="test-details">No direct IEC 60529 equivalent for this ISO water level.</div>
+                    </div>
+                `;
+            }
+
+            iecTestParameters.innerHTML = html;
         }
 
         function updateTestDescriptions(dustInfo, waterInfo) {
