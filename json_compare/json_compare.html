@@ -250,6 +250,23 @@
             font-size: 1rem;
         }
 
+        .panel-title-input {
+            width: 180px;
+            max-width: 100%;
+            border: 1px solid var(--border-color);
+            background: var(--bg-code);
+            color: var(--text-primary);
+            border-radius: 6px;
+            padding: 6px 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .panel-title-input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
         .panel-actions {
             display: flex;
             gap: 8px;
@@ -579,6 +596,26 @@
             border-bottom: 1px solid var(--border-color);
             font-weight: 600;
             font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .diff-header-copy-all {
+            border: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border-radius: 6px;
+            padding: 4px 8px;
+            font-size: 0.75rem;
+            line-height: 1.2;
+            cursor: pointer;
+            transition: border-color 0.15s ease;
+        }
+
+        .diff-header-copy-all:hover {
+            border-color: var(--accent-color);
         }
 
         .diff-explanations-content {
@@ -595,6 +632,7 @@
             margin-bottom: 8px;
             cursor: pointer;
             transition: all 0.2s ease;
+            position: relative;
         }
 
         .diff-card:hover {
@@ -612,6 +650,36 @@
             align-items: center;
             gap: 8px;
             margin-bottom: 6px;
+            padding-right: 62px;
+        }
+
+        .diff-card-copy {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border-radius: 6px;
+            padding: 4px 8px;
+            font-size: 0.75rem;
+            line-height: 1;
+            cursor: pointer;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(-2px);
+            transition: opacity 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
+        }
+
+        .diff-card:hover .diff-card-copy,
+        .diff-card:focus-within .diff-card-copy {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateY(0);
+        }
+
+        .diff-card-copy:hover {
+            border-color: var(--accent-color);
         }
 
         .diff-card-number {
@@ -785,7 +853,7 @@
         <div class="input-section" id="input-section">
             <div class="input-panel" id="panel-left">
                 <div class="panel-header">
-                    <span class="panel-title">Left JSON</span>
+                    <input id="name-left" class="panel-title-input panel-title" type="text" value="Left" placeholder="Left name" aria-label="Left JSON name">
                     <div class="panel-actions">
                         <button class="btn btn-secondary" onclick="document.getElementById('file-left').click()">
                             <svg viewBox="0 0 24 24">
@@ -812,7 +880,7 @@
 
             <div class="input-panel" id="panel-right">
                 <div class="panel-header">
-                    <span class="panel-title">Right JSON</span>
+                    <input id="name-right" class="panel-title-input panel-title" type="text" value="Right" placeholder="Right name" aria-label="Right JSON name">
                     <div class="panel-actions">
                         <button class="btn btn-secondary" onclick="document.getElementById('file-right').click()">
                             <svg viewBox="0 0 24 24">
@@ -874,11 +942,11 @@
                 <div class="diff-legend">
                     <div class="legend-item">
                         <div class="legend-color legend-removed"></div>
-                        <span>Only in left</span>
+                        <span id="legend-left-label">Only in Left</span>
                     </div>
                     <div class="legend-item">
                         <div class="legend-color legend-added"></div>
-                        <span>Only in right</span>
+                        <span id="legend-right-label">Only in Right</span>
                     </div>
                     <div class="legend-item">
                         <div class="legend-color legend-changed"></div>
@@ -889,17 +957,20 @@
 
             <div class="results-grid">
                 <div class="json-view">
-                    <div class="json-view-header">Left JSON (formatted)</div>
+                    <div class="json-view-header" id="view-left-header">Left JSON (formatted)</div>
                     <div class="json-view-content" id="view-left"></div>
                 </div>
 
                 <div class="json-view">
-                    <div class="json-view-header">Right JSON (formatted)</div>
+                    <div class="json-view-header" id="view-right-header">Right JSON (formatted)</div>
                     <div class="json-view-content" id="view-right"></div>
                 </div>
 
                 <div class="diff-explanations">
-                    <div class="diff-explanations-header">Differences</div>
+                    <div class="diff-explanations-header">
+                        <span>Differences</span>
+                        <button id="copy-all-diffs-btn" class="diff-header-copy-all" type="button" onclick="copyAllDiffs()">Copy All</button>
+                    </div>
                     <div class="diff-explanations-content" id="diff-cards"></div>
                 </div>
             </div>
@@ -1010,6 +1081,7 @@
             type: 'application/javascript'
         });
         const workerUrl = URL.createObjectURL(workerBlob);
+        const DEFAULT_SIDE_NAMES = { left: 'Left', right: 'Right' };
 
         function showLoading() {
             loadingOverlay.classList.add('visible');
@@ -1051,10 +1123,50 @@
             applyTheme(getSystemTheme());
         }
 
+        function getSideName(side) {
+            const input = document.getElementById(`name-${side}`);
+            const fallback = DEFAULT_SIDE_NAMES[side];
+            if (!input) return fallback;
+            const value = input.value.trim();
+            return value || fallback;
+        }
+
+        function getSideNames() {
+            return {
+                left: getSideName('left'),
+                right: getSideName('right')
+            };
+        }
+
+        function getDiffTypeLabel(type, sideNames = getSideNames()) {
+            if (type === 'added') return `Only ${sideNames.right}`;
+            if (type === 'removed') return `Only ${sideNames.left}`;
+            return 'Changed';
+        }
+
+        function updateSideNameUI() {
+            const sideNames = getSideNames();
+
+            const leftLegend = document.getElementById('legend-left-label');
+            const rightLegend = document.getElementById('legend-right-label');
+            const leftHeader = document.getElementById('view-left-header');
+            const rightHeader = document.getElementById('view-right-header');
+
+            if (leftLegend) leftLegend.textContent = `Only in ${sideNames.left}`;
+            if (rightLegend) rightLegend.textContent = `Only in ${sideNames.right}`;
+            if (leftHeader) leftHeader.textContent = `${sideNames.left} JSON (formatted)`;
+            if (rightHeader) rightHeader.textContent = `${sideNames.right} JSON (formatted)`;
+        }
+
         // Drag and Drop Logic
         ['left', 'right'].forEach(side => {
             const panel = document.getElementById(`panel-${side}`);
             const textarea = document.getElementById(`json-${side}`);
+            const nameInput = document.getElementById(`name-${side}`);
+
+            if (nameInput) {
+                nameInput.addEventListener('input', updateSideNameUI);
+            }
 
             // Prevent default drag behaviors
             ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
@@ -1182,7 +1294,7 @@
         }
 
         // Compare two JSON objects and find differences
-        function findDifferences(left, right, path = '') {
+        function findDifferences(left, right, path = '', sideNames = getSideNames()) {
             const diffs = [];
 
             // Handle null/undefined
@@ -1195,8 +1307,8 @@
                         path: path || 'root',
                         type: left === null ? 'added' : (right === null ? 'removed' : 'changed'),
                         description: left === null
-                            ? `Value is null on left, but defined on right`
-                            : (right === null ? `Value is defined on left, but null on right` : 'Changed')
+                            ? `Value is null in ${sideNames.left}, but defined in ${sideNames.right}`
+                            : (right === null ? `Value is defined in ${sideNames.left}, but null in ${sideNames.right}` : 'Changed')
                     });
                 }
                 return diffs;
@@ -1225,17 +1337,17 @@
                             path: itemPath,
                             type: 'added',
                             rightValue: right[i],
-                            description: `Item at index ${i} added on right`
+                            description: `Item at index ${i} added in ${sideNames.right}`
                         });
                     } else if (i >= right.length) {
                         diffs.push({
                             path: itemPath,
                             type: 'removed',
                             leftValue: left[i],
-                            description: `Item at index ${i} removed from right`
+                            description: `Item at index ${i} missing in ${sideNames.right}`
                         });
                     } else {
-                        diffs.push(...findDifferences(left[i], right[i], itemPath));
+                        diffs.push(...findDifferences(left[i], right[i], itemPath, sideNames));
                     }
                 }
             } else if (leftType === 'object') {
@@ -1249,17 +1361,17 @@
                             path: keyPath,
                             type: 'added',
                             rightValue: right[key],
-                            description: `Property "${key}" missing on left`
+                            description: `Property "${key}" missing in ${sideNames.left}`
                         });
                     } else if (!(key in right)) {
                         diffs.push({
                             path: keyPath,
                             type: 'removed',
                             leftValue: left[key],
-                            description: `Property "${key}" missing on right`
+                            description: `Property "${key}" missing in ${sideNames.right}`
                         });
                     } else {
-                        diffs.push(...findDifferences(left[key], right[key], keyPath));
+                        diffs.push(...findDifferences(left[key], right[key], keyPath, sideNames));
                     }
                 }
             } else {
@@ -1405,10 +1517,130 @@
             return '';
         }
 
+        function escapeHtml(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function formatDiffValue(value) {
+            if (value === undefined) return '(not present)';
+            if (typeof value === 'string') return JSON.stringify(value);
+            return JSON.stringify(value, null, 2);
+        }
+
+        function isScalarValue(value) {
+            return value === null || ['string', 'number', 'boolean'].includes(typeof value);
+        }
+
+        function formatDiffPlaintext(diff) {
+            const sideNames = getSideNames();
+            const lines = [
+                `Path: ${diff.path}`,
+                `Change: ${diff.type === 'added' ? `Only ${sideNames.right} (added)` : diff.type === 'removed' ? `Only ${sideNames.left} (removed)` : 'Changed'}`
+            ];
+
+            const changedScalars = diff.type === 'changed' && isScalarValue(diff.leftValue) && isScalarValue(diff.rightValue);
+            const changedComplex = diff.type === 'changed' && !changedScalars;
+
+            if (diff.description && !(changedScalars && diff.description.startsWith('Value changed:'))) {
+                lines.push(`Summary: ${diff.description}`);
+            }
+
+            if (diff.type === 'added') {
+                lines.push('', `${sideNames.right} value:`, formatDiffValue(diff.rightValue));
+            } else if (diff.type === 'removed') {
+                lines.push('', `${sideNames.left} value:`, formatDiffValue(diff.leftValue));
+            } else if (changedScalars) {
+                lines.push('', `Value: ${formatDiffValue(diff.leftValue)} -> ${formatDiffValue(diff.rightValue)}`);
+            } else {
+                lines.push('', `${sideNames.left} value:`, formatDiffValue(diff.leftValue));
+                lines.push('', `${sideNames.right} value:`, formatDiffValue(diff.rightValue));
+                if (changedComplex && diff.description && diff.description.startsWith('Value changed:')) {
+                    lines.splice(2, 1);
+                }
+            }
+
+            return lines.join('\n');
+        }
+
+        async function writeClipboardText(text) {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                await navigator.clipboard.writeText(text);
+                return;
+            }
+
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+        }
+
+        function setTemporaryButtonLabel(button, label, duration = 1200) {
+            if (!button) return;
+            const original = button.dataset.originalLabel || button.textContent;
+            button.dataset.originalLabel = original;
+            button.textContent = label;
+            setTimeout(() => {
+                if (button.isConnected) button.textContent = button.dataset.originalLabel || original;
+            }, duration);
+        }
+
+        async function copyDiff(index, event) {
+            if (event) {
+                event.stopPropagation();
+                event.preventDefault();
+            }
+
+            const diffs = window.currentDiffs || [];
+            const diff = diffs[index];
+            if (!diff) return;
+
+            const text = formatDiffPlaintext(diff);
+            const button = document.querySelector(`.diff-card[data-index="${index}"] .diff-card-copy`);
+
+            try {
+                await writeClipboardText(text);
+                setTemporaryButtonLabel(button, 'Copied');
+            } catch (err) {
+                console.error('Failed to copy diff text', err);
+                setTemporaryButtonLabel(button, 'Failed');
+            }
+        }
+
+        async function copyAllDiffs() {
+            const diffs = window.currentDiffs || [];
+            const button = document.getElementById('copy-all-diffs-btn');
+
+            const text = diffs.length === 0
+                ? 'No differences found. JSON documents are identical.'
+                : [
+                    `JSON Differences Overview (${diffs.length})`,
+                    '',
+                    ...diffs.map((diff, index) => `#${index + 1}\n${formatDiffPlaintext(diff)}`)
+                ].join('\n\n');
+
+            try {
+                await writeClipboardText(text);
+                setTemporaryButtonLabel(button, 'Copied');
+            } catch (err) {
+                console.error('Failed to copy all diffs', err);
+                setTemporaryButtonLabel(button, 'Failed');
+            }
+        }
+
         // Main compare function
         function compareJSON() {
             hideError('left');
             hideError('right');
+            updateSideNameUI();
 
             const leftText = document.getElementById('json-left').value.trim();
             const rightText = document.getElementById('json-right').value.trim();
@@ -1448,7 +1680,8 @@
             const sortedRight = sortObjectKeys(rightObj);
 
             // Find differences
-            const diffs = findDifferences(sortedLeft, sortedRight);
+            const sideNames = getSideNames();
+            const diffs = findDifferences(sortedLeft, sortedRight, '', sideNames);
 
             // Build Map for rendering
             const diffMap = new Map();
@@ -1456,6 +1689,7 @@
                 diff.index = index;
                 diffMap.set(diff.path, diff);
             });
+            window.currentDiffs = diffs;
 
             // Update UI
             const resultsSection = document.getElementById('results-section');
@@ -1483,14 +1717,17 @@
             // Render diff cards
             diffCards.innerHTML = diffs.map((diff, index) => `
                 <div class="diff-card" data-index="${index}" onclick="scrollToDiff(${index})">
+                    <button class="diff-card-copy" type="button" onclick="copyDiff(${index}, event)" aria-label="Copy diff ${index + 1}">
+                        Copy
+                    </button>
                     <div class="diff-card-header">
                         <span class="diff-card-number">${index + 1}</span>
                         <span class="diff-card-type ${diff.type}">
-                            ${diff.type === 'added' ? 'Only Right' : diff.type === 'removed' ? 'Only Left' : 'Changed'}
+                            ${escapeHtml(getDiffTypeLabel(diff.type, sideNames))}
                         </span>
                     </div>
-                    <div class="diff-card-path">${diff.path}</div>
-                    <div class="diff-card-description">${diff.description}</div>
+                    <div class="diff-card-path">${escapeHtml(diff.path)}</div>
+                    <div class="diff-card-description">${escapeHtml(diff.description)}</div>
                 </div>
             `).join('');
 
@@ -1565,6 +1802,7 @@
         const syncCheckbox = document.getElementById('sync-scroll');
         let isSyncingLeft = false;
         let isSyncingRight = false;
+        updateSideNameUI();
 
         viewLeft.addEventListener('scroll', function () {
             if (!syncCheckbox || !syncCheckbox.checked || isSyncingLeft) return;
