@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Warning Sufficiency Brake Margin Tool</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card: rgba(30, 41, 59, 0.72);
+            --text: #f8fafc;
+            --muted: #94a3b8;
+            --accent: #38bdf8;
+            --warn: #facc15;
+            --danger: #fb7185;
+            --ok: #22c55e;
+            --driver: #f97316;
+            --sys: #a855f7;
+            --brake: #10b981;
+            --border: rgba(148, 163, 184, 0.12);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            padding: 2rem;
+            color: var(--text);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg);
+            background-image:
+                radial-gradient(circle at 10% 20%, rgba(56, 189, 248, 0.10) 0%, transparent 24%),
+                radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.10) 0%, transparent 24%);
+        }
+
+        .container { max-width: 1220px; margin: 0 auto; }
+
+        .header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 0.85rem;
+            padding: 0.4rem 0.8rem;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+        }
+
+        .back-link:hover { color: var(--text); border-color: var(--accent); }
+        .back-link svg { width: 14px; height: 14px; stroke: currentColor; }
+
+        h1 {
+            margin: 0;
+            font-size: 1.75rem;
+            text-align: center;
+            background: linear-gradient(to right, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            margin: 0 0 1.5rem;
+            text-align: center;
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 390px 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 980px) {
+            body { padding: 1rem; }
+            .layout { grid-template-columns: 1fr; }
+            .header-row { flex-wrap: wrap; justify-content: center; }
+            .spacer { display: none; }
+        }
+
+        .panel {
+            background: var(--card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 1.2rem;
+        }
+
+        .panel-title {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .panel-title svg {
+            width: 18px;
+            height: 18px;
+            stroke: var(--accent);
+            fill: none;
+            stroke-width: 2;
+        }
+
+        .mode-buttons, .preset-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 0.8rem;
+        }
+
+        .mode-btn, .preset-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: 8px;
+            padding: 0.45rem 0.8rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+
+        .mode-btn.selected {
+            color: var(--accent);
+            border-color: var(--accent);
+            background: rgba(56,189,248,0.16);
+        }
+
+        .preset-btn:hover, .mode-btn:hover { border-color: var(--accent); }
+
+        .group {
+            margin-bottom: 0.95rem;
+        }
+
+        .label-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 0.8rem;
+            margin-bottom: 0.35rem;
+        }
+
+        .label-left {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .dot.vehicle { background: var(--accent); }
+        .dot.driver { background: var(--driver); }
+        .dot.system { background: var(--sys); }
+        .dot.brake { background: var(--brake); }
+        .dot.warn { background: var(--warn); }
+
+        .name { font-size: 0.88rem; font-weight: 600; }
+        .value { font-size: 0.84rem; color: var(--accent); font-weight: 700; min-width: 84px; text-align: right; }
+        .desc { margin: 0 0 0.45rem; color: var(--muted); font-size: 0.74rem; line-height: 1.35; }
+
+        .input-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            flex: 1;
+            height: 6px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.1);
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--accent);
+            cursor: pointer;
+            border: none;
+        }
+
+        input[type="number"] {
+            width: 82px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: 8px;
+            padding: 0.42rem 0.45rem;
+            text-align: center;
+            font-size: 0.82rem;
+        }
+
+        .section-label {
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            font-size: 0.74rem;
+            margin: 0.25rem 0 0.65rem;
+        }
+
+        .stack { display: grid; gap: 1rem; }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.8rem;
+        }
+
+        @media (max-width: 900px) {
+            .summary-grid { grid-template-columns: 1fr; }
+            .mc-grid { grid-template-columns: 1fr; }
+        }
+
+        .summary-card {
+            background: rgba(15, 23, 42, 0.55);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 0.8rem;
+        }
+
+        .summary-label {
+            color: var(--muted);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 0.25rem;
+        }
+
+        .summary-value {
+            font-size: 1.28rem;
+            font-weight: 800;
+            line-height: 1.05;
+        }
+
+        .summary-value.ok { color: var(--ok); }
+        .summary-value.warn { color: var(--warn); }
+        .summary-value.danger { color: var(--danger); }
+        .summary-note { color: var(--muted); font-size: 0.73rem; margin-top: 0.25rem; }
+
+        .result-note {
+            margin-top: 0.8rem;
+            font-size: 0.78rem;
+            color: var(--muted);
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(148,163,184,0.08);
+            border-radius: 10px;
+            padding: 0.65rem 0.8rem;
+            line-height: 1.35;
+        }
+
+        .result-note strong { color: var(--warn); }
+
+        .viz-frame {
+            background: linear-gradient(180deg, #1a2332 0%, #0d1520 100%);
+            border-radius: 16px;
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            padding: 1rem;
+        }
+
+        .viz-title {
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-size: 0.78rem;
+            margin-bottom: 0.6rem;
+        }
+
+        .timeline {
+            height: 16px;
+            display: flex;
+            overflow: hidden;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.04);
+        }
+
+        .seg { height: 100%; min-width: 0; }
+        .seg.wait { background: var(--warn); }
+        .seg.driver { background: var(--driver); }
+        .seg.system { background: var(--sys); }
+        .seg.brake { background: var(--brake); }
+
+        .legend {
+            margin-top: 0.55rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.9rem;
+            font-size: 0.75rem;
+            color: var(--muted);
+        }
+
+        .legend-item { display: inline-flex; align-items: center; gap: 0.35rem; }
+        .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+        .canvas-wrap {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(148,163,184,0.12);
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 280px;
+            background: #0b1220;
+        }
+
+        .badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(2,6,23,0.8);
+            border: 1px solid rgba(148,163,184,0.12);
+            border-radius: 8px;
+            font-size: 0.72rem;
+            padding: 0.3rem 0.5rem;
+        }
+
+        .badge strong { color: var(--warn); }
+
+        .mc-grid {
+            display: grid;
+            grid-template-columns: 1.1fr 1fr;
+            gap: 1rem;
+        }
+
+        .chart {
+            height: 200px;
+            display: flex;
+            align-items: end;
+            gap: 2px;
+            padding: 0.35rem;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(148,163,184,0.08);
+            border-radius: 10px;
+        }
+
+        .bar {
+            flex: 1;
+            min-height: 2px;
+            border-radius: 2px 2px 0 0;
+            background: linear-gradient(180deg, rgba(56, 189, 248, 0.95), rgba(56, 189, 248, 0.35));
+        }
+
+        .metric-list { display: grid; gap: 0.55rem; }
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 0.65rem 0.8rem;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(148,163,184,0.08);
+            font-size: 0.82rem;
+        }
+
+        .metric span { color: var(--muted); }
+        .metric strong { color: var(--text); }
+
+        .hidden { display: none; }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header-row">
+            <a href="../index.html" class="back-link">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7" />
+                </svg>
+                Back to Toolbox
+            </a>
+            <h1>Warning Sufficiency & Brake Margin</h1>
+            <div class="spacer" style="width:130px;"></div>
+        </div>
+        <p class="subtitle">Evaluate whether a distance- or TTC-based warning is issued early enough for the driver to brake and avoid a collision, and estimate the remaining distance margin.</p>
+
+        <div class="layout">
+            <div class="panel">
+                <div class="panel-title">
+                    <svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82"></path>
+                        <path d="M12 2v2M12 20v2M2 12h2M20 12h2"></path>
+                    </svg>
+                    Scenario Inputs
+                </div>
+
+                <div class="preset-buttons">
+                    <button class="mode-btn selected" data-sim-mode="straight">Straight Object</button>
+                    <button class="mode-btn" data-sim-mode="bsis">Lane Change (Simplified)</button>
+                </div>
+
+                <div class="preset-buttons" id="straight-presets">
+                    <button class="preset-btn" data-preset="city">City</button>
+                    <button class="preset-btn" data-preset="rural">Rural</button>
+                    <button class="preset-btn" data-preset="highway">Highway</button>
+                </div>
+
+                <div class="group">
+                    <div class="label-row">
+                        <div class="label-left"><span class="dot vehicle"></span><span class="name">Vehicle Speed</span></div>
+                        <span class="value" id="speed-value">80 km/h</span>
+                    </div>
+                    <p class="desc">Current ego-vehicle speed used for warning timing and braking distance calculation.</p>
+                    <div class="input-row">
+                        <input type="range" id="speed-slider" min="5" max="180" step="1" value="80">
+                        <input type="number" id="speed-input" min="5" max="180" step="1" value="80">
+                    </div>
+                </div>
+
+                <div class="group" id="distance-group">
+                    <div class="label-row">
+                        <div class="label-left"><span class="dot vehicle"></span><span class="name">Object Distance</span></div>
+                        <span class="value" id="distance-value">65 m</span>
+                    </div>
+                    <p class="desc">Current longitudinal distance from the vehicle front to the object.</p>
+                    <div class="input-row">
+                        <input type="range" id="distance-slider" min="1" max="300" step="1" value="65">
+                        <input type="number" id="distance-input" min="1" max="300" step="1" value="65">
+                    </div>
+                </div>
+
+                <div class="group hidden" id="turn-radius-group">
+                    <div class="label-row">
+                        <div class="label-left"><span class="dot vehicle"></span><span class="name">Turning Radius (Lane Change)</span></div>
+                        <span class="value" id="turn-radius-value">12.0 m</span>
+                    </div>
+                    <p class="desc">Simplified lane-change geometry. The collision reference is the centerline of the adjacent lane; X-distance is derived from turning radius.</p>
+                    <div class="input-row">
+                        <input type="range" id="turn-radius-slider" min="4" max="25" step="0.5" value="12">
+                        <input type="number" id="turn-radius-input" min="4" max="25" step="0.5" value="12">
+                    </div>
+                </div>
+
+                <div class="group">
+                    <div class="label-row">
+                        <div class="label-left"><span class="dot driver"></span><span class="name">Driver Reaction Time</span></div>
+                        <span class="value" id="reaction-value">0.90 s</span>
+                    </div>
+                    <p class="desc">Perception + decision + pedal movement time. This does not include waiting for the warning trigger.</p>
+                    <div class="input-row">
+                        <input type="range" id="reaction-slider" min="0.15" max="2.5" step="0.01" value="0.9">
+                        <input type="number" id="reaction-input" min="0.15" max="2.5" step="0.01" value="0.9">
+                    </div>
+                </div>
+
+                <div class="group">
+                    <div class="label-row">
+                        <div class="label-left"><span class="dot system"></span><span class="name">Brake System Delay</span></div>
+                        <span class="value" id="delay-value">250 ms</span>
+                    </div>
+                    <p class="desc">Delay between brake input and meaningful vehicle deceleration.</p>
+                    <div class="input-row">
+                        <input type="range" id="delay-slider" min="0" max="600" step="1" value="250">
+                        <input type="number" id="delay-input" min="0" max="600" step="1" value="250">
+                    </div>
+                </div>
+
+                <div class="group">
+                    <div class="label-row">
+                        <div class="label-left"><span class="dot brake"></span><span class="name">Average Deceleration</span></div>
+                        <span class="value" id="decel-value">6.8 m/s²</span>
+                    </div>
+                    <p class="desc">Average deceleration after brake delay (road, tires, and brake capability).</p>
+                    <div class="input-row">
+                        <input type="range" id="decel-slider" min="1.0" max="10" step="0.1" value="6.8">
+                        <input type="number" id="decel-input" min="1.0" max="10" step="0.1" value="6.8">
+                    </div>
+                </div>
+
+                <div class="section-label">Warning Trigger</div>
+                <div class="mode-buttons" id="warning-mode-buttons">
+                    <button class="mode-btn selected" data-warning-mode="ttc">Current TTC</button>
+                    <button class="mode-btn" data-warning-mode="distance">Distance Threshold</button>
+                </div>
+
+                <div class="group" id="ttc-group">
+                    <div class="label-row">
+                        <div class="label-left"><span class="dot warn"></span><span class="name">TTC Threshold</span></div>
+                        <span class="value" id="ttc-threshold-value">2.5 s</span>
+                    </div>
+                    <p class="desc">Warning triggers when <strong>TTC = distance / current speed</strong> reaches this threshold. Braking is not used for TTC trigger timing.</p>
+                    <div class="input-row">
+                        <input type="range" id="ttc-threshold-slider" min="0.1" max="10" step="0.1" value="2.5">
+                        <input type="number" id="ttc-threshold-input" min="0.1" max="10" step="0.1" value="2.5">
+                    </div>
+                </div>
+
+                <div class="group hidden" id="distance-threshold-group" style="margin-bottom:0;">
+                    <div class="label-row">
+                        <div class="label-left"><span class="dot warn"></span><span class="name">Distance Threshold</span></div>
+                        <span class="value" id="distance-threshold-value">40 m</span>
+                    </div>
+                    <p class="desc">Warning triggers when the selected distance metric becomes less than or equal to this threshold.</p>
+                    <div class="input-row">
+                        <input type="range" id="distance-threshold-slider" min="1" max="300" step="1" value="40">
+                        <input type="number" id="distance-threshold-input" min="1" max="300" step="1" value="40">
+                    </div>
+                </div>
+
+                <div class="section-label">Monte Carlo Variation (Optional)</div>
+                <div class="group" style="margin-bottom:0;">
+                    <div class="label-row">
+                        <div class="label-left"><span class="dot driver"></span><span class="name">Reaction Variability (Sigma)</span></div>
+                        <span class="value" id="sigma-value">0.20 s</span>
+                    </div>
+                    <p class="desc">Used only for Monte Carlo probability and margin distribution. The main result uses the exact reaction time set above.</p>
+                    <div class="input-row">
+                        <input type="range" id="sigma-slider" min="0.00" max="1.00" step="0.01" value="0.20">
+                        <input type="number" id="sigma-input" min="0.00" max="1.00" step="0.01" value="0.20">
+                    </div>
+                </div>
+            </div>
+
+            <div class="stack">
+                <div class="panel">
+                    <div class="panel-title">
+                        <svg viewBox="0 0 24 24"><path d="M3 3v18h18"></path><path d="M7 14l4-4 3 3 5-7"></path></svg>
+                        Decision Summary (Current Settings)
+                    </div>
+
+                    <div class="summary-grid">
+                        <div class="summary-card">
+                            <div class="summary-label">Warning Sufficient?</div>
+                            <div class="summary-value" id="enough-value">YES</div>
+                            <div class="summary-note" id="enough-note">Driver can stop before the collision point.</div>
+                        </div>
+                        <div class="summary-card">
+                            <div class="summary-label">Remaining Distance Margin</div>
+                            <div class="summary-value" id="margin-value">+4.2 m</div>
+                            <div class="summary-note">Distance left at the collision point after full stop (negative means overshoot).</div>
+                        </div>
+                        <div class="summary-card">
+                            <div class="summary-label">Warning Trigger Timing</div>
+                            <div class="summary-value warn" id="warning-point-value">t = 0.43 s</div>
+                            <div class="summary-note" id="warning-point-note">Distance at warning: 55.4 m</div>
+                        </div>
+                        <div class="summary-card">
+                            <div class="summary-label">Distance Needed After Warning</div>
+                            <div class="summary-value" id="needed-after-warning">51.2 m</div>
+                            <div class="summary-note">Reaction distance + brake-delay distance + braking distance after warning.</div>
+                        </div>
+                    </div>
+
+                    <div class="result-note" id="warning-summary">Warning timing is evaluated separately. Driver reaction time is not increased by the waiting time until the warning triggers.</div>
+                    <div class="result-note" id="logic-summary">Collision check uses: warning timing + driver reaction + brake delay + braking deceleration.</div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-title">
+                        <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                        Timing & Motion
+                    </div>
+
+                    <div class="viz-frame" style="margin-bottom:1rem;">
+                        <div class="viz-title">Timing Breakdown</div>
+                        <div class="timeline">
+                            <div class="seg wait" id="seg-wait"></div>
+                            <div class="seg driver" id="seg-driver"></div>
+                            <div class="seg system" id="seg-system"></div>
+                            <div class="seg brake" id="seg-brake"></div>
+                        </div>
+                        <div class="legend">
+                            <span class="legend-item"><span class="legend-dot" style="background:var(--warn)"></span>Time until warning trigger</span>
+                            <span class="legend-item"><span class="legend-dot" style="background:var(--driver)"></span>Driver reaction</span>
+                            <span class="legend-item"><span class="legend-dot" style="background:var(--sys)"></span>Brake system delay</span>
+                            <span class="legend-item"><span class="legend-dot" style="background:var(--brake)"></span>Braking</span>
+                        </div>
+                    </div>
+
+                    <div class="viz-frame">
+                        <div class="viz-title">Collision Avoidance Simulation</div>
+                        <div class="canvas-wrap">
+                            <canvas id="sim-canvas" width="780" height="280"></canvas>
+                            <div class="badge">Margin: <strong id="badge-margin">+4.2 m</strong></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-title">
+                        <svg viewBox="0 0 24 24"><path d="M3 3v18h18"></path><path d="M7 16V9"></path><path d="M12 16V5"></path><path d="M17 16v-3"></path></svg>
+                        Monte Carlo (Warning Sufficiency Probability)
+                    </div>
+
+                    <div class="mc-grid">
+                        <div>
+                            <div class="viz-title">Distribution of Distance Margin</div>
+                            <div class="chart" id="margin-chart"></div>
+                            <div class="result-note" style="margin-top:0.6rem;">Monte Carlo varies driver reaction time only (using sigma). Warning trigger logic and vehicle/braking settings stay fixed.</div>
+                        </div>
+                        <div class="metric-list">
+                            <div class="metric"><span>Collision probability</span><strong id="mc-collision">0.0%</strong></div>
+                            <div class="metric"><span>Warning sufficient probability</span><strong id="mc-safe">100.0%</strong></div>
+                            <div class="metric"><span>Mean margin</span><strong id="mc-mean-margin">+0.0 m</strong></div>
+                            <div class="metric"><span>P05 margin</span><strong id="mc-p05-margin">+0.0 m</strong></div>
+                            <div class="metric"><span>Mean driver reaction</span><strong id="mc-mean-rt">0.00 s</strong></div>
+                            <div class="metric"><span>P95 driver reaction</span><strong id="mc-p95-rt">0.00 s</strong></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const state = {
+            simMode: 'straight',
+            speedKmh: 80,
+            objectDistanceM: 65,
+            turningRadiusM: 12,
+            driverReactionS: 0.9,
+            brakeDelayMs: 250,
+            decel: 6.8,
+            warningMode: 'ttc',
+            warningTtcS: 2.5,
+            warningDistanceM: 40,
+            reactionSigmaS: 0.20
+        };
+
+        const bindings = [
+            { key: 'speedKmh', slider: 'speed-slider', input: 'speed-input', min: 5, max: 180 },
+            { key: 'objectDistanceM', slider: 'distance-slider', input: 'distance-input', min: 1, max: 300 },
+            { key: 'turningRadiusM', slider: 'turn-radius-slider', input: 'turn-radius-input', min: 4, max: 25 },
+            { key: 'driverReactionS', slider: 'reaction-slider', input: 'reaction-input', min: 0.15, max: 2.5 },
+            { key: 'brakeDelayMs', slider: 'delay-slider', input: 'delay-input', min: 0, max: 600 },
+            { key: 'decel', slider: 'decel-slider', input: 'decel-input', min: 1.0, max: 10 },
+            { key: 'warningTtcS', slider: 'ttc-threshold-slider', input: 'ttc-threshold-input', min: 0.1, max: 10 },
+            { key: 'warningDistanceM', slider: 'distance-threshold-slider', input: 'distance-threshold-input', min: 1, max: 300 },
+            { key: 'reactionSigmaS', slider: 'sigma-slider', input: 'sigma-input', min: 0, max: 1 }
+        ];
+
+        const el = {
+            speedValue: document.getElementById('speed-value'),
+            distanceValue: document.getElementById('distance-value'),
+            distanceGroup: document.getElementById('distance-group'),
+            turnRadiusGroup: document.getElementById('turn-radius-group'),
+            turnRadiusValue: document.getElementById('turn-radius-value'),
+            straightPresets: document.getElementById('straight-presets'),
+            reactionValue: document.getElementById('reaction-value'),
+            delayValue: document.getElementById('delay-value'),
+            decelValue: document.getElementById('decel-value'),
+            ttcThresholdValue: document.getElementById('ttc-threshold-value'),
+            distanceThresholdValue: document.getElementById('distance-threshold-value'),
+            sigmaValue: document.getElementById('sigma-value'),
+            ttcGroup: document.getElementById('ttc-group'),
+            distanceThresholdGroup: document.getElementById('distance-threshold-group'),
+            enoughValue: document.getElementById('enough-value'),
+            enoughNote: document.getElementById('enough-note'),
+            marginValue: document.getElementById('margin-value'),
+            warningPointValue: document.getElementById('warning-point-value'),
+            warningPointNote: document.getElementById('warning-point-note'),
+            neededAfterWarning: document.getElementById('needed-after-warning'),
+            warningSummary: document.getElementById('warning-summary'),
+            logicSummary: document.getElementById('logic-summary'),
+            segWait: document.getElementById('seg-wait'),
+            segDriver: document.getElementById('seg-driver'),
+            segSystem: document.getElementById('seg-system'),
+            segBrake: document.getElementById('seg-brake'),
+            badgeMargin: document.getElementById('badge-margin'),
+            marginChart: document.getElementById('margin-chart'),
+            mcCollision: document.getElementById('mc-collision'),
+            mcSafe: document.getElementById('mc-safe'),
+            mcMeanMargin: document.getElementById('mc-mean-margin'),
+            mcP05Margin: document.getElementById('mc-p05-margin'),
+            mcMeanRt: document.getElementById('mc-mean-rt'),
+            mcP95Rt: document.getElementById('mc-p95-rt')
+        };
+
+        const canvas = document.getElementById('sim-canvas');
+        const ctx = canvas.getContext('2d');
+        let lastResult = null;
+        let animStart = performance.now();
+
+        function clamp(v, min, max) { return Math.min(max, Math.max(min, v)); }
+        function round(v, d = 2) { return Number(v.toFixed(d)); }
+        function kmhToMps(v) { return v / 3.6; }
+
+        function seededRng(seed) {
+            let s = seed >>> 0;
+            return () => {
+                s = (1664525 * s + 1013904223) >>> 0;
+                return s / 4294967296;
+            };
+        }
+
+        function gaussianRandom(rng = Math.random) {
+            let u = 0, v = 0;
+            while (u === 0) u = rng();
+            while (v === 0) v = rng();
+            return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+        }
+
+        function percentile(sorted, p) {
+            if (!sorted.length) return 0;
+            const idx = (sorted.length - 1) * p;
+            const lo = Math.floor(idx);
+            const hi = Math.ceil(idx);
+            if (lo === hi) return sorted[lo];
+            return sorted[lo] + (sorted[hi] - sorted[lo]) * (idx - lo);
+        }
+
+        function timeToWarning(v, d) {
+            if (state.warningMode === 'ttc') {
+                const ttc0 = d / Math.max(v, 1e-6);
+                return Math.max(0, ttc0 - state.warningTtcS);
+            }
+            return Math.max(0, (d - state.warningDistanceM) / Math.max(v, 1e-6));
+        }
+
+        function getEffectiveCollisionDistanceX() {
+            if (state.simMode !== 'bsis') return state.objectDistanceM;
+            const laneWidth = 3.5;
+            return Math.max(0.5, state.turningRadiusM + laneWidth * 0.5);
+        }
+
+        function computeScenario(driverReactionOverride) {
+            const v0 = kmhToMps(state.speedKmh);
+            const d0 = getEffectiveCollisionDistanceX();
+            const driverReaction = driverReactionOverride ?? state.driverReactionS;
+            const brakeDelay = state.brakeDelayMs / 1000;
+            const tWarn = timeToWarning(v0, d0);
+            const dAtWarn = Math.max(0, d0 - v0 * tWarn);
+
+            const preBrakeTimeAfterWarning = driverReaction + brakeDelay;
+            const dPreBrakeAfterWarning = v0 * preBrakeTimeAfterWarning;
+            const dBrake = (v0 * v0) / (2 * Math.max(0.01, state.decel));
+            const dNeededAfterWarning = dPreBrakeAfterWarning + dBrake;
+            const margin = dAtWarn - dNeededAfterWarning;
+            const canAvoid = margin >= 0;
+
+            const tBrake = v0 / Math.max(0.01, state.decel);
+            const tImpactNoBrakeFromNow = d0 / Math.max(v0, 1e-6);
+            const tResponseStart = tWarn + driverReaction + brakeDelay;
+            const tStop = tResponseStart + tBrake;
+
+            const ttcNow = d0 / Math.max(v0, 1e-6);
+            const warningImmediate = tWarn <= 1e-9;
+
+            return {
+                simMode: state.simMode,
+                v0,
+                d0,
+                turningRadiusM: state.turningRadiusM,
+                ttcNow,
+                driverReaction,
+                brakeDelay,
+                tWarn,
+                dAtWarn,
+                dPreBrakeAfterWarning,
+                dBrake,
+                dNeededAfterWarning,
+                margin,
+                canAvoid,
+                preBrakeTimeAfterWarning,
+                tBrake,
+                tResponseStart,
+                tStop,
+                tImpactNoBrakeFromNow,
+                warningImmediate
+            };
+        }
+
+        function sync(binding, raw, source) {
+            const value = clamp(Number(raw), binding.min, binding.max);
+            if (!Number.isFinite(value)) return;
+            state[binding.key] = value;
+            if (source !== 'slider') document.getElementById(binding.slider).value = value;
+            if (source !== 'input') document.getElementById(binding.input).value = value;
+            updateAll();
+        }
+
+        bindings.forEach((b) => {
+            const slider = document.getElementById(b.slider);
+            const input = document.getElementById(b.input);
+            slider.addEventListener('input', (e) => sync(b, e.target.value, 'slider'));
+            input.addEventListener('input', (e) => sync(b, e.target.value, 'input'));
+            input.addEventListener('blur', (e) => sync(b, e.target.value, 'input'));
+        });
+
+        document.querySelectorAll('.mode-btn[data-warning-mode]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                state.warningMode = btn.dataset.warningMode;
+                document.querySelectorAll('.mode-btn[data-warning-mode]').forEach((b) => b.classList.toggle('selected', b === btn));
+                updateWarningModeUI();
+                updateAll();
+            });
+        });
+
+        document.querySelectorAll('.mode-btn[data-sim-mode]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                state.simMode = btn.dataset.simMode;
+                document.querySelectorAll('.mode-btn[data-sim-mode]').forEach((b) => b.classList.toggle('selected', b === btn));
+                updateSimModeUI();
+                updateAll();
+            });
+        });
+
+        document.querySelectorAll('.preset-btn').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const p = btn.dataset.preset;
+                if (p === 'city') {
+                    Object.assign(state, { speedKmh: 50, objectDistanceM: 35, driverReactionS: 0.75, brakeDelayMs: 200, decel: 6.5, warningTtcS: 2.0, warningDistanceM: 20, reactionSigmaS: 0.15 });
+                } else if (p === 'rural') {
+                    Object.assign(state, { speedKmh: 80, objectDistanceM: 65, driverReactionS: 0.9, brakeDelayMs: 250, decel: 6.8, warningTtcS: 2.5, warningDistanceM: 40, reactionSigmaS: 0.20 });
+                } else {
+                    Object.assign(state, { speedKmh: 120, objectDistanceM: 120, driverReactionS: 1.0, brakeDelayMs: 280, decel: 7.2, warningTtcS: 3.0, warningDistanceM: 90, reactionSigmaS: 0.25 });
+                }
+                bindings.forEach((b) => {
+                    document.getElementById(b.slider).value = state[b.key];
+                    document.getElementById(b.input).value = state[b.key];
+                });
+                updateAll();
+            });
+        });
+
+        function updateWarningModeUI() {
+            el.ttcGroup.classList.toggle('hidden', state.warningMode !== 'ttc');
+            el.distanceThresholdGroup.classList.toggle('hidden', state.warningMode !== 'distance');
+        }
+
+        function updateSimModeUI() {
+            const laneChangeMode = state.simMode === 'bsis';
+            el.distanceGroup.classList.toggle('hidden', laneChangeMode);
+            el.turnRadiusGroup.classList.toggle('hidden', !laneChangeMode);
+            el.straightPresets.classList.toggle('hidden', laneChangeMode);
+        }
+
+        function updateLabels(result) {
+            el.speedValue.textContent = `${round(state.speedKmh, 0)} km/h`;
+            el.distanceValue.textContent = `${round(state.objectDistanceM, 0)} m`;
+            el.turnRadiusValue.textContent = `${round(state.turningRadiusM, 1)} m`;
+            el.reactionValue.textContent = `${round(state.driverReactionS, 2)} s`;
+            el.delayValue.textContent = `${round(state.brakeDelayMs, 0)} ms`;
+            el.decelValue.textContent = `${round(state.decel, 1)} m/s²`;
+            el.ttcThresholdValue.textContent = `${round(state.warningTtcS, 1)} s`;
+            el.distanceThresholdValue.textContent = `${round(state.warningDistanceM, 0)} m`;
+            el.sigmaValue.textContent = `${round(state.reactionSigmaS, 2)} s`;
+
+            el.enoughValue.textContent = result.canAvoid ? 'YES' : 'NO';
+            el.enoughValue.className = `summary-value ${result.canAvoid ? 'ok' : 'danger'}`;
+            el.enoughNote.textContent = result.canAvoid
+                ? `Driver can stop before the collision point (margin ${round(result.margin, 2)} m).`
+                : `Collision occurs before the vehicle can stop (overshoot ${round(Math.abs(result.margin), 2)} m).`;
+
+            el.marginValue.textContent = `${result.margin >= 0 ? '+' : '-'}${round(Math.abs(result.margin), 2)} m`;
+            el.marginValue.className = `summary-value ${result.margin >= 0 ? 'ok' : 'danger'}`;
+
+            el.warningPointValue.textContent = result.warningImmediate ? 'Immediate' : `t = ${round(result.tWarn, 2)} s`;
+            el.warningPointNote.textContent = state.simMode === 'bsis'
+                ? `X-distance at warning: ${round(result.dAtWarn, 2)} m | Current TTCx: ${round(result.ttcNow, 2)} s`
+                : `Distance at warning: ${round(result.dAtWarn, 2)} m | Current TTC now: ${round(result.ttcNow, 2)} s`;
+
+            el.neededAfterWarning.textContent = `${round(result.dNeededAfterWarning, 2)} m`;
+
+            const triggerText = state.warningMode === 'ttc'
+                ? `Trigger = ${state.simMode === 'bsis' ? 'TTCx' : 'TTC'} (distance/current speed) <= ${round(state.warningTtcS, 1)} s`
+                : `Trigger = ${state.simMode === 'bsis' ? 'X-distance to next-lane center' : 'distance to object'} <= ${round(state.warningDistanceM, 0)} m`;
+            el.warningSummary.innerHTML = `${triggerText}. Warning wait time = <strong>${round(result.tWarn, 2)} s</strong>. Driver reaction time remains <strong>${round(result.driverReaction, 2)} s</strong> (separate, not increased by warning wait).`;
+            el.logicSummary.innerHTML = state.simMode === 'bsis'
+                ? `Lane-change simplified mode: the collision reference is the centerline of the adjacent lane. TTC/collision use X-axis distance only. Required X-distance after warning = reaction distance + brake-delay distance (<strong>${round(result.dPreBrakeAfterWarning, 2)} m</strong>) + braking distance (<strong>${round(result.dBrake, 2)} m</strong>) = <strong>${round(result.dNeededAfterWarning, 2)} m</strong>.`
+                : `From warning onward, required distance = reaction + brake-delay distance (<strong>${round(result.dPreBrakeAfterWarning, 2)} m</strong>) + braking distance (<strong>${round(result.dBrake, 2)} m</strong>) = <strong>${round(result.dNeededAfterWarning, 2)} m</strong>.`;
+
+            el.badgeMargin.textContent = `${result.margin >= 0 ? '+' : '-'}${round(Math.abs(result.margin), 2)} m`;
+            el.badgeMargin.style.color = result.margin >= 0 ? 'var(--ok)' : 'var(--danger)';
+        }
+
+        function updateTimeline(result) {
+            const total = result.tWarn + result.driverReaction + result.brakeDelay + result.tBrake;
+            const safeTotal = Math.max(total, 0.001);
+            el.segWait.style.width = `${(result.tWarn / safeTotal) * 100}%`;
+            el.segDriver.style.width = `${(result.driverReaction / safeTotal) * 100}%`;
+            el.segSystem.style.width = `${(result.brakeDelay / safeTotal) * 100}%`;
+            el.segBrake.style.width = `${(result.tBrake / safeTotal) * 100}%`;
+        }
+
+        function distanceTravelledAtTime(t, r) {
+            if (t <= 0) return 0;
+            if (t <= r.tWarn) return r.v0 * t;
+            if (t <= r.tResponseStart) return r.v0 * t;
+            const tb = t - r.tResponseStart;
+            if (tb <= r.tBrake) return r.v0 * r.tResponseStart + (r.v0 * tb - 0.5 * state.decel * tb * tb);
+            return r.v0 * r.tResponseStart + r.dBrake;
+        }
+
+        function speedAtTime(t, r) {
+            if (t <= r.tResponseStart) return r.v0;
+            const tb = t - r.tResponseStart;
+            return Math.max(0, r.v0 - state.decel * tb);
+        }
+
+        function drawCar(x, y, color, length = 52) {
+            ctx.fillStyle = color;
+            ctx.fillRect(x - length / 2, y, length, 18);
+            ctx.fillStyle = '#e2e8f0';
+            ctx.fillRect(x - length / 3, y - 9, length * 0.45, 9);
+            ctx.fillStyle = '#020617';
+            ctx.beginPath();
+            ctx.arc(x - length / 3, y + 20, 5, 0, Math.PI * 2);
+            ctx.arc(x + length / 3, y + 20, 5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function drawSimulation(now) {
+            if (!lastResult) {
+                requestAnimationFrame(drawSimulation);
+                return;
+            }
+            const r = lastResult;
+            const cw = canvas.width;
+            const ch = canvas.height;
+            const elapsed = (now - animStart) / 1000;
+            const cycle = Math.max(3.0, Math.min(9.0, r.tStop + 1.2));
+            const t = elapsed % cycle;
+
+            ctx.clearRect(0, 0, cw, ch);
+            ctx.fillStyle = '#0b1220';
+            ctx.fillRect(0, 0, cw, ch);
+            ctx.fillStyle = 'rgba(56, 189, 248, 0.07)';
+            ctx.fillRect(0, 0, cw, ch * 0.46);
+
+            if (state.simMode === 'bsis') {
+                const laneTop = 138;
+                const laneGap = 58;
+                const laneHeight = 42;
+                const lane2Top = laneTop + laneGap;
+                ctx.fillStyle = '#111827';
+                ctx.fillRect(0, laneTop, cw, laneHeight);
+                ctx.fillRect(0, lane2Top, cw, laneHeight);
+                ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+                ctx.setLineDash([12, 8]);
+                ctx.beginPath();
+                ctx.moveTo(0, (laneTop + laneHeight + lane2Top) / 2);
+                ctx.lineTo(cw, (laneTop + laneHeight + lane2Top) / 2);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                const startX = 70;
+                const xDistancePx = clamp(r.d0 * 7.5, 80, cw - 140);
+                const collisionX = startX + xDistancePx;
+                const collisionY = laneTop + laneHeight / 2;
+
+                const mergeTravelPx = Math.max(90, xDistancePx);
+                const arcBulgePx = clamp(state.turningRadiusM * 2.2, 14, 70);
+
+                ctx.fillStyle = 'rgba(248,113,113,0.95)';
+                ctx.beginPath();
+                ctx.arc(collisionX, collisionY, 8, 0, Math.PI * 2);
+                ctx.fill();
+
+                const cycleB = Math.max(3.0, Math.min(9.0, r.tStop + 1.2));
+                const tB = elapsed % cycleB;
+                const traveled = clamp(distanceTravelledAtTime(tB, r), 0, r.d0 + 20);
+                const p = Math.min(traveled / Math.max(r.d0, 0.001), 1);
+                const carX = startX + p * mergeTravelPx;
+                // Lane-merge style curve into adjacent lane centerline, shaped by radius proxy.
+                const yStart = lane2Top + laneHeight / 2;
+                const yEnd = collisionY;
+                const s = p;
+                const smooth = s * s * (3 - 2 * s);
+                const curveBias = Math.sin(Math.PI * s) * (arcBulgePx / 220);
+                const carY = yStart + (yEnd - yStart) * (smooth + curveBias);
+                let color = '#facc15';
+                if (tB < r.tWarn) color = '#facc15';
+                else if (tB < r.tWarn + r.driverReaction) color = '#f97316';
+                else if (tB < r.tResponseStart) color = '#a855f7';
+                else if (tB < r.tStop) color = '#10b981';
+                else color = r.canAvoid ? '#22c55e' : '#fb7185';
+
+                // Path guide and lane-center collision marker line
+                drawCar(carX, carY, color, 48);
+
+                ctx.strokeStyle = 'rgba(56,189,248,0.35)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(startX, yStart);
+                for (let i = 1; i <= 40; i += 1) {
+                    const q = i / 40;
+                    const qSmooth = q * q * (3 - 2 * q);
+                    const qY = yStart + (yEnd - yStart) * (qSmooth + Math.sin(Math.PI * q) * (arcBulgePx / 220));
+                    const qX = startX + q * mergeTravelPx;
+                    ctx.lineTo(qX, qY);
+                }
+                ctx.stroke();
+                ctx.strokeStyle = 'rgba(248,250,252,0.32)';
+                ctx.setLineDash([6, 6]);
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(0, collisionY);
+                ctx.lineTo(cw, collisionY);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.strokeStyle = 'rgba(248,113,113,0.55)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(collisionX, laneTop - 18);
+                ctx.lineTo(collisionX, lane2Top + laneHeight + 18);
+                ctx.stroke();
+
+                ctx.fillStyle = '#e2e8f0';
+                ctx.font = '13px Inter, sans-serif';
+                ctx.fillText(`Lane-change simplified view | turning radius: ${round(state.turningRadiusM, 1)} m`, 12, 22);
+                ctx.fillText(`X-distance to next-lane center (collision point): ${round(r.d0, 2)} m`, 12, 42);
+                ctx.fillText(`Warning at: ${r.warningImmediate ? 'immediate' : `${round(r.tWarn, 2)} s`} | TTCx now: ${round(r.ttcNow, 2)} s`, 12, 62);
+                ctx.fillText(`Collision: ${r.canAvoid ? 'avoided' : 'yes'} | Margin: ${r.margin >= 0 ? '+' : '-'}${round(Math.abs(r.margin), 2)} m`, 12, 82);
+
+                requestAnimationFrame(drawSimulation);
+                return;
+            }
+
+            const roadTop = 150;
+            const roadH = 92;
+            ctx.fillStyle = '#111827';
+            ctx.fillRect(0, roadTop, cw, roadH);
+            for (let x = -40; x < cw + 40; x += 70) {
+                ctx.fillStyle = 'rgba(255,255,255,0.25)';
+                const dx = x - ((elapsed * 160) % 70);
+                ctx.fillRect(dx, roadTop + roadH / 2 - 2, 34, 4);
+            }
+
+            const totalDisplayDist = Math.max(35, r.d0 * 1.15, (r.v0 * r.tResponseStart + r.dBrake) * 1.15);
+            const pxPerM = (cw - 120) / totalDisplayDist;
+            const startX = 60;
+            const objectX = startX + r.d0 * pxPerM;
+            const travelled = clamp(distanceTravelledAtTime(t, r), 0, r.d0 + 20);
+            const carX = startX + travelled * pxPerM;
+
+            let color = 'var(--warn)';
+            if (t < r.tWarn) color = '#facc15';
+            else if (t < r.tWarn + r.driverReaction) color = '#f97316';
+            else if (t < r.tResponseStart) color = '#a855f7';
+            else if (t < r.tStop) color = '#10b981';
+            else color = r.canAvoid ? '#22c55e' : '#fb7185';
+
+            ctx.fillStyle = 'rgba(248,113,113,0.95)';
+            ctx.fillRect(objectX - 6, roadTop - 28, 12, roadH + 28);
+
+            if (!r.canAvoid && travelled >= r.d0) {
+                ctx.fillStyle = 'rgba(251,113,133,0.22)';
+                ctx.fillRect(objectX - 14, roadTop - 8, 28, 70);
+            }
+
+            drawCar(carX, roadTop + 28, color, 54);
+
+            const warnX = startX + (r.v0 * r.tWarn) * pxPerM;
+            ctx.strokeStyle = 'rgba(250, 204, 21, 0.8)';
+            ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(warnX, roadTop - 34); ctx.lineTo(warnX, roadTop + roadH + 8); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(objectX, roadTop - 34); ctx.lineTo(objectX, roadTop + roadH + 8); ctx.stroke();
+
+            ctx.fillStyle = '#e2e8f0';
+            ctx.font = '13px Inter, sans-serif';
+            ctx.fillText(`Speed: ${round(state.speedKmh, 0)} km/h`, 12, 22);
+            ctx.fillText(`Distance to object: ${round(r.d0, 1)} m`, 12, 42);
+            ctx.fillText(`Warning at: ${r.warningImmediate ? 'immediate' : `${round(r.tWarn, 2)} s`} (${round(r.dAtWarn, 1)} m)`, 12, 62);
+            ctx.fillText(`Margin after stop: ${r.margin >= 0 ? '+' : '-'}${round(Math.abs(r.margin), 2)} m`, 12, 82);
+
+            requestAnimationFrame(drawSimulation);
+        }
+
+        function updateMarginHistogram(values) {
+            if (!values.length) return;
+            const bins = 28;
+            const min = values[0];
+            const max = values[values.length - 1];
+            const width = Math.max(0.01, (max - min) / bins);
+            const counts = new Array(bins).fill(0);
+            values.forEach((v) => {
+                const idx = clamp(Math.floor((v - min) / width), 0, bins - 1);
+                counts[idx] += 1;
+            });
+            const peak = Math.max(...counts, 1);
+            el.marginChart.innerHTML = '';
+            counts.forEach((c) => {
+                const bar = document.createElement('div');
+                bar.className = 'bar';
+                bar.style.height = `${Math.max(2, (c / peak) * 100)}%`;
+                el.marginChart.appendChild(bar);
+            });
+        }
+
+        function runMonteCarlo() {
+            const trials = 1000;
+            const rng = seededRng(123456789);
+            const reactionSamples = [];
+            const margins = [];
+            let collisions = 0;
+
+            for (let i = 0; i < trials; i += 1) {
+                const rt = Math.max(0.05, state.driverReactionS + gaussianRandom(rng) * state.reactionSigmaS);
+                const r = computeScenario(rt);
+                reactionSamples.push(rt);
+                margins.push(r.margin);
+                if (!r.canAvoid) collisions += 1;
+            }
+
+            reactionSamples.sort((a, b) => a - b);
+            margins.sort((a, b) => a - b);
+            updateMarginHistogram(margins);
+
+            const meanRt = reactionSamples.reduce((a, b) => a + b, 0) / trials;
+            const p95Rt = percentile(reactionSamples, 0.95);
+            const meanMargin = margins.reduce((a, b) => a + b, 0) / trials;
+            const p05Margin = percentile(margins, 0.05);
+            const collisionProb = collisions / trials;
+
+            el.mcCollision.textContent = `${round(collisionProb * 100, 1)}%`;
+            el.mcCollision.style.color = collisionProb > 0.2 ? 'var(--danger)' : collisionProb > 0.05 ? 'var(--warn)' : 'var(--ok)';
+            el.mcSafe.textContent = `${round((1 - collisionProb) * 100, 1)}%`;
+            el.mcMeanMargin.textContent = `${meanMargin >= 0 ? '+' : '-'}${round(Math.abs(meanMargin), 2)} m`;
+            el.mcP05Margin.textContent = `${p05Margin >= 0 ? '+' : '-'}${round(Math.abs(p05Margin), 2)} m`;
+            el.mcP05Margin.style.color = p05Margin >= 0 ? 'var(--ok)' : 'var(--danger)';
+            el.mcMeanRt.textContent = `${round(meanRt, 2)} s`;
+            el.mcP95Rt.textContent = `${round(p95Rt, 2)} s`;
+        }
+
+        function updateAll() {
+            updateWarningModeUI();
+            updateSimModeUI();
+            lastResult = computeScenario();
+            updateLabels(lastResult);
+            updateTimeline(lastResult);
+            runMonteCarlo();
+        }
+
+        updateAll();
+        requestAnimationFrame(drawSimulation);
+    </script>
+</body>
+
+</html>
