@@ -783,7 +783,7 @@
         // --- 1. Inline Worker Code ---
         const jobWorkerCode = `
             self.onmessage = async function(e) {
-                const { file } = e.data;
+                const { file, inputBuffer, totalSize: providedTotalSize } = e.data;
                 
                 function formatFileSize(bytes) {
                     if (bytes < 1024) return bytes + ' B';
@@ -891,29 +891,68 @@
                         return rh(a) + rh(b) + rh(c) + rh(d);
                     };
                     
-                    self.postMessage({ type: 'progress', value: 0, status: 'Reading file...' });
-
-                    const totalSize = file.size;
+                    const totalSize = typeof providedTotalSize === 'number'
+                        ? providedTotalSize
+                        : (file ? file.size : 0);
                     let processedSize = 0;
                     const chunks = [];
-                    const reader = file.stream().getReader();
 
-                    // Read Loop for SHA-256 (and collecting chunks)
-                    while (true) {
-                        const { done, value } = await reader.read();
-                        if (done) break;
-
-                        chunks.push(value);
-                        processedSize += value.length;
-
-                        // Report reading progress 0-50%
-                        const percent = (processedSize / totalSize) * 50; 
-                        self.postMessage({ 
-                            type: 'progress', 
-                            value: percent, 
+                    const reportReadProgress = (size) => {
+                        processedSize += size;
+                        const percent = totalSize > 0 ? (processedSize / totalSize) * 50 : 50;
+                        self.postMessage({
+                            type: 'progress',
+                            value: percent,
                             status: \`Reading... \${formatFileSize(processedSize)} / \${formatFileSize(totalSize)}\`
                         });
-                    }
+                    };
+
+                    const readFileInChunks = async () => {
+                        if (inputBuffer) {
+                            const bufferView = new Uint8Array(inputBuffer);
+                            chunks.push(bufferView);
+                            reportReadProgress(bufferView.length);
+                            return;
+                        }
+
+                        self.postMessage({ type: 'progress', value: 0, status: 'Reading file...' });
+
+                        if (typeof file.stream === 'function') {
+                            try {
+                                const reader = file.stream().getReader();
+                                while (true) {
+                                    const { done, value } = await reader.read();
+                                    if (done) break;
+                                    chunks.push(value);
+                                    reportReadProgress(value.length);
+                                }
+                                return;
+                            } catch (streamError) {
+                                console.warn('Streaming file read failed, falling back to arrayBuffer()', streamError);
+                                processedSize = 0;
+                                chunks.length = 0;
+                            }
+                        }
+
+                        const fallbackChunkSize = 4 * 1024 * 1024;
+                        for (let offset = 0; offset < totalSize; offset += fallbackChunkSize) {
+                            const slice = file.slice(offset, offset + fallbackChunkSize);
+                            const buffer = await slice.arrayBuffer();
+                            const chunk = new Uint8Array(buffer);
+                            chunks.push(chunk);
+                            reportReadProgress(chunk.length);
+                        }
+
+                        if (totalSize === 0) {
+                            self.postMessage({
+                                type: 'progress',
+                                value: 50,
+                                status: 'Reading... 0 Bytes / 0 Bytes'
+                            });
+                        }
+                    };
+
+                    await readFileInChunks();
 
                     self.postMessage({ type: 'progress', value: 50, status: 'Computing SHA-256...' });
 
@@ -947,7 +986,13 @@
                     });
 
                 } catch (error) {
-                    self.postMessage({ type: 'error', error: error.message });
+                    const message = String(error && error.message ? error.message : error);
+                    const friendlyMessage = /notreadableerror|requested file could not be read/i.test(message)
+                        ? 'Browser could not read that file. If it is cloud-only, locked by another app, or permission-restricted, make it available locally and retry.'
+                        : (/network/i.test(message)
+                            ? 'Browser failed to read the local file. Please retry or use a different browser.'
+                            : message);
+                    self.postMessage({ type: 'error', error: friendlyMessage });
                 }
             };
         `;
@@ -1050,13 +1095,18 @@
                 this.activeJobs++;
                 job.status = 'processing';
                 job.progressStatus = 'Starting...';
+                job.retriedWithMainThreadRead = false;
                 this.updateJobUI(job);
 
+                this.startWorkerJob(job, { file });
+            }
+
+            startWorkerJob(job, payload) {
                 const worker = new Worker(this.workerBlobURL);
 
-                worker.postMessage({ file });
+                worker.postMessage(payload, payload.inputBuffer ? [payload.inputBuffer] : []);
 
-                worker.onmessage = (e) => {
+                worker.onmessage = async (e) => {
                     const { type, value, status, result, error } = e.data;
 
                     if (type === 'progress') {
@@ -1069,26 +1119,78 @@
                         job.progressStatus = 'Completed';
                         job.md5 = result.md5;
                         job.sha256 = result.sha256;
+                        delete job.retriedWithMainThreadRead;
                         this.saveJobs();
                         this.updateJobUI(job);
 
-                        // Cleanup
                         worker.terminate();
                         this.activeJobs--;
                         this.processQueue();
                     } else if (type === 'error') {
-                        this.handleJobError(job, error, worker);
+                        const retried = await this.retryJobWithMainThreadRead(job, payload.file, worker, error);
+                        if (!retried) {
+                            this.handleJobError(job, error, worker);
+                        }
                     }
                 };
 
-                worker.onerror = (err) => {
+                worker.onerror = () => {
                     this.handleJobError(job, "Worker Error", worker);
                 };
+            }
+
+            async retryJobWithMainThreadRead(job, file, worker, errorMsg) {
+                const canRetry = file && !job.retriedWithMainThreadRead && /not readable|requested file could not be read|browser could not read|network/i.test(String(errorMsg).toLowerCase());
+                if (!canRetry) return false;
+
+                job.retriedWithMainThreadRead = true;
+                worker.terminate();
+
+                try {
+                    const inputBuffer = await this.readFileForWorker(job, file);
+                    this.startWorkerJob(job, { inputBuffer, totalSize: file.size });
+                    return true;
+                } catch (fallbackError) {
+                    this.handleJobError(job, fallbackError.message || String(fallbackError), null);
+                    return true;
+                }
+            }
+
+            async readFileForWorker(job, file) {
+                const totalSize = file.size;
+                const fallbackChunkSize = 4 * 1024 * 1024;
+                const chunks = [];
+                let processedSize = 0;
+
+                job.progress = 0;
+                job.progressStatus = 'Retrying local read...';
+                this.updateJobUI(job);
+
+                for (let offset = 0; offset < totalSize; offset += fallbackChunkSize) {
+                    const slice = file.slice(offset, offset + fallbackChunkSize);
+                    const buffer = await slice.arrayBuffer();
+                    const chunk = new Uint8Array(buffer);
+                    chunks.push(chunk);
+                    processedSize += chunk.length;
+                    job.progress = totalSize > 0 ? (processedSize / totalSize) * 50 : 50;
+                    job.progressStatus = `Retrying read... ${this.formatBytes(processedSize)} / ${this.formatBytes(totalSize)}`;
+                    this.updateJobUI(job);
+                }
+
+                const combined = new Uint8Array(totalSize);
+                let writeOffset = 0;
+                for (const chunk of chunks) {
+                    combined.set(chunk, writeOffset);
+                    writeOffset += chunk.length;
+                }
+
+                return combined.buffer;
             }
 
             handleJobError(job, errorMsg, worker) {
                 job.status = 'failed';
                 job.error = errorMsg;
+                delete job.retriedWithMainThreadRead;
                 this.saveJobs();
                 this.updateJobUI(job);
                 if (worker) worker.terminate();
