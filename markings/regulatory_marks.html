@@ -3,241 +3,611 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Regulatory Marks Decision Helper</title>
     <style>
         :root {
-            --bg-color: #0f172a;
-            --card-bg: rgba(30, 41, 59, 0.7);
-            --text-color: #f8fafc;
-            --accent-color: #38bdf8;
-            --accent-hover: #0ea5e9;
-            --secondary-text: #94a3b8;
+            --bg-color: #e0e7ff;
+            --panel-bg: #ffffff;
+            --card-bg: #ffffff;
+            --text-primary: #1a1a1a;
+            --text-secondary: #4a4a4a;
+            --border-color: #000000;
+            --border-width: 3px;
+            --shadow-offset: 6px;
+            --shadow-color: #000000;
+            --accent-primary: #4f46e5;
+            --accent-secondary: #ec4899;
+            --hover-bg: #fdf2f8;
             --success-color: #22c55e;
-            --warning-color: #facc15;
-            --info-color: #60a5fa;
-            --border-color: rgba(148, 163, 184, 0.1);
+            --warning-color: #f59e0b;
+            --info-color: #3b82f6;
+            --muted-bg: #f3f4f6;
+        }
+
+        body.dark-mode {
+            --bg-color: #0d1320;
+            --panel-bg: #131d31;
+            --card-bg: #19243b;
+            --text-primary: #f8fbff;
+            --text-secondary: #c4d2eb;
+            --border-color: #7db2ff;
+            --shadow-color: #0a0f1d;
+            --accent-primary: #6ea8ff;
+            --accent-secondary: #ff7eb8;
+            --hover-bg: #22314f;
+            --success-color: #7dff6b;
+            --warning-color: #f9a83b;
+            --info-color: #5cc8ff;
+            --muted-bg: #22314f;
+        }
+
+        * {
+            box-sizing: border-box;
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
             margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
             min-height: 100vh;
-            background-image:
-                radial-gradient(circle at 10% 20%, rgba(56, 189, 248, 0.1) 0%, transparent 20%),
-                radial-gradient(circle at 90% 80%, rgba(139, 92, 246, 0.1) 0%, transparent 20%);
+            padding: 24px;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg-color);
+            color: var(--text-primary);
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
 
-        .container {
-            width: 100%;
-            max-width: 800px;
-            padding: 2rem;
+        .page {
+            max-width: 1180px;
+            margin: 0 auto;
         }
 
-        .card {
-            background: var(--card-bg);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-radius: 24px;
-            padding: 2.5rem;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            border: 1px solid var(--border-color);
-            transition: transform 0.3s ease, opacity 0.3s ease;
-            max-height: 90vh;
+        .hero {
+            position: relative;
+            margin-bottom: 28px;
+            padding: 28px;
+            background: var(--panel-bg);
+            border: var(--border-width) solid var(--border-color);
+            box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--shadow-color);
+            transform: rotate(-1deg);
+            transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: -15px;
+            right: -15px;
+            width: 48px;
+            height: 48px;
+            background: var(--accent-primary);
+            border: var(--border-width) solid var(--border-color);
+            box-shadow: 4px 4px 0 var(--shadow-color);
+            transform: rotate(10deg);
+            cursor: pointer;
             display: flex;
-            flex-direction: column;
-            overflow: hidden;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .theme-toggle:hover {
+            transform: rotate(0deg) scale(1.1);
+        }
+
+        .theme-toggle:active {
+            transform: rotate(0deg) scale(0.95);
+        }
+
+        .theme-toggle svg {
+            width: 24px;
+            height: 24px;
+            stroke: #fff;
+            stroke-width: 2.5;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .theme-toggle .icon-sun {
+            display: none;
+        }
+
+        .theme-toggle .icon-moon {
+            display: block;
+        }
+
+        body.dark-mode .theme-toggle {
+            background: #6ea8ff;
+            border-color: #0a0f1d;
+            box-shadow: 4px 4px 0 #f8fbff;
+        }
+
+        body.dark-mode .theme-toggle .icon-sun {
+            display: block;
+            stroke: #000;
+        }
+
+        body.dark-mode .theme-toggle .icon-moon {
+            display: none;
         }
 
         h1 {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-            background: linear-gradient(to right, #38bdf8, #818cf8);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-align: center;
+            margin: 0 0 10px;
+            font-size: clamp(2.5rem, 5vw, 4.5rem);
+            line-height: 0.92;
+            text-transform: uppercase;
+            letter-spacing: -0.04em;
+            text-shadow: 2px 2px 0 var(--accent-secondary);
         }
 
-        .subtitle {
-            text-align: center;
-            color: var(--secondary-text);
-            margin-bottom: 2.5rem;
+        .tool-intro {
+            margin-bottom: 24px;
+            padding: 20px;
+            background: var(--panel-bg);
+            border: var(--border-width) solid var(--border-color);
+            box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--shadow-color);
+            transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .tool-intro h2 {
+            margin: 0 0 8px;
+            font-size: 0.9rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .tool-intro p {
+            margin: 0;
             font-size: 1rem;
+            line-height: 1.55;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 340px minmax(0, 1fr);
+            gap: 24px;
+            align-items: start;
+        }
+
+        .panel,
+        .app-shell {
+            background: var(--panel-bg);
+            border: var(--border-width) solid var(--border-color);
+            box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--shadow-color);
+            transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .panel {
+            padding: 20px;
+            position: sticky;
+            top: 24px;
+        }
+
+        .panel h2,
+        .app-shell h2 {
+            margin: 0 0 12px;
+            font-size: 1.15rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .panel p,
+        .panel li,
+        .result-note,
+        .source-list li {
+            font-size: 0.95rem;
+            line-height: 1.5;
+            color: var(--text-secondary);
+        }
+
+        code {
+            font-family: 'Courier New', monospace;
+            font-weight: 800;
+            color: var(--text-primary);
+            background: #ede9fe;
+            padding: 1px 5px;
+        }
+
+        body.dark-mode code {
+            background: #2c4169;
+        }
+
+        body.dark-mode .panel summary::before {
+            color: #0d1320;
+        }
+
+        .panel ul,
+        .source-list {
+            margin: 12px 0 0;
+            padding-left: 18px;
+        }
+
+        .panel details + details,
+        .panel p + details,
+        .panel ul + details {
+            margin-top: 16px;
+        }
+
+        .panel details {
+            border: var(--border-width) solid var(--border-color);
+            background: var(--card-bg);
+            box-shadow: 4px 4px 0 var(--shadow-color);
+            padding: 12px 14px;
+            transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .panel summary {
+            cursor: pointer;
+            list-style: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.95rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .panel summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .panel summary::before {
+            content: "+";
+            width: 22px;
+            height: 22px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid var(--border-color);
+            background: var(--accent-primary);
+            color: #ffffff;
+            font-size: 1rem;
+            line-height: 1;
+            flex: 0 0 auto;
+        }
+
+        .panel details[open] summary::before {
+            content: "-";
+        }
+
+        .panel details > *:not(summary) {
+            margin-top: 12px;
+        }
+
+        .source-list a {
+            color: var(--accent-primary);
+            font-weight: 700;
+        }
+
+        .app-shell {
+            padding: 22px;
+        }
+
+        .app-head {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: flex-start;
+            margin-bottom: 18px;
+        }
+
+        .app-title {
+            margin: 0;
+            font-size: 1.4rem;
+            font-weight: 900;
+        }
+
+        .app-meta {
+            margin: 6px 0 0;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            max-width: 620px;
+        }
+
+        .app-meta-list {
+            margin: 8px 0 0;
+            padding-left: 18px;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.5;
+            max-width: 620px;
+        }
+
+        .app-meta-list li + li {
+            margin-top: 6px;
+        }
+
+        .status-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            border: var(--border-width) solid var(--border-color);
+            background: #fef3c7;
+            font-weight: 800;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.02em;
+        }
+
+        body.dark-mode .status-chip {
+            background: #2c4169;
+            color: var(--text-primary);
+        }
+
+        .status-chip::before {
+            content: "";
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--warning-color);
+            border: 2px solid var(--border-color);
+            flex: 0 0 auto;
+        }
+
+        .status-chip.done {
+            background: #dcfce7;
+        }
+
+        body.dark-mode .status-chip.done {
+            background: rgba(125, 255, 107, 0.18);
+        }
+
+        .status-chip.done::before {
+            background: var(--success-color);
         }
 
         #content-area {
-            overflow-y: auto;
-            flex-grow: 1;
-            padding-right: 0.5rem;
-            scroll-behavior: smooth;
             display: flex;
             flex-direction: column;
-            gap: 2rem;
+            gap: 16px;
+            transition: opacity 0.18s ease, transform 0.18s ease, filter 0.18s ease;
+            transform-origin: top center;
         }
 
-        #content-area::-webkit-scrollbar {
-            width: 6px;
+        #content-area.is-rewinding {
+            opacity: 0.28;
+            transform: translateY(8px) scale(0.995);
+            filter: saturate(0.92);
         }
 
-        #content-area::-webkit-scrollbar-track {
-            background: transparent;
+        .question-container,
+        .result-container,
+        .result-note-block,
+        .result-disclaimer {
+            border: var(--border-width) solid var(--border-color);
+            background: #ffffff;
+            box-shadow: 4px 4px 0 var(--shadow-color);
+            transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
         }
 
-        #content-area::-webkit-scrollbar-thumb {
-            background: rgba(148, 163, 184, 0.2);
-            border-radius: 10px;
+        body.dark-mode .question-container,
+        body.dark-mode .result-note-block,
+        body.dark-mode .result-disclaimer {
+            background: #19243b;
         }
 
         .question-container {
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-            flex-shrink: 0;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid rgba(148, 163, 184, 0.05);
-        }
-
-        .question-container:last-child {
-            border-bottom: none;
+            padding: 18px;
         }
 
         .question-container.answered {
-            opacity: 0.8;
-            gap: 0.75rem;
+            background: #f9fafb;
+        }
+
+        body.dark-mode .question-container.answered {
+            background: #22314f;
+        }
+
+        .question-eyebrow {
+            display: inline-block;
+            margin-bottom: 10px;
+            padding: 4px 8px;
+            background: var(--text-primary);
+            color: var(--bg-color);
+            font-size: 0.78rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        body.dark-mode .question-eyebrow {
+            background: #6ea8ff;
+            color: #0d1320;
         }
 
         .question-text {
-            font-size: 1.25rem;
-            font-weight: 500;
-            text-align: center;
-            margin-bottom: 0.5rem;
+            margin: 0;
+            font-size: 1.2rem;
+            line-height: 1.35;
+            font-weight: 800;
+        }
+
+        .question-subtext {
+            margin: 10px 0 0;
+            color: var(--text-secondary);
             line-height: 1.5;
-            transition: all 0.3s ease;
         }
 
         .answered .question-text {
             font-size: 1rem;
-            opacity: 0.6;
-            text-align: left;
         }
 
         .options-grid {
             display: grid;
-            grid-template-columns: 1fr;
-            gap: 1rem;
+            gap: 12px;
+            margin-top: 18px;
         }
 
         button {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--border-color);
-            color: var(--text-color);
-            padding: 1rem 1.5rem;
-            border-radius: 12px;
-            font-size: 1rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s ease;
+            appearance: none;
+            width: 100%;
+            border: var(--border-width) solid var(--border-color);
+            background: #ffffff;
+            color: var(--text-primary);
+            padding: 16px;
             text-align: left;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+            cursor: pointer;
+            font: inherit;
+            font-weight: 700;
+            box-shadow: 4px 4px 0 var(--shadow-color);
+            transition: transform 0.12s ease, background-color 0.12s ease, border-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        body.dark-mode button {
+            background: #19243b;
         }
 
         button:hover {
-            background: rgba(56, 189, 248, 0.1);
-            border-color: var(--accent-color);
-            transform: translateY(-2px);
+            background: var(--hover-bg);
+            transform: translate(-2px, -2px);
+        }
+
+        button:active {
+            transform: translate(0, 0);
         }
 
         button.selected {
-            background: rgba(34, 197, 94, 0.1);
-            border-color: var(--success-color);
-            cursor: default;
-            transform: none !important;
-            padding: 0.75rem 1.25rem;
+            background: #dcfce7;
+            cursor: pointer;
+            transform: none;
+        }
+
+        body.dark-mode button.selected {
+            background: rgba(125, 255, 107, 0.18);
         }
 
         .answered button:not(.selected) {
             display: none;
         }
 
-        button:active {
-            transform: translateY(0);
+        .button-row {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
         }
 
-        button .arrow {
-            opacity: 0;
-            transform: translateX(-10px);
-            transition: all 0.2s ease;
-            color: var(--accent-color);
+        .button-copy {
+            display: grid;
+            gap: 6px;
         }
 
-        button.selected .arrow {
-            display: none;
+        .button-label {
+            font-size: 1rem;
         }
 
-        button:hover .arrow {
-            opacity: 1;
-            transform: translateX(0);
+        .button-sub {
+            color: var(--text-secondary);
+            font-size: 0.84rem;
+            font-weight: 500;
+            line-height: 1.4;
+        }
+
+        .button-arrow {
+            font-size: 1.3rem;
+            font-weight: 900;
+            color: var(--accent-primary);
         }
 
         .result-container {
-            text-align: center;
-            animation: fadeIn 0.5s ease-out;
+            padding: 20px;
+            background: #fff7ed;
+        }
+
+        body.dark-mode .result-container {
+            background: #22314f;
+        }
+
+        .result-header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 14px;
+            align-items: flex-start;
+        }
+
+        .result-title {
+            margin: 0;
+            font-size: 1.4rem;
+            text-transform: uppercase;
+        }
+
+        .path-box {
+            margin-top: 14px;
+            padding: 12px 14px;
+            border: 2px solid var(--border-color);
+            background: #ffffff;
+            font-size: 0.92rem;
+            line-height: 1.5;
+        }
+
+        body.dark-mode .path-box {
+            background: #19243b;
         }
 
         .marks-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 1rem;
-            margin-top: 2rem;
-            margin-bottom: 2rem;
+            grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+            gap: 14px;
+            margin-top: 18px;
         }
 
         .mark-card {
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 16px;
-            padding: 1rem 0.5rem;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 0.5rem;
-            border: 1px solid var(--border-color);
-            transition: all 0.3s ease;
+            border: var(--border-width) solid var(--border-color);
+            background: #ffffff;
+            padding: 16px 12px;
+            display: grid;
+            justify-items: center;
+            text-align: center;
+            grid-template-rows: auto auto auto 1fr;
+            align-items: start;
+            gap: 12px;
+            box-shadow: 4px 4px 0 var(--shadow-color);
+            transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
         }
 
         .mark-card.active {
-            border-color: var(--success-color);
-            background: rgba(34, 197, 94, 0.1);
-        }
-
-        .mark-card.inactive {
-            opacity: 0.5;
-            border-color: rgba(255, 255, 255, 0.05);
+            background: #dcfce7;
+            border-width: 4px;
         }
 
         .mark-card.warning {
-            border-color: var(--warning-color);
-            background: rgba(250, 204, 21, 0.1);
+            background: #fef3c7;
+            border-width: 4px;
         }
 
         .mark-card.info {
-            border-color: var(--info-color);
-            background: rgba(96, 165, 250, 0.12);
+            background: #dbeafe;
+            border-width: 4px;
+        }
+
+        body.dark-mode .mark-card.active {
+            background: rgba(125, 255, 107, 0.18);
+        }
+
+        body.dark-mode .mark-card.warning {
+            background: rgba(249, 168, 59, 0.18);
+        }
+
+        body.dark-mode .mark-card.info {
+            background: rgba(92, 200, 255, 0.14);
+        }
+
+        body.dark-mode .mark-card {
+            background: #19243b;
         }
 
         .mark-logo {
-            width: 48px;
-            height: 48px;
-            margin-bottom: 0.5rem;
+            width: 56px;
+            height: 56px;
             fill: currentColor;
+            align-self: center;
         }
 
         .active .mark-logo {
@@ -253,64 +623,153 @@
         }
 
         .inactive .mark-logo {
-            color: var(--secondary-text);
+            color: var(--text-secondary);
         }
 
         .mark-name {
-            font-weight: 700;
-            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            line-height: 1.2;
         }
 
         .mark-status {
-            font-size: 0.875rem;
-            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            width: 100%;
+            padding: 8px 8px;
+            border: var(--border-width) solid var(--border-color);
+            box-shadow: 4px 4px 0 var(--shadow-color);
+            background: #ffffff;
+            font-size: 0.75rem;
+            font-weight: 900;
+            line-height: 1.3;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+            overflow-wrap: break-word;
+            word-break: break-word;
+        }
+
+        .mark-status::before {
+            content: "";
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            border: 2px solid var(--border-color);
+            background: currentColor;
+            flex: 0 0 auto;
+        }
+
+        .mark-basis {
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            font-size: 0.8rem;
+            line-height: 1.4;
+            color: var(--text-secondary);
+            margin: 0;
+            width: 100%;
+            overflow-wrap: break-word;
+            word-break: break-word;
         }
 
         .active .mark-status {
-            color: var(--success-color);
-        }
-
-        .inactive .mark-status {
-            color: var(--secondary-text);
+            background: #86efac;
+            color: #14532d;
         }
 
         .warning .mark-status {
-            color: var(--warning-color);
+            background: #fcd34d;
+            color: #78350f;
         }
 
         .info .mark-status {
-            color: var(--info-color);
+            background: #93c5fd;
+            color: #1e3a8a;
+        }
+
+        body.dark-mode .active .mark-status {
+            background: #7dff6b;
+            color: #0d1320;
+        }
+
+        body.dark-mode .warning .mark-status {
+            background: #f9a83b;
+            color: #0d1320;
+        }
+
+        body.dark-mode .info .mark-status {
+            background: #5cc8ff;
+            color: #0d1320;
+        }
+
+        body.dark-mode .mark-status {
+            box-shadow: 4px 4px 0 #0a0f1d;
+        }
+
+        body.dark-mode .mark-status::before {
+            border-color: #0d1320;
+            box-shadow: 0 0 0 1px rgba(248, 251, 255, 0.18);
+        }
+
+        body.dark-mode .active .mark-status::before {
+            background: #14532d;
+        }
+
+        body.dark-mode .warning .mark-status::before {
+            background: #78350f;
+        }
+
+        body.dark-mode .info .mark-status::before {
+            background: #1e3a8a;
+        }
+
+        .result-note-block,
+        .result-disclaimer {
+            padding: 16px;
+            margin-top: 16px;
+        }
+
+        .result-note-block h3,
+        .result-disclaimer h3 {
+            margin: 0 0 10px;
+            font-size: 1rem;
+            text-transform: uppercase;
+        }
+
+        .notes-list {
+            margin: 0;
+            padding-left: 18px;
+        }
+
+        .notes-list li + li {
+            margin-top: 8px;
         }
 
         .reset-btn {
-            background: var(--accent-color);
-            color: #0f172a;
-            border: none;
-            justify-content: center;
-            font-weight: 700;
-            margin-top: 1rem;
-            width: 100%;
+            margin-top: 18px;
+            background: var(--accent-primary);
+            color: #ffffff;
+            text-align: center;
+            font-weight: 900;
         }
 
         .reset-btn:hover {
-            background: var(--accent-hover);
-            transform: translateY(-2px);
+            background: #3730a3;
         }
 
-        .reset-btn .arrow {
-            color: #0f172a;
+        body.dark-mode .reset-btn {
+            color: #f8fbff;
         }
 
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        body.dark-mode .reset-btn:hover {
+            background: #5b8fe0;
         }
 
         .fade-enter {
@@ -321,350 +780,574 @@
         .fade-enter-active {
             opacity: 1;
             transform: translateY(0);
-            transition: opacity 0.3s, transform 0.3s;
+            transition: opacity 0.25s ease, transform 0.25s ease;
         }
 
-        .fade-exit {
-            opacity: 1;
-            transform: translateY(0);
+        @media (max-width: 980px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+
+            .panel {
+                position: static;
+            }
+
+            .marks-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
         }
 
-        .fade-exit-active {
-            opacity: 0;
-            transform: translateY(-10px);
-            transition: opacity 0.3s, transform 0.3s;
+        @media (max-width: 640px) {
+            body {
+                padding: 16px;
+            }
+
+            .hero,
+            .panel,
+            .app-shell,
+            .question-container,
+            .result-container,
+            .result-note-block,
+            .result-disclaimer,
+            .mark-card,
+            button {
+                box-shadow: 3px 3px 0 var(--shadow-color);
+            }
+
+            .hero {
+                padding: 20px;
+                transform: none;
+            }
+
+            .theme-toggle {
+                top: -12px;
+                right: -8px;
+            }
+
+            .marks-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
         }
     </style>
 </head>
 
 <body>
-    <div class="container">
-        <div class="card" id="app-card">
+    <div class="page">
+        <header class="hero">
+            <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" aria-label="Toggle Dark Mode">
+                <svg class="icon-moon" viewBox="0 0 24 24">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                </svg>
+                <svg class="icon-sun" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="5"></circle>
+                    <line x1="12" y1="1" x2="12" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="23"></line>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                    <line x1="1" y1="12" x2="3" y2="12"></line>
+                    <line x1="21" y1="12" x2="23" y2="12"></line>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                </svg>
+            </button>
             <h1>Regulatory Marks</h1>
-            <p class="subtitle">Determine required compliance marks for your device</p>
+        </header>
 
-            <div id="content-area">
-                <!-- Dynamic Content Here -->
-            </div>
+        <div class="tool-intro">
+            <h2>What This Covers</h2>
+            <p>General decision support for CE, WEEE, FCC, and UN ECE R10. This page is tuned for
+                cable assemblies and automotive electronic products and uses conservative "check the route" outputs
+                where vehicle-specific exclusions are often fact-pattern dependent.</p>
+        </div>
+
+        <div class="layout">
+            <aside class="panel">
+                <h2>Use Boundaries</h2>
+                <p>This helper follows general guidance commonly used in Europe for RoHS/WEEE scope, vehicle-specific
+                    exclusions, RED radio products, FCC Part 15, and UN ECE R10 automotive EMC.</p>
+                <ul>
+                    <li>Generic or dual-use products are treated as normal EEE unless a narrower exclusion clearly applies.</li>
+                    <li>Vehicle-specific products get a <code>CHECK</code> result when outcome depends on whether the product is a
+                        separately marketed EEE item or an integrated transport/vehicle part.</li>
+                    <li>Wireless products stay on the RED/CE path even when used in vehicles.</li>
+                    <li>UN ECE R10 is shown as the automotive approval route, not as a substitute for every EU product-law obligation.</li>
+                </ul>
+
+                <details>
+                    <summary>Primary References</summary>
+                    <ul class="source-list">
+                        <li><a href="https://eur-lex.europa.eu/eli/dir/2011/65/oj" target="_blank" rel="noreferrer">RoHS Directive 2011/65/EU</a></li>
+                        <li><a href="https://eur-lex.europa.eu/eli/dir/2012/19/oj" target="_blank" rel="noreferrer">WEEE Directive 2012/19/EU</a></li>
+                        <li><a href="https://eur-lex.europa.eu/eli/dir/2014/53/oj" target="_blank" rel="noreferrer">RED 2014/53/EU</a></li>
+                        <li><a href="https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=oj:JOC_2022_247_R_0001" target="_blank" rel="noreferrer">Commission Blue Guide</a></li>
+                        <li><a href="https://unece.org/transport/vehicle-regulations-wp29/standards/addenda-1958-agreement-regulations-0-20" target="_blank" rel="noreferrer">UN Regulation No. 10</a></li>
+                        <li><a href="https://www.ecfr.gov/current/title-47/chapter-I/subchapter-A/part-15" target="_blank" rel="noreferrer">47 CFR Part 15</a></li>
+                    </ul>
+                </details>
+
+                <details>
+                    <summary>Practical Scope Guidance</summary>
+                    <ul class="source-list">
+                        <li><a href="https://www.ewrn.org/fileadmin/ewrn/documents/190612_EWRN_guidance_document_components_EEE_fin.pdf" target="_blank" rel="noreferrer">EWRN: Components versus EEE</a></li>
+                        <li><a href="https://www.zvei.org/fileadmin/user_upload/Presse_und_Medien/Publikationen/2021/Mai/Kabel_unter_RoHS_Richtlinie/Kabel-unter-RoHS-Richtlinie.pdf" target="_blank" rel="noreferrer">ZVEI: Kabel unter RoHS-Richtlinie</a></li>
+                        <li><a href="https://www.ewrn.org/fileadmin/ewrn/documents/170918_EWRN_MT_WEEE2_Guidance_fin.pdf" target="_blank" rel="noreferrer">EWRN: Means of transport under WEEE2</a></li>
+                        <li><a href="https://ec.europa.eu/environment/pdf/waste/faq_weee.pdf" target="_blank" rel="noreferrer">European Commission FAQ on WEEE/RoHS scope</a></li>
+                        <li><a href="https://www.clepa.eu/wp-content/uploads/2018/07/2018-07-04-ELV-vs-WEEE-RoHS-CLEPA-statement.pdf" target="_blank" rel="noreferrer">CLEPA: ELV vs. WEEE/RoHS statement</a></li>
+                    </ul>
+                    <p>Useful examples behind the decision tree: EWRN&apos;s transport guidance helps with the WEEE
+                        exclusion boundary, while the Commission FAQ uses separately sold radios versus vehicle-specific
+                        car radios to illustrate when ordinary EEE logic applies instead of the vehicle route. The
+                        CLEPA statement adds automotive-industry interpretation at the ELV/WEEE-RoHS boundary. The
+                        Commission FAQ is older and not legally binding, so it is best used as interpretive background.</p>
+                </details>
+            </aside>
+
+            <main class="app-shell">
+                <div class="app-head">
+                    <div>
+                        <h2 class="app-title">Decision Helper</h2>
+                        <p class="app-meta">Outcome wording is intentionally strict:</p>
+                        <ul class="app-meta-list">
+                            <li><code>REQUIRED</code> means the route is normally expected.</li>
+                            <li><code>CHECK</code> means the route depends on scope or exclusion facts.</li>
+                            <li><code>NO</code> means the mark is generally not expected for the described product form.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div id="content-area"></div>
+            </main>
         </div>
     </div>
 
     <script>
-        // State Management
+        const savedTheme = localStorage.getItem('toolboxTheme');
+        const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+        if (savedTheme === 'dark' || (!savedTheme && systemDark)) {
+            document.body.classList.add('dark-mode');
+        }
+
         const state = {
             step: 'q1_form_factor',
             data: {
-                formFactor: null, // 'unfinished', 'finished_cable', 'finished_unit'
-                cableType: null, // 'passive', 'active'
+                formFactor: null,
+                cableType: null,
                 isWireless: null,
                 isVehicleSpecific: null,
                 isSafetyCritical: null
-            }
+            },
+            answers: {}
         };
 
-        // DOM Elements
         const contentArea = document.getElementById('content-area');
+        const FLOW_TRANSITION_MS = 180;
 
-        // Logic / Questions
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+            localStorage.setItem('toolboxTheme', isDark ? 'dark' : 'light');
+        }
+
         const questions = {
             q1_form_factor: {
-                text: "Q1: Physical Form Factor<br><span style='font-size: 0.9rem; color: var(--secondary-text);'>Is this product a finished device or a cable assembly?</span>",
+                eyebrow: 'Scope',
+                text: 'What is being placed on the market?',
+                subtext: 'Choose the marketed item, not only the technology inside it.',
                 options: [
                     {
-                        label: "Raw Material / Internal Part",
-                        sub: "Bulk wire, internal component (Not sold to end-user)",
-                        value: "unfinished",
-                        action: (s) => s.data.formFactor = 'unfinished',
-                        next: "finish"
+                        label: 'Raw material / internal part',
+                        sub: 'Bulk wire, loose internal component, PCB subassembly, or item not sold as a standalone end product.',
+                        action: (s) => { s.data.formFactor = 'unfinished'; },
+                        next: 'finish'
                     },
                     {
-                        label: "Finished Cable / Pigtail",
-                        sub: "Cable with connectors OR open wires/pigtails intended for install",
-                        value: "finished_cable",
-                        action: (s) => s.data.formFactor = 'finished_cable',
-                        next: "q1b_cable_type"
+                        label: 'Finished cable / harness / pigtail',
+                        sub: 'Cable assembly with connectors or flying leads, sold or supplied as a standalone item.',
+                        action: (s) => { s.data.formFactor = 'finished_cable'; },
+                        next: 'q1b_cable_type'
                     },
                     {
-                        label: "Finished Electronic Unit",
-                        sub: "e.g., ECU, Camera, Gateway",
-                        value: "finished_unit",
-                        action: (s) => s.data.formFactor = 'finished_unit',
-                        next: "q2_wireless"
+                        label: 'Finished electronic unit',
+                        sub: 'ECU, camera, display, gateway, sensor module, adapter, interface box, or similar equipment.',
+                        action: (s) => { s.data.formFactor = 'finished_unit'; },
+                        next: 'q2_wireless'
                     }
                 ]
             },
             q1b_cable_type: {
-                text: "Q1b: Cable Type<br><span style='font-size: 0.9rem; color: var(--secondary-text);'>Is the cable passive or does it contain active electronics?</span>",
+                eyebrow: 'Cable Type',
+                text: 'Does the cable assembly contain active electronics?',
+                subtext: 'Passive assemblies and active converter/booster cables follow different CE and FCC paths.',
                 options: [
                     {
-                        label: "Standard Cable (Passive)",
-                        sub: "No chips or active electronics",
-                        value: "passive",
-                        action: (s) => s.data.cableType = 'passive',
-                        next: "q1c_passive_use"
+                        label: 'Passive cable',
+                        sub: 'No powered electronics, no signal processing, no radio.',
+                        action: (s) => { s.data.cableType = 'passive'; },
+                        next: 'q1c_passive_use'
                     },
                     {
-                        label: "Active Cable (With Chip)",
-                        sub: "Contains electronics (e.g., signal booster, active converter)",
-                        value: "active",
-                        action: (s) => s.data.cableType = 'active',
-                        next: "q2_wireless"
+                        label: 'Active cable',
+                        sub: 'Contains chips, signal conditioning, retimers, media conversion, powered electronics, or radio.',
+                        action: (s) => { s.data.cableType = 'active'; },
+                        next: 'q2_wireless'
                     }
                 ]
             },
             q1c_passive_use: {
-                text: "Q1c: Intended Use<br><span style='font-size: 0.9rem; color: var(--secondary-text);'>Is the cable specifically designed for use in vehicles?</span>",
+                eyebrow: 'Vehicle Scope',
+                text: 'Is the passive cable specifically designed only for use in a vehicle or vehicle platform?',
+                subtext: 'Use YES only when the product is dedicated to transport/vehicle integration rather than normal general-market EEE use.',
                 options: [
                     {
-                        label: "YES (Vehicle Specific)",
-                        sub: "Likely ELV context; CE/WEEE marking can be route-dependent",
-                        value: true,
-                        action: (s) => s.data.isVehicleSpecific = true,
-                        next: "finish"
+                        label: 'Yes, vehicle-specific only',
+                        sub: 'Dedicated harness or assembly with no realistic non-vehicle application.',
+                        action: (s) => { s.data.isVehicleSpecific = true; },
+                        next: 'finish'
                     },
                     {
-                        label: "NO (Generic / Standard)",
-                        sub: "WEEE applies",
-                        value: false,
-                        action: (s) => s.data.isVehicleSpecific = false,
-                        next: "finish"
+                        label: 'No, generic or dual-use',
+                        sub: 'Could reasonably be used outside a vehicle or is sold as a normal accessory/cable product.',
+                        action: (s) => { s.data.isVehicleSpecific = false; },
+                        next: 'finish'
                     }
                 ]
             },
             q2_wireless: {
-                text: "Q2: Wireless Functionality<br><span style='font-size: 0.9rem; color: var(--secondary-text);'>Does the product contain an intentional radio transmitter (e.g., Bluetooth, Wi-Fi, Radar)?</span>",
+                eyebrow: 'Radio',
+                text: 'Does the product contain an intentional radio transmitter?',
+                subtext: 'Examples: Bluetooth, Wi-Fi, GNSS transmitter modules, UWB, radar, LTE, or similar radio functions.',
                 options: [
                     {
-                        label: "YES",
-                        sub: "Radio Equipment Directive (RED) applies",
-                        value: true,
-                        action: (s) => s.data.isWireless = true,
-                        next: "q3_specific_design"
+                        label: 'Yes, intentional radio present',
+                        sub: 'This normally places the product on the RED and FCC certification path.',
+                        action: (s) => { s.data.isWireless = true; },
+                        next: 'q3_specific_design'
                     },
                     {
-                        label: "NO",
-                        sub: "No intentional transmitter",
-                        value: false,
-                        action: (s) => s.data.isWireless = false,
-                        next: "q3_specific_design"
+                        label: 'No radio transmitter',
+                        sub: 'The product may still be an unintentional radiator or an automotive EMC device.',
+                        action: (s) => { s.data.isWireless = false; },
+                        next: 'q3_specific_design'
                     }
                 ]
             },
             q3_specific_design: {
-                text: "Q3: Intended Use & Specific Design<br><span style='font-size: 0.9rem; color: var(--secondary-text);'>Is the product specifically designed for use in vehicles, such that it has no other reasonable application?</span>",
+                eyebrow: 'Product Route',
+                text: 'Is it specifically designed only for a vehicle or transport application?',
+                subtext: 'Use YES only where the product is dedicated to that vehicle context and not a normal general-market EEE product.',
                 options: [
                     {
-                        label: "YES (Vehicle Specific)",
-                        sub: "Vehicle-specific: CE/E-mark outcome can depend on approval route",
-                        value: true,
-                        action: (s) => s.data.isVehicleSpecific = true,
-                        next: "q4_safety"
+                        label: 'Yes, vehicle-specific product',
+                        sub: 'Dedicated vehicle integration, aftermarket vehicle part, or OEM vehicle program item.',
+                        action: (s) => { s.data.isVehicleSpecific = true; },
+                        next: 'q4_safety'
                     },
                     {
-                        label: "NO (Dual-Use / Generic)",
-                        sub: "WEEE & CE required",
-                        value: false,
-                        action: (s) => s.data.isVehicleSpecific = false,
-                        next: "finish"
+                        label: 'No, generic or dual-use product',
+                        sub: 'Could be marketed as ordinary equipment outside the automotive approval route.',
+                        action: (s) => { s.data.isVehicleSpecific = false; },
+                        next: 'finish'
                     }
                 ]
             },
             q4_safety: {
-                text: "Q4: Immunity & Safety Functions<br><span style='font-size: 0.9rem; color: var(--secondary-text);'>Does the product perform an Immunity Related Function (IRF)? (e.g. affects control, visibility, legal data)</span>",
+                eyebrow: 'Automotive EMC',
+                text: 'Could malfunction or degraded immunity affect a regulated or vehicle-critical function?',
+                subtext: 'Examples: driver control, visibility, legal display/data, braking/steering-related signalling, or key vehicle communication functions.',
                 options: [
                     {
-                        label: "YES (Safety Critical)",
-                        sub: "ECE R10 Mandatory",
-                        value: true,
-                        action: (s) => s.data.isSafetyCritical = true,
-                        next: "finish"
+                        label: 'Yes, vehicle-critical / IRF-like function',
+                        sub: 'Treat as the stronger UN ECE R10 case.',
+                        action: (s) => { s.data.isSafetyCritical = true; },
+                        next: 'finish'
                     },
                     {
-                        label: "NO (Comfort / Accessory)",
-                        sub: "R10 may still be needed in vehicle approval contexts",
-                        value: false,
-                        action: (s) => s.data.isSafetyCritical = false,
-                        next: "finish"
+                        label: 'No, accessory or comfort function',
+                        sub: 'UN ECE R10 may still apply depending on approval route and installation context.',
+                        action: (s) => { s.data.isSafetyCritical = false; },
+                        next: 'finish'
                     }
                 ]
             }
         };
 
-        // Render Functions
-        function renderQuestion(stepKey) {
-            const q = questions[stepKey];
-
-            const qDiv = document.createElement('div');
-            qDiv.className = 'question-container fade-enter-active';
-            qDiv.id = `step-${stepKey}`;
-
-            let html = `
-                <div class="question-text">${q.text}</div>
-                <div class="options-grid">
-            `;
-
-            q.options.forEach((opt, index) => {
-                html += `
-                    <button onclick="handleAnswer('${stepKey}', ${index}, this)">
-                        <div style="display: flex; flex-direction: column; align-items: flex-start;">
-                            <span>${opt.label}</span>
-                            ${opt.sub ? `<span style="font-size: 0.8rem; color: var(--secondary-text); margin-top: 0.25rem;">${opt.sub}</span>` : ''}
-                        </div>
-                        <span class="arrow">→</span>
-                    </button>
-                `;
-            });
-
-            html += `</div>`;
-            qDiv.innerHTML = html;
-            contentArea.appendChild(qDiv);
-
-            // Scroll to bottom
-            setTimeout(() => {
-                contentArea.scrollTop = contentArea.scrollHeight;
-            }, 50);
+        function createMark(status, basis) {
+            return { status, basis };
         }
 
-        function handleAnswer(stepKey, optionIndex, btn) {
-            const q = questions[stepKey];
-            const opt = q.options[optionIndex];
-
-            // Mark current question as answered
-            const container = document.getElementById(`step-${stepKey}`);
-            container.classList.add('answered');
-            btn.classList.add('selected');
-
-            // Disable all buttons in this container
-            const buttons = container.querySelectorAll('button');
-            buttons.forEach(b => b.removeAttribute('onclick'));
-
-            // Update state
-            if (opt.action) {
-                opt.action(state);
-            }
-
-            // Transition
-            if (opt.next === 'finish') {
-                showResults();
-            } else {
-                renderQuestion(opt.next);
-            }
-        }
-
-        function calculateMarks() {
+        function calculateAssessment() {
             const { formFactor, cableType, isWireless, isVehicleSpecific, isSafetyCritical } = state.data;
-
-            // Default result structure
-            let result = {
-                ce: "NO",
-                weee: "NO",
-                fcc: "NO",
-                ece: "NO"
+            const result = {
+                ce: createMark('NO', 'No standalone CE product route is typically concluded at raw component level.'),
+                weee: createMark('NO', 'Not treated here as a standalone EEE product.'),
+                fcc: createMark('NO', 'No standalone authorization result at raw component level.'),
+                ece: createMark('NO', 'Not a standalone vehicle EMC approval item.'),
+                notes: [],
+                disclaimer: 'General guidance only. Final marking depends on the exact product definition, installation concept, market route, and who places the product on the market.'
             };
 
-            // 1. Unfinished Cable / Component
             if (formFactor === 'unfinished') {
-                return result; // All NO
+                result.notes.push('Internal parts and raw materials are usually assessed through the finished equipment or finished vehicle route, not by applying all end-product marks directly to the part.');
+                return result;
             }
 
-            // 2. Passive Cable
             if (formFactor === 'finished_cable' && cableType === 'passive') {
-                // Passive Cable Logic
-                // USA: N/A (no active electronics / no intentional or unintentional radiator)
-                // EU: CE (RoHS only)
-                // R10: Not Needed
-                // WEEE: Required (Standard Cable is EEE) unless Vehicle Specific (ELV)
-                return {
-                    ce: isVehicleSpecific ? "CHECK (Route-dependent)" : "REQUIRED (RoHS)",
-                    weee: isVehicleSpecific ? "CHECK (ELV exclusion)" : "REQUIRED",
-                    fcc: "N/A (No electronics)",
-                    ece: "NO"
-                };
+                if (isVehicleSpecific) {
+                    result.ce = createMark('CHECK (RoHS scope)', 'Dedicated transport/vehicle products can fall into scope questions or exclusions; do not assume normal CE artwork without confirming the route.');
+                    result.weee = createMark('CHECK (vehicle exclusion)', 'Vehicle-only products can fall outside WEEE only when the transport/vehicle exclusion facts are actually met.');
+                    result.fcc = createMark('N/A (passive)', 'A passive cable with no active electronics is generally outside FCC equipment authorization.');
+                    result.ece = createMark('NO', 'A passive cable is normally not a standalone UN ECE R10 approval object.');
+                    result.notes.push('For vehicle-specific passive harnesses, the key issue is whether the product is really a transport/vehicle-specific part or a normal separately marketed cable assembly.');
+                } else {
+                    result.ce = createMark('REQUIRED (RoHS)', 'Finished generic cable assemblies are typically treated as EEE-related products in scope for RoHS and carry CE marking for that route.');
+                    result.weee = createMark('REQUIRED', 'A finished generic cable assembly supplied as a separate product is commonly treated as WEEE in scope.');
+                    result.fcc = createMark('N/A (passive)', 'No active electronics and no intentional or unintentional radiator function.');
+                    result.ece = createMark('NO', 'No standalone automotive EMC approval is normally expected.');
+                    result.notes.push('This follows the common industry treatment that generic finished cable assemblies are not automatically excluded just because they are later used with electronics.');
+                }
+                result.notes.push('Packaging or accompanying documents may be the practical location for some markings when product size or form factor makes on-product marking impractical.');
+                return result;
             }
 
-            // Master Decision Matrix Logic (Active Cables & Units)
-
-            // E-Mark (R10)
             if (isVehicleSpecific) {
-                result.ece = isSafetyCritical ? "REQUIRED" : "CHECK (Vehicle-route dependent)";
+                if (isSafetyCritical) {
+                    result.ece = createMark('REQUIRED', 'Vehicle-critical electronic sub-assemblies are the clearest UN ECE R10 case.');
+                } else {
+                    result.ece = createMark('CHECK (approval route)', 'A vehicle-specific accessory can still require UN ECE R10 depending on installation and approval route.');
+                }
             } else {
-                result.ece = "NO";
+                result.ece = createMark('NO', 'Generic non-vehicle products do not follow the UN ECE R10 marking route.');
             }
 
-            // CE Mark
             if (isWireless) {
-                if (isVehicleSpecific) {
-                    result.ce = "REQUIRED (RED)";
-                } else {
-                    result.ce = "REQUIRED (RED + RoHS)";
-                }
+                result.ce = isVehicleSpecific
+                    ? createMark('REQUIRED (RED)', 'Intentional radio equipment normally requires CE under RED; additional horizontal obligations can still exist.')
+                    : createMark('REQUIRED (RED + RoHS)', 'Intentional radio equipment normally follows the RED route, with RoHS applying separately where the product is in scope; the EMC Directive is not applied separately because EMC is covered within RED.');
+                result.fcc = createMark('FCC ID', 'Intentional transmitters normally require FCC certification rather than SDoC.');
+                result.notes.push('Vehicle use does not by itself remove a radio product from the RED path.');
             } else {
-                // Not Wireless
                 if (isVehicleSpecific) {
-                    result.ce = "CHECK (Route-dependent)";
+                    if (isSafetyCritical) {
+                        result.ce = createMark('CHECK (route-dependent)', 'For dedicated vehicle electronics, EMC can move through the UNECE route while RoHS/WEEE scope still needs a separate check.');
+                    } else {
+                        result.ce = createMark('CHECK (route-dependent)', 'Confirm whether the product is marketed as ordinary EEE or only through a transport/vehicle-specific route before adding CE artwork.');
+                    }
+                    result.fcc = createMark('CHECK (47 CFR 15.103)', 'The motor-vehicle exemption is narrow and depends on exclusive use in a transportation vehicle.');
                 } else {
-                    // Dual-Use / Generic
-                    result.ce = "REQUIRED";
-                }
-
-                // Active cable text refinement for generic (non vehicle-specific) products.
-                if (cableType === 'active' && result.ce === 'REQUIRED') {
-                    result.ce = "REQUIRED (RoHS + EMC)";
+                    if (formFactor === 'finished_cable' && cableType === 'active') {
+                        result.ce = createMark('REQUIRED (EMC + RoHS)', 'An active generic cable is generally a normal EEE product with EMC and RoHS implications.');
+                    } else {
+                        result.ce = createMark('REQUIRED', 'Generic electronic equipment normally follows the applicable CE legislation set.');
+                    }
+                    result.fcc = createMark('SDoC', 'A generic non-radio electronic product is commonly treated as an unintentional radiator under FCC Part 15.');
                 }
             }
 
-            // FCC
-            if (isWireless) {
-                result.fcc = "FCC ID";
-            } else {
-                // Non-wireless
-                if (isVehicleSpecific) {
-                    result.fcc = "CHECK (15.103(a) eligibility)";
-                } else {
-                    result.fcc = "SDoC";
-                }
-
-                // Active non-wireless cable/unit is treated as unintentional radiator in generic use -> SDoC.
-            }
-
-            // WEEE Bin
             if (isVehicleSpecific) {
-                result.weee = "CHECK (ELV exclusion)";
+                result.weee = createMark('CHECK (vehicle exclusion)', 'WEEE exclusion is not automatic; confirm that the product is genuinely transport/vehicle-specific and within the exclusion logic.');
+                result.notes.push('Do not rely on a vehicle exclusion for dual-use or separately marketed general accessories.');
             } else {
-                // Dual-Use / Generic -> WEEE Required
-                result.weee = "REQUIRED";
+                result.weee = createMark('REQUIRED', 'Generic finished equipment supplied separately is normally treated as WEEE in scope.');
+            }
+
+            if (result.fcc.status === 'SDoC') {
+                result.notes.push('SDoC does not mean an FCC logo is mandatory on the product; keep the documentation path distinct from physical product artwork.');
+            }
+
+            if (result.ce.status.startsWith('CHECK')) {
+                result.notes.push('Where CE is marked as CHECK, confirm the exact legal route before freezing labels. Automotive EMC approval and EU product-law scope do not collapse into one question.');
             }
 
             return result;
         }
 
         function buildPathSummary() {
-            const parts = [];
             const { formFactor, cableType, isWireless, isVehicleSpecific, isSafetyCritical } = state.data;
+            const parts = [];
 
-            if (formFactor === 'unfinished') parts.push('Raw material/internal part');
-            if (formFactor === 'finished_cable') parts.push('Finished cable');
+            if (formFactor === 'unfinished') parts.push('Raw material / internal part');
+            if (formFactor === 'finished_cable') parts.push('Finished cable assembly');
             if (formFactor === 'finished_unit') parts.push('Finished electronic unit');
-
-            if (formFactor === 'finished_cable' && cableType === 'passive') parts.push('Passive');
-            if (formFactor === 'finished_cable' && cableType === 'active') parts.push('Active electronics');
-
-            if (formFactor !== 'unfinished') {
-                if (isWireless === true) parts.push('Wireless');
-                if (isWireless === false) parts.push('No wireless');
-            }
-
+            if (cableType === 'passive') parts.push('Passive');
+            if (cableType === 'active') parts.push('Active electronics');
+            if (isWireless === true) parts.push('Intentional radio');
+            if (isWireless === false) parts.push('No intentional radio');
             if (isVehicleSpecific === true) parts.push('Vehicle-specific');
-            if (isVehicleSpecific === false) parts.push('Generic/dual-use');
-
-            if (isVehicleSpecific === true && isSafetyCritical === true) parts.push('IRF / safety-critical');
-            if (isVehicleSpecific === true && isSafetyCritical === false) parts.push('Non-IRF accessory');
+            if (isVehicleSpecific === false) parts.push('Generic / dual-use');
+            if (isVehicleSpecific === true && isSafetyCritical === true) parts.push('Vehicle-critical function');
+            if (isVehicleSpecific === true && isSafetyCritical === false) parts.push('Accessory / comfort function');
 
             return parts.join(' -> ');
         }
 
+        function getEmptyData() {
+            return {
+                formFactor: null,
+                cableType: null,
+                isWireless: null,
+                isVehicleSpecific: null,
+                isSafetyCritical: null
+            };
+        }
+
+        function getAnsweredPath() {
+            const path = [];
+            let stepKey = 'q1_form_factor';
+
+            while (stepKey && questions[stepKey] && state.answers[stepKey] !== undefined) {
+                const optionIndex = state.answers[stepKey];
+                const option = questions[stepKey].options[optionIndex];
+
+                if (!option) break;
+
+                path.push(stepKey);
+
+                if (option.next === 'finish') {
+                    break;
+                }
+
+                stepKey = option.next;
+            }
+
+            return path;
+        }
+
+        function syncStateFromAnswers() {
+            state.data = getEmptyData();
+            let stepKey = 'q1_form_factor';
+
+            while (stepKey && questions[stepKey]) {
+                const optionIndex = state.answers[stepKey];
+
+                if (optionIndex === undefined) {
+                    state.step = stepKey;
+                    return;
+                }
+
+                const option = questions[stepKey].options[optionIndex];
+
+                if (!option) {
+                    delete state.answers[stepKey];
+                    state.step = stepKey;
+                    return;
+                }
+
+                option.action(state);
+
+                if (option.next === 'finish') {
+                    state.step = 'finish';
+                    return;
+                }
+
+                stepKey = option.next;
+            }
+
+            state.step = 'q1_form_factor';
+        }
+
+        function renderQuestion(stepKey, selectedIndex = null) {
+            const q = questions[stepKey];
+            const container = document.createElement('section');
+            const isAnswered = selectedIndex !== null;
+            container.className = `question-container fade-enter fade-enter-active${isAnswered ? ' answered' : ''}`;
+            container.id = `step-${stepKey}`;
+
+            let html = `
+                <div class="question-eyebrow">${q.eyebrow}</div>
+                <p class="question-text">${q.text}</p>
+                <p class="question-subtext">${q.subtext}</p>
+                <div class="options-grid">
+            `;
+
+            q.options.forEach((opt, index) => {
+                const isSelected = selectedIndex === index;
+                const action = isSelected
+                    ? `rewindToStep('${stepKey}')`
+                    : `handleAnswer('${stepKey}', ${index})`;
+
+                html += `
+                    <button class="${isSelected ? 'selected' : ''}" onclick="${action}">
+                        <div class="button-row">
+                            <div class="button-copy">
+                                <span class="button-label">${opt.label}</span>
+                                <span class="button-sub">${opt.sub}</span>
+                            </div>
+                            <span class="button-arrow">→</span>
+                        </div>
+                    </button>
+                `;
+            });
+
+            html += '</div>';
+            container.innerHTML = html;
+            contentArea.appendChild(container);
+        }
+
+        function renderFlow(focusStep = null) {
+            contentArea.innerHTML = '';
+            syncStateFromAnswers();
+
+            const path = getAnsweredPath();
+
+            path.forEach((stepKey) => {
+                renderQuestion(stepKey, state.answers[stepKey]);
+            });
+
+            if (state.step === 'finish') {
+                showResults();
+            } else {
+                renderQuestion(state.step);
+            }
+
+            const targetId = focusStep
+                ? `step-${focusStep}`
+                : state.step === 'finish'
+                    ? '.result-container'
+                    : `step-${state.step}`;
+            const target = targetId.startsWith('.')
+                ? contentArea.querySelector(targetId)
+                : document.getElementById(targetId);
+
+            if (target) {
+                requestAnimationFrame(() => {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: focusStep ? 'start' : 'center'
+                    });
+                });
+            }
+        }
+
+        function handleAnswer(stepKey, optionIndex) {
+            state.answers[stepKey] = optionIndex;
+            renderFlow();
+        }
+
+        function rewindToStep(stepKey) {
+            const path = getAnsweredPath();
+            const rewindIndex = path.indexOf(stepKey);
+
+            if (rewindIndex === -1) {
+                return;
+            }
+
+            path.slice(rewindIndex).forEach((key) => {
+                delete state.answers[key];
+            });
+
+            contentArea.classList.add('is-rewinding');
+
+            window.setTimeout(() => {
+                renderFlow(stepKey);
+                requestAnimationFrame(() => {
+                    contentArea.classList.remove('is-rewinding');
+                });
+            }, FLOW_TRANSITION_MS);
+        }
+
         function showResults() {
-            const marks = calculateMarks();
+            const assessment = calculateAssessment();
             const pathSummary = buildPathSummary();
 
             const logos = {
@@ -676,95 +1359,82 @@
                 ece: `<svg class="mark-logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" stroke-width="5"/><text x="50" y="65" font-family="Arial" font-weight="bold" font-size="40" text-anchor="middle" fill="currentColor">E</text></svg>`
             };
 
-            const renderMarkCard = (name, status, logoKey) => {
-                let statusClass = 'inactive';
-                if (status.includes('REQUIRED') || status === 'FCC ID') statusClass = 'active';
-                if (status === 'SDoC') statusClass = 'warning';
-                if (status.startsWith('CHECK')) statusClass = 'warning';
-                if (status === 'NO' || status.startsWith('N/A')) statusClass = 'info';
+            function getStatusClass(status) {
+                if (status.includes('REQUIRED') || status === 'FCC ID') return 'active';
+                if (status.startsWith('CHECK') || status === 'SDoC') return 'warning';
+                if (status === 'NO' || status.startsWith('N/A')) return 'info';
+                return 'inactive';
+            }
+
+            function renderMarkCard(name, key, value) {
                 return `
-                <div class="mark-card ${statusClass}">
-                    ${logos[logoKey]}
-                    <div class="mark-name">${name}</div>
-                    <div class="mark-status">${status}</div>
-                </div>
+                    <article class="mark-card ${getStatusClass(value.status)}">
+                        ${logos[key]}
+                        <div class="mark-name">${name}</div>
+                        <div class="mark-status">${value.status}</div>
+                        <div class="mark-basis">${value.basis}</div>
+                    </article>
                 `;
-            };
-
-            // Generate Notes
-            let notesHtml = '';
-            if (marks.fcc === 'CHECK (15.103(a) eligibility)') {
-                notesHtml += `FCC 15.103(a) check: Confirm the product is used exclusively in motor vehicles before treating it as exempt.<br>`;
-            }
-            if (marks.fcc === 'N/A (No electronics)') {
-                notesHtml += `FCC N/A: Passive products without active electronics are generally outside FCC Part 15 device authorization paths.<br>`;
-            }
-            if (marks.fcc === 'SDoC') {
-                notesHtml += `SDoC: Supplier's Declaration of Conformity. No physical marking required.<br>`;
-            }
-            if (state.data.formFactor === 'finished_cable') {
-                notesHtml += `ZVEI Guidance: Cables and pigtails (even with open wires) are considered EEE products. If sold separately or used in a generic way, RoHS compliance and CE marking (usually on packaging) are required.<br>`;
-            }
-            if ([marks.ce, marks.weee, marks.ece].some(v => v.startsWith('CHECK'))) {
-                notesHtml += `Route-dependent: For vehicle-specific aftermarket parts, final marking may depend on whether you market the part under a vehicle type-approval route (e.g., UN R10) or as a general aftermarket product.<br>`;
-                notesHtml += `Next step: Confirm the intended market route and who makes the final compliance claim before freezing label artwork.<br>`;
             }
 
-            const notesSection = notesHtml ? `
-                <div style="text-align: left; font-size: 0.85rem; color: var(--secondary-text); background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 12px; margin-bottom: 1rem;">
-                    <strong>Notes:</strong><br>
-                    ${notesHtml}
-                </div>
-            ` : '';
+            const notesHtml = assessment.notes.length
+                ? `
+                    <section class="result-note-block">
+                        <h3>Interpretation Notes</h3>
+                        <ul class="notes-list">
+                            ${assessment.notes.map((note) => `<li class="result-note">${note}</li>`).join('')}
+                        </ul>
+                    </section>
+                `
+                : '';
 
-            const html = `
-                <div class="result-container fade-enter-active" style="padding-top: 1rem;">
-                    <div class="question-text" style="text-align: center; opacity: 1; font-size: 1.25rem;">Compliance Results</div>
-                    <p style="color: var(--secondary-text); margin-bottom: 1rem;">Based on your inputs:</p>
-                    <p style="color: var(--secondary-text); margin-bottom: 0.25rem; font-size: 0.9rem;"><strong>Path:</strong> ${pathSummary}</p>
-                    
-                    <div class="marks-grid">
-                        ${renderMarkCard('CE Mark', marks.ce, 'ce')}
-                        ${renderMarkCard('WEEE Logo', marks.weee, 'weee')}
-                        ${renderMarkCard('FCC', marks.fcc, 'fcc')}
-                        ${renderMarkCard('ECE R10', marks.ece, 'ece')}
+            const result = document.createElement('section');
+            result.className = 'result-container fade-enter fade-enter-active';
+            result.innerHTML = `
+                <div class="result-header">
+                    <div>
+                        <h3 class="result-title">Assessment</h3>
+                        <p class="app-meta">Review the legal route before translating this into product artwork.</p>
                     </div>
-
-                    ${notesSection}
-
-                    <button class="reset-btn" onclick="resetApp()">
-                        Start Over
-                        <span class="arrow">↺</span>
-                    </button>
+                    <div class="status-chip done">Decision Complete</div>
                 </div>
+
+                <div class="path-box"><strong>Decision path:</strong> ${pathSummary}</div>
+
+                <div class="marks-grid">
+                    ${renderMarkCard('CE Mark', 'ce', assessment.ce)}
+                    ${renderMarkCard('WEEE Bin', 'weee', assessment.weee)}
+                    ${renderMarkCard('FCC Route', 'fcc', assessment.fcc)}
+                    ${renderMarkCard('UN ECE R10', 'ece', assessment.ece)}
+                </div>
+
+                ${notesHtml}
+
+                <section class="result-disclaimer">
+                    <h3>Compliance Boundary</h3>
+                    <p class="result-note">${assessment.disclaimer}</p>
+                    <p class="result-note">If the output is <strong>CHECK</strong>, confirm scope with the OEM,
+                        approval authority, responsible economic operator, or product-compliance counsel before locking
+                        label artwork.</p>
+                </section>
+
+                <button class="reset-btn" onclick="resetApp()">Start Over</button>
             `;
 
-            const resDiv = document.createElement('div');
-            resDiv.innerHTML = html;
-            contentArea.appendChild(resDiv);
-
-            // Scroll to bottom
-            setTimeout(() => {
-                contentArea.scrollTop = contentArea.scrollHeight;
-            }, 50);
+            contentArea.appendChild(result);
+            requestAnimationFrame(() => {
+                result.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
         }
 
         function resetApp() {
-            contentArea.innerHTML = '';
             state.step = 'q1_form_factor';
-            state.data = {
-                formFactor: null,
-                cableType: null,
-                isWireless: null,
-                isVehicleSpecific: null,
-                isSafetyCritical: null
-            };
-            renderQuestion('q1_form_factor');
+            state.data = getEmptyData();
+            state.answers = {};
+            renderFlow();
         }
 
-        // Initialize
-        renderQuestion('q1_form_factor');
-
+        renderFlow();
     </script>
 </body>
 
