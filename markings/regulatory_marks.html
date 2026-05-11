@@ -1106,16 +1106,17 @@
             }
 
             if (formFactor === 'finished_mechanical') {
-                result.ce = createMark('NO', 'This helper does not identify a CE route for a finished part with no electrical or radio function.');
-                result.weee = createMark('NO', 'A finished non-electrical mechanical part is not treated here as standalone EEE.');
-                result.fcc = createMark('NO', 'With no electronic circuitry or radio function, FCC equipment authorization is not normally implicated.');
+                result.ce = createMark('NO', 'CE marking is triggered by specific EU product directives (e.g. RoHS, EMC, RED, LVD, Machinery, Toys, PPE). A purely mechanical/plastic part with no electrical, radio, or machinery function falls outside the scope of these electronics-focused directives.');
+                result.weee = createMark('NO', 'WEEE applies to Electrical and Electronic Equipment dependent on electric currents or electromagnetic fields. A passive mechanical or plastic part has no such function and is not EEE.');
+                result.fcc = createMark('NO', '47 CFR Part 15 covers intentional, unintentional, and incidental radiators. A part with no electronic circuitry cannot radiate RF energy and is outside FCC equipment authorization.');
                 result.ece = isVehicleSpecific
-                    ? createMark('CHECK (vehicle route)', 'A vehicle-specific mechanical part is not normally a standalone UN ECE R10 object, but confirm whether another vehicle approval route governs the marketed part.')
-                    : createMark('NO', 'A generic finished mechanical part does not follow the UN ECE R10 marking route.');
+                    ? createMark('CHECK (vehicle route)', 'UN ECE R10 targets electrical/electronic sub-assemblies with EMC behaviour. A vehicle-specific mechanical part is not normally a standalone R10 object, but another vehicle approval route (e.g. R21, R43, R118) may govern the marketed part.')
+                    : createMark('NO', 'UN ECE R10 is an automotive EMC regulation. With no electrical/electronic function and no vehicle-specific context, it does not apply.');
+                result.notes.push('Why no marks: CE, WEEE, FCC, and UN ECE R10 are all triggered by an electrical, electronic, radio, or EMC-relevant function. A finished plastic or mechanical part without any such function does not meet the entry condition of these regimes.');
                 result.notes.push('This route is for finished parts with no cables, powered electronics, or intentional radio functions.');
-                result.notes.push('The absence of these marks here does not rule out other product-specific obligations outside the CE/WEEE/FCC/UN ECE R10 routes covered by this helper.');
+                result.notes.push('The absence of these marks does not rule out other product-specific obligations (e.g. REACH/SVHC, food-contact, toy safety, construction products, packaging, or material-restriction rules) which sit outside the CE/WEEE/FCC/UN ECE R10 routes covered by this helper.');
                 if (isVehicleSpecific) {
-                    result.notes.push('Vehicle-specific mechanical parts should still be checked against the relevant vehicle-part approval framework before labels are finalized.');
+                    result.notes.push('Vehicle-specific mechanical parts may still fall under other UNECE regulations covering mechanical/visibility/restraint functions (e.g. mirrors, glazing, seat anchorages, tyres) — check the relevant vehicle-part approval framework before labels are finalized.');
                 }
                 return result;
             }
