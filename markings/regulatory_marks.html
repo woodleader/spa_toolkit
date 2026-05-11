@@ -856,20 +856,23 @@
         <div class="tool-intro">
             <h2>What This Covers</h2>
             <p>General decision support for CE, WEEE, FCC, and UN ECE R10. This page is tuned for
-                cable assemblies and automotive electronic products and uses conservative "check the route" outputs
-                where vehicle-specific exclusions are often fact-pattern dependent.</p>
+                cable assemblies, automotive electronic products, and finished non-electrical parts, and uses
+                conservative "check the route" outputs where vehicle-specific exclusions are often fact-pattern
+                dependent.</p>
         </div>
 
         <div class="layout">
             <aside class="panel">
                 <h2>Use Boundaries</h2>
                 <p>This helper follows general guidance commonly used in Europe for RoHS/WEEE scope, vehicle-specific
-                    exclusions, RED radio products, FCC Part 15, and UN ECE R10 automotive EMC.</p>
+                    exclusions, RED radio products, FCC Part 15, and UN ECE R10 automotive EMC, while also showing
+                    when a finished mechanical part is outside those electronics-focused routes.</p>
                 <ul>
-                    <li>Generic or dual-use products are treated as normal EEE unless a narrower exclusion clearly applies.</li>
+                    <li>Generic or dual-use products with electrical or radio functions are treated as normal EEE unless a narrower exclusion clearly applies.</li>
                     <li>Vehicle-specific products get a <code>CHECK</code> result when outcome depends on whether the product is a
                         separately marketed EEE item or an integrated transport/vehicle part.</li>
                     <li>Wireless products stay on the RED/CE path even when used in vehicles.</li>
+                    <li>Finished non-electrical parts are shown mainly to confirm when these specific marking routes do not normally apply.</li>
                     <li>UN ECE R10 is shown as the automotive approval route, not as a substitute for every EU product-law obligation.</li>
                 </ul>
 
@@ -972,6 +975,12 @@
                         sub: 'ECU, camera, display, gateway, sensor module, adapter, interface box, or similar equipment.',
                         action: (s) => { s.data.formFactor = 'finished_unit'; },
                         next: 'q2_wireless'
+                    },
+                    {
+                        label: 'Finished non-electrical part',
+                        sub: 'Bracket, housing, trim part, mount, cover, spacer, or purely mechanical fitting sold as a standalone item.',
+                        action: (s) => { s.data.formFactor = 'finished_mechanical'; },
+                        next: 'q3_specific_design'
                     }
                 ]
             },
@@ -1035,13 +1044,13 @@
             q3_specific_design: {
                 eyebrow: 'Product Route',
                 text: 'Is it specifically designed only for a vehicle or transport application?',
-                subtext: 'Use YES only where the product is dedicated to that vehicle context and not a normal general-market EEE product.',
+                subtext: 'Use YES only where the product is dedicated to that vehicle context and not a normal general-market EEE product or mechanical product.',
                 options: [
                     {
                         label: 'Yes, vehicle-specific product',
                         sub: 'Dedicated vehicle integration, aftermarket vehicle part, or OEM vehicle program item.',
                         action: (s) => { s.data.isVehicleSpecific = true; },
-                        next: 'q4_safety'
+                        next: (s) => s.data.formFactor === 'finished_mechanical' ? 'finish' : 'q4_safety'
                     },
                     {
                         label: 'No, generic or dual-use product',
@@ -1076,6 +1085,10 @@
             return { status, basis };
         }
 
+        function resolveNextStep(option) {
+            return typeof option.next === 'function' ? option.next(state) : option.next;
+        }
+
         function calculateAssessment() {
             const { formFactor, cableType, isWireless, isVehicleSpecific, isSafetyCritical } = state.data;
             const result = {
@@ -1089,6 +1102,21 @@
 
             if (formFactor === 'unfinished') {
                 result.notes.push('Internal parts and raw materials are usually assessed through the finished equipment or finished vehicle route, not by applying all end-product marks directly to the part.');
+                return result;
+            }
+
+            if (formFactor === 'finished_mechanical') {
+                result.ce = createMark('NO', 'This helper does not identify a CE route for a finished part with no electrical or radio function.');
+                result.weee = createMark('NO', 'A finished non-electrical mechanical part is not treated here as standalone EEE.');
+                result.fcc = createMark('NO', 'With no electronic circuitry or radio function, FCC equipment authorization is not normally implicated.');
+                result.ece = isVehicleSpecific
+                    ? createMark('CHECK (vehicle route)', 'A vehicle-specific mechanical part is not normally a standalone UN ECE R10 object, but confirm whether another vehicle approval route governs the marketed part.')
+                    : createMark('NO', 'A generic finished mechanical part does not follow the UN ECE R10 marking route.');
+                result.notes.push('This route is for finished parts with no cables, powered electronics, or intentional radio functions.');
+                result.notes.push('The absence of these marks here does not rule out other product-specific obligations outside the CE/WEEE/FCC/UN ECE R10 routes covered by this helper.');
+                if (isVehicleSpecific) {
+                    result.notes.push('Vehicle-specific mechanical parts should still be checked against the relevant vehicle-part approval framework before labels are finalized.');
+                }
                 return result;
             }
 
@@ -1169,6 +1197,7 @@
             if (formFactor === 'unfinished') parts.push('Raw material / internal part');
             if (formFactor === 'finished_cable') parts.push('Finished cable assembly');
             if (formFactor === 'finished_unit') parts.push('Finished electronic unit');
+            if (formFactor === 'finished_mechanical') parts.push('Finished non-electrical part');
             if (cableType === 'passive') parts.push('Passive');
             if (cableType === 'active') parts.push('Active electronics');
             if (isWireless === true) parts.push('Intentional radio');
@@ -1203,11 +1232,13 @@
 
                 path.push(stepKey);
 
-                if (option.next === 'finish') {
+                const nextStep = resolveNextStep(option);
+
+                if (nextStep === 'finish') {
                     break;
                 }
 
-                stepKey = option.next;
+                stepKey = nextStep;
             }
 
             return path;
@@ -1235,12 +1266,14 @@
 
                 option.action(state);
 
-                if (option.next === 'finish') {
+                const nextStep = resolveNextStep(option);
+
+                if (nextStep === 'finish') {
                     state.step = 'finish';
                     return;
                 }
 
-                stepKey = option.next;
+                stepKey = nextStep;
             }
 
             state.step = 'q1_form_factor';
