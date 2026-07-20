@@ -107,6 +107,67 @@ async function synchronizeLauncher() {
   await write('README.md', readme);
 }
 
+const toolsWithOwnThemeToggle = new Set([
+  'md5check/md5check.html',
+  'json_compare/json_compare.html',
+  'markings/regulatory_marks.html'
+]);
+
+async function embedTheme() {
+  const manifest = JSON.parse(await read('tool-manifest.json'));
+  const css = (await read('styles/theme.css')).trim();
+  const style = `<style data-toolkit-theme="neo-brutalist">\n${css}\n</style>`;
+  for (const tool of manifest.tools) {
+    const html = await read(tool.path);
+    await write(tool.path, replaceGeneratedBlock(html, 'THEME:neo-brutalist', style));
+  }
+}
+
+const themeToggleMarkup = `<button id="toolkit-theme-toggle" aria-label="Toggle dark mode">
+<svg id="toolkit-theme-sun" viewBox="0 0 24 24" style="display:none"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+<svg id="toolkit-theme-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+</button>
+<script data-toolkit-runtime="theme-toggle">
+(function () {
+  var KEY = 'toolbox-theme';
+  var root = document.documentElement;
+  var sun = document.getElementById('toolkit-theme-sun');
+  var moon = document.getElementById('toolkit-theme-moon');
+  var media = window.matchMedia('(prefers-color-scheme: dark)');
+  function apply(theme) {
+    root.dataset.theme = theme;
+    sun.style.display = theme === 'dark' ? 'block' : 'none';
+    moon.style.display = theme === 'dark' ? 'none' : 'block';
+  }
+  var stored = null;
+  try { stored = localStorage.getItem(KEY); } catch (error) { stored = null; }
+  var theme = stored || (media.matches ? 'dark' : 'light');
+  apply(theme);
+  document.getElementById('toolkit-theme-toggle').addEventListener('click', function () {
+    theme = theme === 'dark' ? 'light' : 'dark';
+    try { localStorage.setItem(KEY, theme); } catch (error) { /* private mode */ }
+    apply(theme);
+  });
+  media.addEventListener('change', function (event) {
+    var manual = null;
+    try { manual = localStorage.getItem(KEY); } catch (error) { manual = null; }
+    if (!manual) {
+      theme = event.matches ? 'dark' : 'light';
+      apply(theme);
+    }
+  });
+}());
+</script>`;
+
+async function embedThemeToggle() {
+  const manifest = JSON.parse(await read('tool-manifest.json'));
+  for (const tool of manifest.tools) {
+    if (toolsWithOwnThemeToggle.has(tool.path)) continue;
+    const html = await read(tool.path);
+    await write(tool.path, replaceGeneratedBlock(html, 'THEME:toggle', themeToggleMarkup, '</body>'));
+  }
+}
+
 async function embedJ1939Catalog() {
   const catalog = JSON.parse(await read('data/j1939-pgns.json'));
   let html = await read('j1939_converter/j1939_converter.html');
@@ -130,3 +191,5 @@ await embedOfflinePolicy();
 await embedRuntimes();
 await embedThree();
 await embedJ1939Catalog();
+await embedTheme();
+await embedThemeToggle();
