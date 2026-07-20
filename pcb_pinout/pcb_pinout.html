@@ -31,7 +31,7 @@
             margin: 0;
             padding: 0;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background: linear-gradient(135deg, var(--bg-deep) 0%, #1a1a2e 100%);
+            background: var(--bg-deep);
             color: var(--text-primary);
             min-height: 100vh;
         }
@@ -181,7 +181,7 @@
             text-align: center;
             cursor: pointer;
             transition: all 0.3s;
-            background: rgba(0, 0, 0, 0.2);
+            background: var(--bg-deep);
         }
 
         .upload-zone:hover,
@@ -500,7 +500,7 @@
         .legend-input:focus {
             outline: none;
             border-color: var(--accent);
-            background: rgba(0, 0, 0, 0.3);
+            background: var(--bg-deep);
         }
 
         .legend-desc {
@@ -863,6 +863,351 @@
 <!-- TOOLKIT:POLICY:offline-first:START -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' blob:; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; media-src data: blob:; worker-src blob:; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <!-- TOOLKIT:POLICY:offline-first:END -->
+<!-- TOOLKIT:THEME:neo-brutalist:START -->
+<style data-toolkit-theme="neo-brutalist">
+/* ============================================================
+   TOOLBOX THEME · Neo-Brutalist 2.0
+   Single source of truth for the suite-wide design system.
+   scripts/build.mjs inlines this file into every tool between
+   TOOLKIT:THEME:neo-brutalist markers (the tools' CSP forbids
+   linked stylesheets), so edit HERE and run `npm run build`.
+
+   Contract: one indigo accent, 2px ink borders, hard offset
+   shadows, zero corner radius, heavy uppercase headings.
+   Dark mode mirrors the launcher: deep navy surfaces with
+   light-blue borders. Tool-specific semantic colors (sensor,
+   cable, pin, diff, severity ramps) are deliberately NOT
+   remapped here.
+   ============================================================ */
+
+/* ---------- base tokens: light ---------- */
+:root {
+    --t-bg: #e5e9fb;
+    --t-panel: #ffffff;
+    --t-panel2: #f4f6ff;
+    --t-ink: #14141a;
+    --t-ink2: #4a4a55;
+    --t-line: #14141a;
+    --t-accent: #4f46e5;
+    --t-accent-ink: #ffffff;
+    --t-accent-soft: #e5e3fb;
+    --t-ok: #157f4e;
+    --t-ok-bg: #dff2e8;
+    --t-warn: #a16207;
+    --t-warn-bg: #f8ecd2;
+    --t-err: #b3261e;
+    --t-err-bg: #f9e0de;
+    --t-shadow-color: #14141a;
+    --t-font-sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --t-font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+/* ---------- base tokens: dark ---------- */
+[data-theme="dark"],
+body.dark-mode {
+    --t-bg: #0d1320;
+    --t-panel: #131d31;
+    --t-panel2: #19243b;
+    --t-ink: #f8fbff;
+    --t-ink2: #c4d2eb;
+    --t-line: #7db2ff;
+    --t-accent: #6ea8ff;
+    --t-accent-ink: #0d1320;
+    --t-accent-soft: #22314f;
+    --t-ok: #7dff6b;
+    --t-ok-bg: #123522;
+    --t-warn: #f4c542;
+    --t-warn-bg: #3a2f10;
+    --t-err: #ff6b6b;
+    --t-err-bg: #401a1a;
+    --t-shadow-color: #0a0f1d;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        --t-bg: #0d1320;
+        --t-panel: #131d31;
+        --t-panel2: #19243b;
+        --t-ink: #f8fbff;
+        --t-ink2: #c4d2eb;
+        --t-line: #7db2ff;
+        --t-accent: #6ea8ff;
+        --t-accent-ink: #0d1320;
+        --t-accent-soft: #22314f;
+        --t-ok: #7dff6b;
+        --t-ok-bg: #123522;
+        --t-warn: #f4c542;
+        --t-warn-bg: #3a2f10;
+        --t-err: #ff6b6b;
+        --t-err-bg: #401a1a;
+        --t-shadow-color: #0a0f1d;
+    }
+}
+
+/* ---------- map every tool's variable family onto the tokens ----
+   Declared on the same selectors as the token sets so both modes
+   flow automatically. Later-in-cascade beats the tools' own
+   equal-specificity declarations because this block is injected
+   after each tool's inline <style>. */
+:root,
+[data-theme="dark"],
+[data-theme="light"],
+body.dark-mode {
+    /* md5check / json_compare family */
+    --bg-primary: var(--t-bg);
+    --bg-secondary: var(--t-panel);
+    --bg-tertiary: var(--t-panel2);
+    --bg-code: var(--t-panel2);
+    --text-primary: var(--t-ink);
+    --text-secondary: var(--t-ink2);
+    --border-color: var(--t-line);
+    --shadow: var(--t-shadow-color);
+    --accent-color: var(--t-accent);
+    --accent-bg: var(--t-accent-soft);
+    --success-bg: var(--t-ok-bg);
+    --success-text: var(--t-ok);
+    --success-border: var(--t-ok);
+    --error-bg: var(--t-err-bg);
+    --error-text: var(--t-err);
+    --error-border: var(--t-err);
+    --warning-bg: var(--t-warn-bg);
+    --warning-text: var(--t-warn);
+    --warning-border: var(--t-warn);
+    --muted-bg: var(--t-panel2);
+
+    /* slate family (can_viz, j1939, dbc, fmea, pcb, pixel, plot_3d, screensim, adas) */
+    --bg-deep: var(--t-bg);
+    --bg-card: var(--t-panel);
+    --card-bg: var(--t-panel);
+    --border: var(--t-line);
+    --accent: var(--t-accent);
+    --accent-secondary: var(--t-accent);
+    --accent-hover: var(--t-accent);
+    --success: var(--t-ok);
+    --warning: var(--t-warn);
+    --danger: var(--t-err);
+
+    /* calculator family (desiccant, glass, ip, fakra, fpdlink, gmsl2) */
+    --bg-color: var(--t-bg);
+    --text-color: var(--t-ink);
+    --secondary-text: var(--t-ink2);
+    --success-color: var(--t-ok);
+    --warning-color: var(--t-warn);
+    --danger-color: var(--t-err);
+    --info-color: var(--t-accent);
+
+    /* driver_reaction family */
+    --bg: var(--t-bg);
+    --card: var(--t-panel);
+    --text: var(--t-ink);
+    --muted: var(--t-ink2);
+    --warn: var(--t-warn);
+    --ok: var(--t-ok);
+
+    /* latency_timer family */
+    --dim-text: var(--t-ink2);
+
+    /* launcher / regulatory_marks family */
+    --panel-bg: var(--t-panel);
+    --border-width: 2px;
+    --shadow-offset: 5px;
+    --shadow-color: var(--t-shadow-color);
+    --accent-primary: var(--t-accent);
+    --hover-bg: var(--t-accent-soft);
+}
+
+/* ---------- structural restyle ----------
+   Deliberately conservative: layout wrappers (.container and
+   friends) and semantic button/input variants (severity pickers,
+   preset rows, colored ratings) are left alone. Panels are only
+   restyled where the class reliably means "panel" across the
+   suite. Tool-scoped fixes use :has() anchors on unique IDs. */
+
+body {
+    font-family: var(--t-font-sans);
+    background-color: var(--t-bg);
+    color: var(--t-ink);
+}
+
+h1, h2, h3, .section-title, .panel-title {
+    font-family: var(--t-font-sans);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    font-weight: 800;
+}
+
+/* many tools use gradient-clipped display headings: flatten to ink */
+h1 {
+    background: none !important;
+    -webkit-text-fill-color: var(--t-ink) !important;
+    color: var(--t-ink) !important;
+}
+
+/* panels: hard borders, hard shadows, zero radius.
+   .card and .panel are real panels across the suite; page wrappers
+   use .container / .main-content and are NOT listed here. */
+.card, .panel, .summary-card, .math-formula-card,
+.job-item, .result-box, .pgn-list-container {
+    border: 2px solid var(--t-line) !important;
+    border-radius: 0 !important;
+    box-shadow: 5px 5px 0 var(--t-shadow-color) !important;
+}
+
+.job-item {
+    box-shadow: 3px 3px 0 var(--t-shadow-color) !important;
+}
+
+/* md5check is the one tool whose .container is itself the panel */
+body:has(#drop-zone) .container {
+    border: 2px solid var(--t-line);
+    border-radius: 0;
+    box-shadow: 5px 5px 0 var(--t-shadow-color);
+    background: var(--t-panel);
+}
+
+/* inputs: zero-specificity defaults so any tool-specific styling
+   (colored ratings, severity selects, diff editors) wins */
+:where(input[type="text"], input[type="number"], input[type="search"], select, textarea) {
+    border: 2px solid var(--t-line);
+    border-radius: 0;
+    background-color: var(--t-panel);
+    color: var(--t-ink);
+}
+
+/* generic action buttons only; mode/level/preset variants with
+   semantic colors are intentionally not forced */
+.btn, .btn-primary, .btn-compare, .btn-clear,
+.tab-btn.active, .format-btn.active {
+    background: var(--t-accent) !important;
+    color: var(--t-accent-ink) !important;
+    border: 2px solid var(--t-line) !important;
+    border-radius: 0 !important;
+    box-shadow: 3px 3px 0 var(--t-shadow-color) !important;
+    font-weight: 700;
+}
+
+.btn-secondary, .tab-btn:not(.active), .format-btn:not(.active) {
+    background: var(--t-panel) !important;
+    color: var(--t-ink) !important;
+    border: 2px solid var(--t-line) !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    font-weight: 700;
+}
+
+.btn:active, .btn-primary:active, .btn-compare:active, .btn-clear:active, .tab-btn:active {
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0 var(--t-shadow-color) !important;
+}
+
+/* md5check drop zone */
+#drop-zone {
+    border: 3px dashed var(--t-line) !important;
+    border-radius: 0 !important;
+    background: var(--t-panel2) !important;
+    color: var(--t-ink2);
+    font-weight: 700;
+}
+
+#drop-zone.drag-over {
+    border-color: var(--t-accent) !important;
+    background: var(--t-accent-soft) !important;
+}
+
+/* tables: only the classes verified as plain data tables */
+.breakdown-table th, .pgn-list-table th {
+    color: var(--t-ink);
+    font-weight: 800;
+    text-transform: uppercase;
+    font-size: 0.75em;
+    border-bottom: 2px solid var(--t-line);
+}
+
+/* standardized back-to-toolbox link: every tool gets the injected
+   #toolkit-back-link chip (bottom-left, mirroring the theme toggle
+   bottom-right); the tools' scattered legacy back links are hidden */
+a[href="../index.html"]:not(#toolkit-back-link) {
+    display: none !important;
+}
+
+#toolkit-back-link {
+    position: fixed;
+    bottom: 14px;
+    left: 14px;
+    z-index: 1000;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 16px;
+    font-family: var(--t-font-sans);
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    text-decoration: none;
+    color: var(--t-ink);
+    background: var(--t-panel);
+    border: 2px solid var(--t-line);
+    box-shadow: 3px 3px 0 var(--t-shadow-color);
+}
+
+#toolkit-back-link:hover {
+    background: var(--t-accent);
+    color: var(--t-accent-ink);
+}
+
+#toolkit-back-link:active {
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0 var(--t-shadow-color);
+}
+
+@media print {
+    #toolkit-back-link, #toolkit-theme-toggle { display: none !important; }
+}
+
+/* dark-mode toggle: covers pre-existing .theme-toggle buttons and
+   the injected TOOLKIT toggle */
+.theme-toggle, #toolkit-theme-toggle {
+    border: 2px solid var(--t-line) !important;
+    border-radius: 0 !important;
+    background: var(--t-panel) !important;
+    color: var(--t-ink) !important;
+    box-shadow: 3px 3px 0 var(--t-shadow-color) !important;
+    cursor: pointer;
+}
+
+.theme-toggle:active, #toolkit-theme-toggle:active {
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0 var(--t-shadow-color) !important;
+}
+
+/* toggle icons follow the theme ink, never hardcoded strokes */
+.theme-toggle svg {
+    stroke: currentColor !important;
+}
+
+#toolkit-theme-toggle {
+    position: fixed;
+    bottom: 14px;
+    right: 14px;
+    z-index: 1000;
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+#toolkit-theme-toggle svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+}
+</style>
+<!-- TOOLKIT:THEME:neo-brutalist:END -->
 </head>
 
 <body>
@@ -1821,6 +2166,46 @@
         // Initial state
         updateLegend();
     </script>
+<!-- TOOLKIT:THEME:toggle:START -->
+<button id="toolkit-theme-toggle" aria-label="Toggle dark mode">
+<svg id="toolkit-theme-sun" viewBox="0 0 24 24" style="display:none"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+<svg id="toolkit-theme-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+</button>
+<script data-toolkit-runtime="theme-toggle">
+(function () {
+  var KEY = 'toolbox-theme';
+  var root = document.documentElement;
+  var sun = document.getElementById('toolkit-theme-sun');
+  var moon = document.getElementById('toolkit-theme-moon');
+  var media = window.matchMedia('(prefers-color-scheme: dark)');
+  function apply(theme) {
+    root.dataset.theme = theme;
+    sun.style.display = theme === 'dark' ? 'block' : 'none';
+    moon.style.display = theme === 'dark' ? 'none' : 'block';
+  }
+  var stored = null;
+  try { stored = localStorage.getItem(KEY); } catch (error) { stored = null; }
+  var theme = stored || (media.matches ? 'dark' : 'light');
+  apply(theme);
+  document.getElementById('toolkit-theme-toggle').addEventListener('click', function () {
+    theme = theme === 'dark' ? 'light' : 'dark';
+    try { localStorage.setItem(KEY, theme); } catch (error) { /* private mode */ }
+    apply(theme);
+  });
+  media.addEventListener('change', function (event) {
+    var manual = null;
+    try { manual = localStorage.getItem(KEY); } catch (error) { manual = null; }
+    if (!manual) {
+      theme = event.matches ? 'dark' : 'light';
+      apply(theme);
+    }
+  });
+}());
+</script>
+<!-- TOOLKIT:THEME:toggle:END -->
+<!-- TOOLKIT:THEME:back-link:START -->
+<a id="toolkit-back-link" href="../index.html">← Toolbox</a>
+<!-- TOOLKIT:THEME:back-link:END -->
 </body>
 
 </html>
