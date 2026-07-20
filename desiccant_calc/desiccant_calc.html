@@ -871,7 +871,12 @@ body.dark-mode {
     --hover-bg: var(--t-accent-soft);
 }
 
-/* ---------- structural restyle ---------- */
+/* ---------- structural restyle ----------
+   Deliberately conservative: layout wrappers (.container and
+   friends) and semantic button/input variants (severity pickers,
+   preset rows, colored ratings) are left alone. Panels are only
+   restyled where the class reliably means "panel" across the
+   suite. Tool-scoped fixes use :has() anchors on unique IDs. */
 
 body {
     font-family: var(--t-font-sans);
@@ -893,52 +898,50 @@ h1 {
     color: var(--t-ink) !important;
 }
 
-/* panels: hard borders, hard shadows, zero radius */
-.card, .panel, .container, .summary-card, .math-formula-card,
+/* panels: hard borders, hard shadows, zero radius.
+   .card and .panel are real panels across the suite; page wrappers
+   use .container / .main-content and are NOT listed here. */
+.card, .panel, .summary-card, .math-formula-card,
 .job-item, .result-box, .pgn-list-container, .bit-map-container, .notes {
     border: 2px solid var(--t-line) !important;
     border-radius: 0 !important;
     box-shadow: 5px 5px 0 var(--t-shadow-color) !important;
-    background-color: var(--t-panel);
-    backdrop-filter: none !important;
 }
 
 .notes, .job-item {
-    background-color: var(--t-panel2);
     box-shadow: 3px 3px 0 var(--t-shadow-color) !important;
 }
 
-/* inputs */
-input[type="text"], input[type="number"], input[type="search"],
-select, textarea, .form-input, .hash-input, .search-box input {
-    border: 2px solid var(--t-line) !important;
-    border-radius: 0 !important;
-    background-color: var(--t-panel) !important;
-    color: var(--t-ink) !important;
+/* md5check is the one tool whose .container is itself the panel */
+body:has(#drop-zone) .container {
+    border: 2px solid var(--t-line);
+    border-radius: 0;
+    box-shadow: 5px 5px 0 var(--t-shadow-color);
+    background: var(--t-panel);
 }
 
-input[type="text"]:focus, input[type="number"]:focus, input[type="search"]:focus,
-select:focus, textarea:focus, .form-input:focus, .hash-input:focus, .search-box input:focus {
-    outline: none;
-    border-color: var(--t-accent) !important;
-    box-shadow: 3px 3px 0 var(--t-shadow-color) !important;
+/* inputs: zero-specificity defaults so any tool-specific styling
+   (colored ratings, severity selects, diff editors) wins */
+:where(input[type="text"], input[type="number"], input[type="search"], select, textarea) {
+    border: 2px solid var(--t-line);
+    border-radius: 0;
+    background-color: var(--t-panel);
+    color: var(--t-ink);
 }
 
-/* buttons: primary actions get the accent, everything else stays panel */
-.btn, .btn-clear, .tab-btn.active, .format-btn.active,
-.mode-btn.active, .level-btn.active, .preset-btn.active {
+/* generic action buttons only; mode/level/preset variants with
+   semantic colors are intentionally not forced */
+.btn, .btn-primary, .btn-compare, .btn-clear,
+.tab-btn.active, .format-btn.active {
     background: var(--t-accent) !important;
     color: var(--t-accent-ink) !important;
     border: 2px solid var(--t-line) !important;
     border-radius: 0 !important;
     box-shadow: 3px 3px 0 var(--t-shadow-color) !important;
     font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.02em;
 }
 
-.btn-secondary, .tab-btn:not(.active), .format-btn:not(.active),
-.mode-btn:not(.active), .level-btn:not(.active), .preset-btn:not(.active) {
+.btn-secondary, .tab-btn:not(.active), .format-btn:not(.active) {
     background: var(--t-panel) !important;
     color: var(--t-ink) !important;
     border: 2px solid var(--t-line) !important;
@@ -947,8 +950,7 @@ select:focus, textarea:focus, .form-input:focus, .hash-input:focus, .search-box 
     font-weight: 700;
 }
 
-.btn:active, .btn-clear:active, .tab-btn:active, .mode-btn:active,
-.level-btn:active, .preset-btn:active, .format-btn:active {
+.btn:active, .btn-primary:active, .btn-compare:active, .btn-clear:active, .tab-btn:active {
     transform: translate(2px, 2px);
     box-shadow: 1px 1px 0 var(--t-shadow-color) !important;
 }
@@ -967,8 +969,8 @@ select:focus, textarea:focus, .form-input:focus, .hash-input:focus, .search-box 
     background: var(--t-accent-soft) !important;
 }
 
-/* tables */
-table th {
+/* tables: only the classes verified as plain data tables */
+.breakdown-table th, .pgn-list-table th {
     color: var(--t-ink);
     font-weight: 800;
     text-transform: uppercase;
