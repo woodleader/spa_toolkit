@@ -222,7 +222,7 @@
         input[type="text"],
         input[type="number"],
         select {
-            background: rgba(0, 0, 0, 0.3);
+            background: var(--bg-deep);
             border: 1px solid var(--border);
             color: var(--text-primary);
             padding: 10px 12px;
@@ -456,7 +456,7 @@
             width: 100%;
             min-height: 120px;
             max-height: 200px;
-            background: rgba(0, 0, 0, 0.3);
+            background: var(--bg-deep);
             border: 1px solid var(--border);
             color: var(--text-primary);
             padding: 10px;
@@ -1763,13 +1763,13 @@ h1 {
    .card and .panel are real panels across the suite; page wrappers
    use .container / .main-content and are NOT listed here. */
 .card, .panel, .summary-card, .math-formula-card,
-.job-item, .result-box, .pgn-list-container, .bit-map-container, .notes {
+.job-item, .result-box, .pgn-list-container {
     border: 2px solid var(--t-line) !important;
     border-radius: 0 !important;
     box-shadow: 5px 5px 0 var(--t-shadow-color) !important;
 }
 
-.notes, .job-item {
+.job-item {
     box-shadow: 3px 3px 0 var(--t-shadow-color) !important;
 }
 
@@ -1895,6 +1895,11 @@ a[href="../index.html"]:not(#toolkit-back-link) {
 .theme-toggle:active, #toolkit-theme-toggle:active {
     transform: translate(2px, 2px);
     box-shadow: 1px 1px 0 var(--t-shadow-color) !important;
+}
+
+/* toggle icons follow the theme ink, never hardcoded strokes */
+.theme-toggle svg {
+    stroke: currentColor !important;
 }
 
 #toolkit-theme-toggle {
