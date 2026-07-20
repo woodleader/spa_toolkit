@@ -5,6 +5,8 @@ A brief collection of lightweight, single-page web applications designed for spe
 > [!NOTE]
 > **AI-Authored Project**: This entire collection of tools, including the logic, UI design, and the launcher itself, was fully or mostly developed by Artificial Intelligence (Claude/Gemini) through iterative pair programming.
 
+Adding or restyling a tool? See [DESIGN.md](DESIGN.md) for the design system and the build conventions.
+
 <!-- TOOLKIT:README:START -->
 
 ## Tool inventory
