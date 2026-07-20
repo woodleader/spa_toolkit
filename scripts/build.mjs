@@ -68,7 +68,8 @@ async function embedThree() {
     .replace(/^\s*<script src="https:\/\/cdn\.jsdelivr\.net\/npm\/three@0\.128\.0\/examples\/js\/controls\/OrbitControls\.js"><\/script>\s*$/m, '');
   const three = await read('vendor/three-r128/three.min.js');
   const controls = await read('vendor/three-r128/OrbitControls.js');
-  const scripts = `<script data-vendored-runtime="three-r128">\n${three}\n</script>\n<script data-vendored-runtime="orbit-controls-r128">\n${controls}\n</script>`;
+  const license = (await read('vendor/three-r128/LICENSE')).trim();
+  const scripts = `<!--\n${license}\n-->\n<script data-vendored-runtime="three-r128">\n${three}\n</script>\n<script data-vendored-runtime="orbit-controls-r128">\n${controls}\n</script>`;
   html = replaceGeneratedBlock(html, 'VENDOR:three-r128', scripts);
   await write('plot_3d/plot_3d.html', html);
 }

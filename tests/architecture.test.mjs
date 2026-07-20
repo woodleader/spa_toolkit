@@ -113,7 +113,16 @@ test('deployed pages call the shared calculation and persistence interfaces', as
 
 test('deployed 3D viewer embeds its runtime dependencies', async () => {
   const html = await readFile(new URL('../plot_3d/plot_3d.html', import.meta.url), 'utf8');
+  const license = await readFile(new URL('../vendor/three-r128/LICENSE', import.meta.url), 'utf8');
   assert.match(html, /data-vendored-runtime="three-r128"/);
   assert.match(html, /data-vendored-runtime="orbit-controls-r128"/);
+  assert.ok(html.includes(license.trim()), 'standalone viewer must carry the complete Three.js MIT notice');
   assert.doesNotMatch(html, /<script[^>]+src=["']https?:\/\//i);
+});
+
+test('launcher reports its actual page modification date', async () => {
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+  assert.match(html, /<time id="last-updated"[^>]*>/);
+  assert.match(html, /new Date\(document\.lastModified\)/);
+  assert.doesNotMatch(html, /LAST UPDATE:\s*\d{2}\.\d{2}\.\d{4}/);
 });

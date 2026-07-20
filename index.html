@@ -1133,7 +1133,7 @@
         </div>
 
         <footer>
-            // SYSTEM STATUS: OK // LAST UPDATE: 19.03.2026 //
+            // SYSTEM STATUS: OK // LAST UPDATE: <time id="last-updated">UNKNOWN</time> //
         </footer>
     </div>
 <!-- TOOLKIT:DATA:tool-manifest:START -->
@@ -1156,6 +1156,17 @@
     let currentGroup = 'none';
     let currentView = 'grid';
     let allCards = [];
+
+    const lastModified = new Date(document.lastModified);
+    const lastUpdated = document.getElementById('last-updated');
+    if (lastUpdated && !Number.isNaN(lastModified.getTime())) {
+        lastUpdated.dateTime = lastModified.toISOString();
+        lastUpdated.textContent = new Intl.DateTimeFormat('de-DE', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+        }).format(lastModified);
+    }
 
     // Theme Toggle Logic
     const toggleBtn = document.getElementById('theme-toggle');
