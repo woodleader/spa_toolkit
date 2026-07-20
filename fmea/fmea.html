@@ -41,7 +41,11 @@
         }
 
         .container {
-            max-width: 1600px;
+            /* The worksheet needs roughly 2100px to show all 17 columns.
+               Capping the page at 1600px forced horizontal scrolling even
+               on monitors with room to spare, so allow it to grow; every
+               block in here is tabular, so a wide measure costs nothing. */
+            max-width: 2400px;
             margin: 0 auto;
             padding: 24px;
         }
@@ -322,6 +326,14 @@
         /* While editing, allow the field to grow further */
         textarea.editable:focus {
             max-height: 400px;
+        }
+
+        /* Below the roomy layout's ideal width, trade some column width to
+           keep the whole worksheet on screen; 1920px monitors fit this way. */
+        @media (max-width: 2100px) {
+            textarea.editable {
+                min-width: 160px;
+            }
         }
 
         /* Rating Inputs */
