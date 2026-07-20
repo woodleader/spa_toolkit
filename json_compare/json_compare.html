@@ -814,6 +814,32 @@
             }
         }
     </style>
+<!-- TOOLKIT:RUNTIME:safe-document:START -->
+<script data-toolkit-runtime="safe-document">
+(function () {
+const HTML_ENTITIES = Object.freeze({
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#39;'
+});
+
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, character => HTML_ENTITIES[character]);
+}
+
+function escapeAttribute(value) {
+  return escapeHtml(value).replace(/`/g, '&#96;');
+}
+
+window.ToolboxSafeDocument = Object.freeze({ escapeHtml, escapeAttribute });
+}());
+</script>
+<!-- TOOLKIT:RUNTIME:safe-document:END -->
+<!-- TOOLKIT:POLICY:offline-first:START -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' blob:; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; media-src data: blob:; worker-src blob:; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<!-- TOOLKIT:POLICY:offline-first:END -->
 </head>
 
 <body>
@@ -1401,13 +1427,13 @@
             const createLine = (content) => {
                 const num = lineCounter.val++;
                 // escape path for attribute
-                const safePath = path.replace(/"/g, '&quot;');
+                const safePath = ToolboxSafeDocument.escapeAttribute(path);
                 return `<div class="diff-line ${cls}" ${idAttr} data-path="${safePath}" data-side="${side}"><span class="line-num">${num}</span><span class="line-content">${indent}${content}</span></div>`;
             };
 
             if (val === null) return createLine(`null${suffix}`);
             if (typeof val === 'number' || typeof val === 'boolean') return createLine(`${val}${suffix}`);
-            if (typeof val === 'string') return createLine(`"${val}"${suffix}`);
+            if (typeof val === 'string') return createLine(`${escapeHtml(JSON.stringify(val))}${suffix}`);
 
             if (Array.isArray(val)) {
                 if (val.length === 0) return createLine(`[]${suffix}`);
@@ -1445,7 +1471,7 @@
 
         function keyValueRender(key, val, diffMap, side, lineCounter, path, level, suffix) {
             const indent = '  '.repeat(level);
-            const keyStr = `"${key}": `;
+            const keyStr = `${escapeHtml(JSON.stringify(key))}: `;
 
             const diff = diffMap.get(path);
             const cls = getDiffClass(diff, side);
@@ -1453,12 +1479,12 @@
 
             const createLine = (content) => {
                 const num = lineCounter.val++;
-                const safePath = path.replace(/"/g, '&quot;');
+                const safePath = ToolboxSafeDocument.escapeAttribute(path);
                 return `<div class="diff-line ${cls}" ${idAttr} data-path="${safePath}" data-side="${side}"><span class="line-num">${num}</span><span class="line-content">${indent}${content}</span></div>`;
             };
 
             if (val === null || typeof val !== 'object') {
-                const valStr = JSON.stringify(val);
+                const valStr = escapeHtml(JSON.stringify(val));
                 return createLine(`${keyStr}${valStr}${suffix}`);
             }
 
@@ -1518,12 +1544,7 @@
         }
 
         function escapeHtml(str) {
-            return String(str)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#39;');
+            return ToolboxSafeDocument.escapeHtml(str);
         }
 
         function formatDiffValue(value) {

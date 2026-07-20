@@ -625,6 +625,99 @@
             font-family: 'Courier New', monospace;
         }
     </style>
+<!-- TOOLKIT:RUNTIME:engineering-kernels:START -->
+<script data-toolkit-runtime="engineering-kernels">
+(function () {
+const WATER_VAPOR_GAS_CONSTANT = 0.4615;
+
+function saturationPressureHPa(temperatureC) {
+  return 6.1094 * Math.exp((17.625 * temperatureC) / (temperatureC + 243.04));
+}
+
+function dewPointC(actualPressureHPa) {
+  if (actualPressureHPa <= 0) return -273.15;
+  const logarithm = Math.log(actualPressureHPa / 6.1094);
+  return (243.04 * logarithm) / (17.625 - logarithm);
+}
+
+function calculateDesiccant(scenario) {
+  const saturation = saturationPressureHPa(Number(scenario.sealingTemperatureC));
+  const actualPressure = Number(scenario.relativeHumidityPct) * saturation / 100;
+  const dewPoint = dewPointC(actualPressure);
+  const initialMoistureG = (actualPressure * Number(scenario.volumeL) * 0.1) / (WATER_VAPOR_GAS_CONSTANT * (Number(scenario.sealingTemperatureC) + 273.15));
+  const ingressMoistureG = (Number(scenario.sealAreaCm2 ?? 0) / 10000) * Number(scenario.mvtrGPerM2Day ?? 0) * Number(scenario.serviceLifeYears ?? 0) * 365;
+  const totalMoistureG = initialMoistureG + ingressMoistureG;
+  const theoreticalDesiccantG = totalMoistureG / Number(scenario.absorptionGPerG);
+  const recommendedDesiccantG = theoreticalDesiccantG * Number(scenario.safetyFactor ?? 1);
+  const foggingMarginC = Number(scenario.minimumTemperatureC) - dewPoint;
+  const foggingStatus = foggingMarginC > 5 ? 'safe' : foggingMarginC > 0 ? 'warning' : 'danger';
+  return Object.freeze({ saturationPressureHPa: saturation, actualPressureHPa: actualPressure, dewPointC: dewPoint, initialMoistureG, ingressMoistureG, totalMoistureG, theoreticalDesiccantG, recommendedDesiccantG, foggingMarginC, foggingStatus });
+}
+
+function calculateReactionScenario(scenario) {
+  const speedMps = Number(scenario.speedKmh) / 3.6;
+  const distanceM = Number(scenario.distanceM);
+  const warningDelayS = scenario.warningMode === 'distance'
+    ? Math.max(0, (distanceM - Number(scenario.warningThreshold)) / Math.max(speedMps, 1e-6))
+    : Math.max(0, distanceM / Math.max(speedMps, 1e-6) - Number(scenario.warningThreshold));
+  const distanceAtWarningM = Math.max(0, distanceM - speedMps * warningDelayS);
+  const brakeDelayS = Number(scenario.brakeDelayMs) / 1000;
+  const reactionDistanceM = speedMps * (Number(scenario.reactionTimeS) + brakeDelayS);
+  const brakingDistanceM = speedMps ** 2 / (2 * Math.max(0.01, Number(scenario.decelerationMps2)));
+  const requiredDistanceM = reactionDistanceM + brakingDistanceM;
+  const marginM = distanceAtWarningM - requiredDistanceM;
+  return Object.freeze({ speedMps, warningDelayS, distanceAtWarningM, brakeDelayS, reactionDistanceM, brakingDistanceM, requiredDistanceM, marginM, canAvoid: marginM >= 0 });
+}
+
+function calculateLatency({ fps, ecuLatencyMs, monitorLatencyMs, vehicleSpeedKmh }) {
+  const sensorLatencyMs = 1000 / Math.max(0.001, Number(fps));
+  const totalLatencyMs = sensorLatencyMs + Number(ecuLatencyMs) + Number(monitorLatencyMs);
+  const positionOffsetM = totalLatencyMs / 1000 * (Number(vehicleSpeedKmh) / 3.6);
+  return Object.freeze({ sensorLatencyMs, totalLatencyMs, positionOffsetM });
+}
+
+function applyRadialDistortion(imageX, imageY, { resolutionWidth, resolutionHeight, distortionK }) {
+  const halfDiagonal = Math.hypot(Number(resolutionWidth) / 2, Number(resolutionHeight) / 2);
+  const normalizedRadius = Math.hypot(Number(imageX), Number(imageY)) / halfDiagonal;
+  const factor = 1 + Number(distortionK) * normalizedRadius ** 2;
+  return Object.freeze({ x: Number(imageX) / factor, y: Number(imageY) / factor });
+}
+
+function calculateGroundFov({ cameraHeightM, cameraTiltRad, horizontalFovRad, verticalFovRad }) {
+  const nearAngle = Number(cameraTiltRad) + Number(verticalFovRad) / 2;
+  const farAngle = Number(cameraTiltRad) - Number(verticalFovRad) / 2;
+  const nearDistanceM = nearAngle >= Math.PI / 2 ? 0 : Number(cameraHeightM) * Math.tan(Math.PI / 2 - nearAngle);
+  const farDistanceM = farAngle <= 0 ? 200 : Math.min(Number(cameraHeightM) * Math.tan(Math.PI / 2 - farAngle), 200);
+  const nearWidthM = 2 * (nearDistanceM > 0 ? nearDistanceM : Number(cameraHeightM)) * Math.tan(Number(horizontalFovRad) / 2);
+  const farWidthM = 2 * farDistanceM * Math.tan(Number(horizontalFovRad) / 2);
+  return Object.freeze({ nearDistanceM, farDistanceM, nearWidthM, farWidthM, blindSpotDistanceM: nearDistanceM });
+}
+
+function calculateSensorTopFootprint({ x, y, orientationDeg, fieldOfViewDeg, rangeM }) {
+  const svgX = -Number(y);
+  const svgY = -Number(x);
+  const svgOrientationDeg = Number(orientationDeg) - 90;
+  const startAngle = (svgOrientationDeg - Number(fieldOfViewDeg) / 2) * Math.PI / 180;
+  const endAngle = (svgOrientationDeg + Number(fieldOfViewDeg) / 2) * Math.PI / 180;
+  return Object.freeze({
+    originX: svgX,
+    originY: svgY,
+    startX: svgX + Number(rangeM) * Math.cos(startAngle),
+    startY: svgY + Number(rangeM) * Math.sin(startAngle),
+    endX: svgX + Number(rangeM) * Math.cos(endAngle),
+    endY: svgY + Number(rangeM) * Math.sin(endAngle),
+    largeArc: Number(fieldOfViewDeg) > 180 ? 1 : 0,
+    orientationRad: svgOrientationDeg * Math.PI / 180
+  });
+}
+
+window.ToolboxEngineeringKernels = Object.freeze({ saturationPressureHPa, dewPointC, calculateDesiccant, calculateReactionScenario, calculateLatency, applyRadialDistortion, calculateGroundFov, calculateSensorTopFootprint });
+}());
+</script>
+<!-- TOOLKIT:RUNTIME:engineering-kernels:END -->
+<!-- TOOLKIT:POLICY:offline-first:START -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' blob:; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; media-src data: blob:; worker-src blob:; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<!-- TOOLKIT:POLICY:offline-first:END -->
 </head>
 
 <body>
@@ -1002,9 +1095,6 @@
     </div>
 
     <script>
-        // Constants
-        const R_WATER = 0.4615; // Gas constant for water vapor in J/(g·K)
-
         // DOM Elements
         const tsealInput = document.getElementById('tseal');
         const rhsealInput = document.getElementById('rhseal');
@@ -1054,31 +1144,6 @@
             danger: '<circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line>'
         };
 
-        // August-Roche-Magnus formula for saturation vapor pressure
-        function getSaturationPressure(tempC) {
-            return 6.1094 * Math.exp((17.625 * tempC) / (tempC + 243.04));
-        }
-
-        // Calculate dew point from actual vapor pressure
-        function getDewPoint(actualPressureHPa) {
-            if (actualPressureHPa <= 0) return -273.15; // Handle edge case
-            const ln = Math.log(actualPressureHPa / 6.1094);
-            return (243.04 * ln) / (17.625 - ln);
-        }
-
-        // Calculate initial moisture in grams
-        function getInitialMoisture(actualPressureHPa, volumeL, tempC) {
-            const tempK = tempC + 273.15;
-            return (actualPressureHPa * volumeL * 0.1) / (R_WATER * tempK);
-        }
-
-        // Calculate moisture ingress over service life
-        function getMoistureIngress(areaCm2, mvtr, years) {
-            const areaM2 = areaCm2 / 10000;
-            const days = years * 365;
-            return areaM2 * mvtr * days;
-        }
-
         // Helper to parse number with default, handling 0 correctly
         function parseNum(input, defaultVal) {
             const val = parseFloat(input.value);
@@ -1125,78 +1190,47 @@
             const volume = parseNum(volumeInput, 1);
             const tmin = parseNum(tminInput, -20);
             const isAdvanced = advancedToggle.checked;
+            const sealArea = isAdvanced ? parseNum(sealareaInput, 10) : 0;
+            const mvtr = isAdvanced ? parseNum(mvtrInput, 0.5) : 0;
+            const serviceLife = isAdvanced ? parseNum(servicelifeInput, 10) : 0;
+            const safetyInput = document.getElementById('safetyfactor');
+            const safetyFactor = isAdvanced && safetyInput ? parseNum(safetyInput, 1.5) : 1.5;
+            const kValue = parseFloat(desiccantTypeSelect.value);
+            const desiccantName = desiccantTypeSelect.options[desiccantTypeSelect.selectedIndex].text;
 
-            // Update displays
+            const result = ToolboxEngineeringKernels.calculateDesiccant({
+                sealingTemperatureC: tseal,
+                relativeHumidityPct: rhseal,
+                volumeL: volume,
+                minimumTemperatureC: tmin,
+                sealAreaCm2: sealArea,
+                mvtrGPerM2Day: mvtr,
+                serviceLifeYears: serviceLife,
+                absorptionGPerG: kValue,
+                safetyFactor
+            });
+
             tsealDisplay.textContent = `${tseal}°C`;
             rhsealDisplay.textContent = `${rhseal}%`;
             volumeDisplay.textContent = `${volume} L`;
             tminDisplay.textContent = `${tmin}°C`;
+            satPressure.textContent = result.saturationPressureHPa.toFixed(1);
+            actualPressure.textContent = result.actualPressureHPa.toFixed(1);
+            dewpointValue.textContent = result.dewPointC.toFixed(1);
+            initialMoisture.textContent = result.initialMoistureG.toFixed(4);
+            updateFoggingStatus(result.dewPointC, tmin);
 
-            // Calculate saturation and actual vapor pressure at sealing
-            const ps = getSaturationPressure(tseal);
-            const pa = (rhseal * ps) / 100;
-
-            // Calculate dew point (current state without desiccant)
-            const dewPoint = getDewPoint(pa);
-
-            // Calculate initial moisture in the sealed volume
-            const wInitial = getInitialMoisture(pa, volume, tseal);
-
-            // Update basic results
-            satPressure.textContent = ps.toFixed(1);
-            actualPressure.textContent = pa.toFixed(1);
-            dewpointValue.textContent = dewPoint.toFixed(1);
-            initialMoisture.textContent = wInitial.toFixed(4);
-
-            // Update fogging status (informational only - doesn't affect desiccant calculation)
-            const margin = updateFoggingStatus(dewPoint, tmin);
-
-            // Desiccant calculation per original spec:
-            // Total desiccant = ((W_initial + W_ingress) / K) * SafetyFactor
-            const kValue = parseFloat(desiccantTypeSelect.value);
-            const desiccantName = desiccantTypeSelect.options[desiccantTypeSelect.selectedIndex].text;
-
-            // Start with initial moisture load
-            let wTotal = wInitial;
-            let safetyFactor = 1.0;
-
+            ingressItem.style.display = isAdvanced ? 'block' : 'none';
+            ingressMoisture.textContent = result.ingressMoistureG.toFixed(4);
             if (isAdvanced) {
-                const sealArea = parseNum(sealareaInput, 10);
-                const mvtr = parseNum(mvtrInput, 0.5);
-                const serviceLife = parseNum(servicelifeInput, 10);
-                const safetyInput = document.getElementById('safetyfactor');
-                safetyFactor = safetyInput ? parseNum(safetyInput, 1.5) : 1.5;
-
-                // Update advanced displays
                 areaDisplay.textContent = `${sealArea} cm²`;
                 mvtrDisplay.textContent = mvtr.toFixed(1);
                 lifeDisplay.textContent = `${serviceLife} yrs`;
-                if (document.getElementById('safety-display')) {
-                    document.getElementById('safety-display').textContent = `${safetyFactor.toFixed(1)}x`;
-                }
-
-                // Calculate ingress
-                const wIngress = getMoistureIngress(sealArea, mvtr, serviceLife);
-                wTotal += wIngress;
-
-                ingressItem.style.display = 'block';
-                ingressMoisture.textContent = wIngress.toFixed(4);
-            } else {
-                ingressItem.style.display = 'none';
-                safetyFactor = 1.5; // Default safety factor in simple mode
+                document.getElementById('safety-display').textContent = `${safetyFactor.toFixed(1)}x`;
             }
 
-            // Calculate total desiccant
-            const mDesiccantTheoretical = wTotal / kValue;
-            const mDesiccantRecommended = mDesiccantTheoretical * safetyFactor;
-
-            totalDesiccant.textContent = mDesiccantRecommended.toFixed(3);
-
-            if (safetyFactor > 1.0) {
-                desiccantDesc.innerHTML = `Using ${desiccantName}<br><span style="font-size: 0.8em; opacity: 0.8">Includes ${safetyFactor}x Safety Factor (Min: ${mDesiccantTheoretical.toFixed(3)}g)</span>`;
-            } else {
-                desiccantDesc.textContent = `Using ${desiccantName}`;
-            }
+            totalDesiccant.textContent = result.recommendedDesiccantG.toFixed(3);
+            desiccantDesc.innerHTML = `Using ${desiccantName}<br><span style="font-size: 0.8em; opacity: 0.8">Includes ${safetyFactor}x Safety Factor (Min: ${result.theoreticalDesiccantG.toFixed(3)}g)</span>`;
         }
 
         // Event listeners

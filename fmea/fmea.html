@@ -906,6 +906,82 @@
             }
         }
     </style>
+<!-- TOOLKIT:RUNTIME:safe-document:START -->
+<script data-toolkit-runtime="safe-document">
+(function () {
+const HTML_ENTITIES = Object.freeze({
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#39;'
+});
+
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, character => HTML_ENTITIES[character]);
+}
+
+function escapeAttribute(value) {
+  return escapeHtml(value).replace(/`/g, '&#96;');
+}
+
+window.ToolboxSafeDocument = Object.freeze({ escapeHtml, escapeAttribute });
+}());
+</script>
+<!-- TOOLKIT:RUNTIME:safe-document:END -->
+<!-- TOOLKIT:RUNTIME:workspace:START -->
+<script data-toolkit-runtime="workspace">
+(function () {
+function clone(value) {
+  return value === undefined ? undefined : JSON.parse(JSON.stringify(value));
+}
+
+function createWorkspace({ key, version, adapter = globalThis.localStorage, fallback, validate = () => true, migrations = {} }) {
+  if (!key || !Number.isInteger(version) || version < 1) throw new TypeError('Workspace requires a key and positive integer version.');
+
+  function load() {
+    try {
+      const raw = adapter?.getItem(key);
+      if (!raw) return clone(fallback);
+      const envelope = JSON.parse(raw);
+      const isVersioned = Number.isInteger(envelope?.version) && Object.hasOwn(envelope, 'data');
+      let data = isVersioned ? envelope.data : envelope;
+      let storedVersion = isVersioned ? Number(envelope.version) : 0;
+      if (!Number.isInteger(storedVersion) || storedVersion < 0 || storedVersion > version) return clone(fallback);
+      while (storedVersion < version) {
+        const migrate = migrations[storedVersion];
+        if (typeof migrate !== 'function') return clone(fallback);
+        data = migrate(data);
+        storedVersion += 1;
+      }
+      if (!validate(data)) return clone(fallback);
+      if (storedVersion !== envelope.version) save(data);
+      return clone(data);
+    } catch {
+      return clone(fallback);
+    }
+  }
+
+  function save(data) {
+    if (!validate(data)) throw new TypeError(`Invalid workspace data for ${key}.`);
+    try {
+      adapter?.setItem(key, JSON.stringify({ version, data }));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  return Object.freeze({ load, save, key, version });
+}
+
+window.ToolboxWorkspace = Object.freeze({ createWorkspace });
+}());
+</script>
+<!-- TOOLKIT:RUNTIME:workspace:END -->
+<!-- TOOLKIT:POLICY:offline-first:START -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' blob:; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; media-src data: blob:; worker-src blob:; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<!-- TOOLKIT:POLICY:offline-first:END -->
 </head>
 
 <body>
@@ -1363,6 +1439,19 @@
         // ============================================
 
         const STORAGE_KEY = 'fmea_tool_data';
+        const isValidRating = value => Number.isInteger(value) && value >= 1 && value <= 10;
+        const isValidFmeaRow = row => row && typeof row.id === 'string' &&
+            ['item', 'failureMode', 'effects', 'causes', 'controls', 'actions'].every(field => typeof row[field] === 'string') &&
+            ['severity', 'occurrence', 'detection'].every(field => isValidRating(row[field])) &&
+            ['Open', 'In Progress', 'Closed'].includes(row.status);
+        const fmeaWorkspace = ToolboxWorkspace.createWorkspace({
+            key: STORAGE_KEY,
+            version: 1,
+            fallback: { mode: 'DFMEA', rows: [] },
+            migrations: { 0: data => data },
+            validate: data => data && ['DFMEA', 'PFMEA'].includes(data.mode) &&
+                Array.isArray(data.rows) && data.rows.every(isValidFmeaRow)
+        });
         let currentMode = 'DFMEA';
         let currentFilter = 'all';
         let rows = [];
@@ -1410,23 +1499,16 @@
         }
 
         function saveToLocalStorage() {
-            const data = {
+            fmeaWorkspace.save({
                 mode: currentMode,
                 rows: rows
-            };
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            });
         }
 
         function loadFromLocalStorage() {
-            try {
-                const data = JSON.parse(localStorage.getItem(STORAGE_KEY));
-                if (data) {
-                    currentMode = data.mode || 'DFMEA';
-                    rows = data.rows || [];
-                }
-            } catch (e) {
-                console.error('Failed to load data:', e);
-            }
+            const data = fmeaWorkspace.load();
+            currentMode = data.mode;
+            rows = data.rows;
         }
 
         // ============================================
@@ -1445,6 +1527,8 @@
         }
 
         function renderRow(row, index) {
+            const safe = ToolboxSafeDocument.escapeHtml;
+            const safeAttr = ToolboxSafeDocument.escapeAttribute;
             const ap = calculateAP(row.severity, row.occurrence, row.detection);
             const apClass = ap === 'H' ? 'high' : ap === 'M' ? 'medium' : 'low';
 
@@ -1459,46 +1543,46 @@
             const hidden = currentFilter !== 'all' && currentFilter !== apClass;
 
             return `
-                <tr data-id="${row.id}" class="priority-${apClass} ${hidden ? 'hidden' : ''}">
+                <tr data-id="${safeAttr(row.id)}" class="priority-${apClass} ${hidden ? 'hidden' : ''}">
                     <td style="color: var(--text-secondary); font-size: 0.8rem;">${index + 1}</td>
                     <td>
-                        <textarea class="editable" data-field="item" placeholder="Function/Requirement">${row.item}</textarea>
+                        <textarea class="editable" data-field="item" placeholder="Function/Requirement">${safe(row.item)}</textarea>
                     </td>
                     <td>
-                        <textarea class="editable" data-field="failureMode" placeholder="How could it fail?">${row.failureMode}</textarea>
+                        <textarea class="editable" data-field="failureMode" placeholder="How could it fail?">${safe(row.failureMode)}</textarea>
                     </td>
                     <td>
-                        <textarea class="editable" data-field="effects" placeholder="What happens if it fails?">${row.effects}</textarea>
+                        <textarea class="editable" data-field="effects" placeholder="What happens if it fails?">${safe(row.effects)}</textarea>
                     </td>
                     <td class="rating-cell">
-                        <input type="number" class="rating-input" data-field="severity" min="1" max="10" value="${row.severity}">
+                        <input type="number" class="rating-input" data-field="severity" min="1" max="10" value="${safeAttr(row.severity)}">
                     </td>
                     <td>
-                        <textarea class="editable" data-field="causes" placeholder="Why could it fail?">${row.causes}</textarea>
+                        <textarea class="editable" data-field="causes" placeholder="Why could it fail?">${safe(row.causes)}</textarea>
                     </td>
                     <td class="rating-cell">
-                        <input type="number" class="rating-input" data-field="occurrence" min="1" max="10" value="${row.occurrence}">
+                        <input type="number" class="rating-input" data-field="occurrence" min="1" max="10" value="${safeAttr(row.occurrence)}">
                     </td>
                     <td>
-                        <textarea class="editable" data-field="controls" placeholder="Prevention/Detection controls">${row.controls}</textarea>
+                        <textarea class="editable" data-field="controls" placeholder="Prevention/Detection controls">${safe(row.controls)}</textarea>
                     </td>
                     <td class="rating-cell">
-                        <input type="number" class="rating-input" data-field="detection" min="1" max="10" value="${row.detection}">
+                        <input type="number" class="rating-input" data-field="detection" min="1" max="10" value="${safeAttr(row.detection)}">
                     </td>
                     <td>
                         <span class="ap-badge ${apClass}">${ap}</span>
                     </td>
                     <td>
-                        <textarea class="editable" data-field="actions" placeholder="Recommended actions">${row.actions}</textarea>
+                        <textarea class="editable" data-field="actions" placeholder="Recommended actions">${safe(row.actions)}</textarea>
                     </td>
                     <td class="rating-cell">
-                        <input type="number" class="rating-input" data-field="severity2" min="1" max="10" value="${s2}">
+                        <input type="number" class="rating-input" data-field="severity2" min="1" max="10" value="${safeAttr(s2)}">
                     </td>
                     <td class="rating-cell">
-                        <input type="number" class="rating-input" data-field="occurrence2" min="1" max="10" value="${o2}">
+                        <input type="number" class="rating-input" data-field="occurrence2" min="1" max="10" value="${safeAttr(o2)}">
                     </td>
                     <td class="rating-cell">
-                        <input type="number" class="rating-input" data-field="detection2" min="1" max="10" value="${d2}">
+                        <input type="number" class="rating-input" data-field="detection2" min="1" max="10" value="${safeAttr(d2)}">
                     </td>
                     <td>
                         <span class="ap-badge ${ap2Class}">${ap2}</span>

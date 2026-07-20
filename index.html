@@ -656,6 +656,9 @@
             }
         }
     </style>
+<!-- TOOLKIT:POLICY:offline-first:START -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' blob:; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; media-src data: blob:; worker-src blob:; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<!-- TOOLKIT:POLICY:offline-first:END -->
 </head>
 
 <body>
@@ -738,7 +741,7 @@
 
         <main class="launcher-grid" id="launcher-grid">
             <!-- Regulatory Markings -->
-            <a href="markings/regulatory_marks.html" class="app-card" data-tags="compliance,verification">
+            <a href="markings/regulatory_marks.html" class="app-card" data-tool-id="regulatory-marks" data-tags="compliance,verification">
                 <div class="app-tags">
                     <span class="app-tag" style="--tag-color: var(--tag-compliance)">Compliance</span>
                     <span class="app-tag" style="--tag-color: var(--tag-verification)">Verification</span>
@@ -754,7 +757,7 @@
             </a>
 
             <!-- MD5 Check -->
-            <a href="md5check/md5check.html" class="app-card" data-tags="verification">
+            <a href="md5check/md5check.html" class="app-card" data-tool-id="hash-check" data-tags="verification">
                 <div class="app-tags">
                     <span class="app-tag" style="--tag-color: var(--tag-verification)">Verification</span>
                 </div>
@@ -771,7 +774,7 @@
             </a>
 
             <!-- JSON Compare -->
-            <a href="json_compare/json_compare.html" class="app-card" data-tags="verification,visualization">
+            <a href="json_compare/json_compare.html" class="app-card" data-tool-id="json-compare" data-tags="verification,visualization">
                 <div class="app-tags">
                     <span class="app-tag" style="--tag-color: var(--tag-verification)">Verification</span>
                     <span class="app-tag" style="--tag-color: var(--tag-visualization)">Visualization</span>
@@ -792,7 +795,7 @@
             </a>
 
             <!-- Latency Timer -->
-            <a href="latency_timer/timer.html" class="app-card" data-tags="camera,verification">
+            <a href="latency_timer/timer.html" class="app-card" data-tool-id="latency-timer" data-tags="camera,verification">
                 <div class="app-tags">
                     <span class="app-tag" style="--tag-color: var(--tag-camera)">Camera</span>
                     <span class="app-tag" style="--tag-color: var(--tag-verification)">Verification</span>
@@ -811,7 +814,7 @@
             </a>
 
             <!-- CAN Visualizer -->
-            <a href="can_viz/can_viz.html" class="app-card" data-tags="can,automotive,visualization">
+            <a href="can_viz/can_viz.html" class="app-card" data-tool-id="can-visualizer" data-tags="can,automotive,visualization">
                 <div class="app-tags">
                     <span class="app-tag" style="--tag-color: var(--tag-can)">CAN</span>
                     <span class="app-tag" style="--tag-color: var(--tag-automotive)">Automotive</span>
@@ -835,7 +838,7 @@
             </a>
 
             <!-- ADAS Sensor FOV -->
-            <a href="adas_sensor_fov/adas_sensor_fov.html" class="app-card" data-tags="automotive,visualization">
+            <a href="adas_sensor_fov/adas_sensor_fov.html" class="app-card" data-tool-id="adas-sensor-fov" data-tags="automotive,visualization">
                 <div class="app-tags">
                     <span class="app-tag" style="--tag-color: var(--tag-automotive)">Automotive</span>
                     <span class="app-tag" style="--tag-color: var(--tag-visualization)">Visualization</span>
@@ -857,7 +860,7 @@
             </a>
 
             <!-- J1939 PGN Converter -->
-            <a href="j1939_converter/j1939_converter.html" class="app-card" data-tags="can,automotive">
+            <a href="j1939_converter/j1939_converter.html" class="app-card" data-tool-id="j1939-converter" data-tags="can,automotive">
                 <div class="app-tags">
                     <span class="app-tag" style="--tag-color: var(--tag-can)">CAN</span>
                     <span class="app-tag" style="--tag-color: var(--tag-automotive)">Automotive</span>
@@ -880,7 +883,7 @@
             </a>
 
             <!-- DBC Parser Lite -->
-            <a href="dbc_parser/dbc_parser.html" class="app-card" data-tags="can,automotive">
+            <a href="dbc_parser/dbc_parser.html" class="app-card" data-tool-id="dbc-parser" data-tags="can,automotive">
                 <div class="app-tags">
                     <span class="app-tag" style="--tag-color: var(--tag-can)">CAN</span>
                     <span class="app-tag" style="--tag-color: var(--tag-automotive)">Automotive</span>
@@ -898,7 +901,7 @@
             </a>
 
             <!-- FMEA Tool -->
-            <a href="fmea/fmea.html" class="app-card" data-tags="automotive,compliance">
+            <a href="fmea/fmea.html" class="app-card" data-tool-id="fmea" data-tags="automotive,compliance">
                 <div class="app-tags">
                     <span class="app-tag" style="--tag-color: var(--tag-automotive)">Automotive</span>
                     <span class="app-tag" style="--tag-color: var(--tag-compliance)">Compliance</span>
@@ -915,7 +918,7 @@
             </a>
 
             <!-- PCB Pinout Marker -->
-            <a href="pcb_pinout/pcb_pinout.html" class="app-card" data-tags="visualization,verification">
+            <a href="pcb_pinout/pcb_pinout.html" class="app-card" data-tool-id="pcb-pinout" data-tags="visualization,verification">
                 <div class="app-tags">
                     <span class="app-tag" style="--tag-color: var(--tag-visualization)">Visualization</span>
                     <span class="app-tag" style="--tag-color: var(--tag-verification)">Verification</span>
@@ -939,7 +942,7 @@
             </a>
 
             <!-- IP Protection Class -->
-            <a href="ip_protection/ip_protection.html" class="app-card" data-tags="automotive,compliance">
+            <a href="ip_protection/ip_protection.html" class="app-card" data-tool-id="ip-protection" data-tags="automotive,compliance">
                 <div class="app-tags">
                     <span class="app-tag" style="--tag-color: var(--tag-automotive)">Automotive</span>
                     <span class="app-tag" style="--tag-color: var(--tag-compliance)">Compliance</span>
@@ -956,7 +959,7 @@
             </a>
 
             <!-- Glass-to-Glass Latency -->
-            <a href="glass_latency/glass_latency.html" class="app-card" data-tags="camera,automotive,visualization">
+            <a href="glass_latency/glass_latency.html" class="app-card" data-tool-id="glass-latency" data-tags="camera,automotive,visualization">
                 <div class="app-tags">
                     <span class="app-tag" style="--tag-color: var(--tag-camera)">Camera</span>
                     <span class="app-tag" style="--tag-color: var(--tag-automotive)">Automotive</span>
@@ -975,8 +978,7 @@
             </a>
 
             <!-- Driver Reaction Time Simulator -->
-            <a href="driver_reaction_time/driver_reaction_time.html" class="app-card"
-                data-tags="automotive,visualization">
+            <a href="driver_reaction_time/driver_reaction_time.html" class="app-card" data-tool-id="driver-reaction" data-tags="automotive,verification">
                 <div class="app-tags">
                     <span class="app-tag" style="--tag-color: var(--tag-automotive)">Automotive</span>
                     <span class="app-tag" style="--tag-color: var(--tag-visualization)">Visualization</span>
@@ -994,7 +996,7 @@
             </a>
 
             <!-- FPD-Link III Loss Calculator -->
-            <a href="fpdlink_loss/fpdlink_loss.html" class="app-card" data-tags="automotive,visualization">
+            <a href="fpdlink_loss/fpdlink_loss.html" class="app-card" data-tool-id="fpdlink-loss" data-tags="automotive,visualization">
                 <div class="app-tags">
                     <span class="app-tag" style="--tag-color: var(--tag-automotive)">Automotive</span>
                     <span class="app-tag" style="--tag-color: var(--tag-visualization)">Visualization</span>
@@ -1010,7 +1012,7 @@
             </a>
 
             <!-- GMSL2 Channel Loss Calculator -->
-            <a href="gmsl2_loss/gmsl2_loss.html" class="app-card" data-tags="automotive,visualization">
+            <a href="gmsl2_loss/gmsl2_loss.html" class="app-card" data-tool-id="gmsl2-loss" data-tags="automotive,visualization">
                 <div class="app-tags">
                     <span class="app-tag" style="--tag-color: var(--tag-automotive)">Automotive</span>
                     <span class="app-tag" style="--tag-color: var(--tag-visualization)">Visualization</span>
@@ -1026,7 +1028,7 @@
             </a>
 
             <!-- FAKRA Cable Compare -->
-            <a href="fakra_cables/fakra_cables.html" class="app-card" data-tags="automotive,visualization">
+            <a href="fakra_cables/fakra_cables.html" class="app-card" data-tool-id="fakra-cables" data-tags="automotive,visualization">
                 <div class="app-tags">
                     <span class="app-tag" style="--tag-color: var(--tag-automotive)">Automotive</span>
                     <span class="app-tag" style="--tag-color: var(--tag-visualization)">Visualization</span>
@@ -1046,7 +1048,7 @@
             </a>
 
             <!-- Camera Pixel Estimator -->
-            <a href="pixel_estimator/pixel_estimator.html" class="app-card" data-tags="camera,visualization">
+            <a href="pixel_estimator/pixel_estimator.html" class="app-card" data-tool-id="pixel-estimator" data-tags="camera,visualization">
                 <div class="app-tags">
                     <span class="app-tag" style="--tag-color: var(--tag-camera)">Camera</span>
                     <span class="app-tag" style="--tag-color: var(--tag-visualization)">Visualization</span>
@@ -1067,7 +1069,7 @@
             </a>
 
             <!-- 3D Plot Viewer -->
-            <a href="plot_3d/plot_3d.html" class="app-card" data-tags="visualization">
+            <a href="plot_3d/plot_3d.html" class="app-card" data-tool-id="plot-3d" data-tags="visualization">
                 <div class="app-tags">
                     <span class="app-tag" style="--tag-color: var(--tag-visualization)">Visualization</span>
                 </div>
@@ -1090,7 +1092,7 @@
             </a>
 
             <!-- Desiccant Calculator -->
-            <a href="desiccant_calc/desiccant_calc.html" class="app-card" data-tags="automotive,compliance">
+            <a href="desiccant_calc/desiccant_calc.html" class="app-card" data-tool-id="desiccant-calculator" data-tags="automotive,compliance">
                 <div class="app-tags">
                     <span class="app-tag" style="--tag-color: var(--tag-automotive)">Automotive</span>
                     <span class="app-tag" style="--tag-color: var(--tag-compliance)">Compliance</span>
@@ -1107,7 +1109,7 @@
                 </div>
             </a>
             <!-- ScreenSim Studio -->
-            <a href="screensim/screensim.html" class="app-card" data-tags="visualization">
+            <a href="screensim/screensim.html" class="app-card" data-tool-id="screensim" data-tags="visualization">
                 <div class="app-tags">
                     <span class="app-tag" style="--tag-color: var(--tag-visualization)">Visualization</span>
                 </div>
@@ -1131,9 +1133,12 @@
         </div>
 
         <footer>
-            // SYSTEM STATUS: OK // LAST UPDATE: 19.03.2026 //
+            // SYSTEM STATUS: OK // LAST UPDATE: <time id="last-updated">UNKNOWN</time> //
         </footer>
     </div>
+<!-- TOOLKIT:DATA:tool-manifest:START -->
+<script id="tool-manifest" type="application/json">{"version":1,"tools":[{"id":"regulatory-marks","path":"markings/regulatory_marks.html","title":"Regulatory Marks","tags":["compliance","verification"]},{"id":"hash-check","path":"md5check/md5check.html","title":"MD5 & SHA Check","tags":["verification"]},{"id":"json-compare","path":"json_compare/json_compare.html","title":"JSON Compare","tags":["verification","visualization"]},{"id":"latency-timer","path":"latency_timer/timer.html","title":"Latency Timer","tags":["camera","verification"]},{"id":"can-visualizer","path":"can_viz/can_viz.html","title":"CAN Visualizer","tags":["can","automotive","visualization"]},{"id":"adas-sensor-fov","path":"adas_sensor_fov/adas_sensor_fov.html","title":"ADAS Sensor FOV","tags":["automotive","visualization"]},{"id":"j1939-converter","path":"j1939_converter/j1939_converter.html","title":"J1939 PGN Converter","tags":["can","automotive"]},{"id":"dbc-parser","path":"dbc_parser/dbc_parser.html","title":"DBC Parser Lite","tags":["can","automotive"]},{"id":"fmea","path":"fmea/fmea.html","title":"FMEA Tool","tags":["automotive","compliance"]},{"id":"pcb-pinout","path":"pcb_pinout/pcb_pinout.html","title":"PCB Pinout Marker","tags":["visualization","verification"]},{"id":"ip-protection","path":"ip_protection/ip_protection.html","title":"IP Protection Guide","tags":["automotive","compliance"]},{"id":"glass-latency","path":"glass_latency/glass_latency.html","title":"Glass-to-Glass Latency","tags":["camera","automotive","visualization"]},{"id":"driver-reaction","path":"driver_reaction_time/driver_reaction_time.html","title":"Driver Reaction Time","tags":["automotive","verification"]},{"id":"fpdlink-loss","path":"fpdlink_loss/fpdlink_loss.html","title":"FPD-Link III Loss","tags":["automotive","visualization"]},{"id":"gmsl2-loss","path":"gmsl2_loss/gmsl2_loss.html","title":"GMSL2 Channel Loss","tags":["automotive","visualization"]},{"id":"fakra-cables","path":"fakra_cables/fakra_cables.html","title":"FAKRA Cable Compare","tags":["automotive","visualization"]},{"id":"pixel-estimator","path":"pixel_estimator/pixel_estimator.html","title":"Pixel Estimator","tags":["camera","visualization"]},{"id":"plot-3d","path":"plot_3d/plot_3d.html","title":"3D Plot Viewer","tags":["visualization"]},{"id":"desiccant-calculator","path":"desiccant_calc/desiccant_calc.html","title":"Desiccant Calculator","tags":["automotive","compliance"]},{"id":"screensim","path":"screensim/screensim.html","title":"ScreenSim Studio","tags":["visualization"]}]}</script>
+<!-- TOOLKIT:DATA:tool-manifest:END -->
 </body>
 
 <script>
@@ -1151,6 +1156,17 @@
     let currentGroup = 'none';
     let currentView = 'grid';
     let allCards = [];
+
+    const lastModified = new Date(document.lastModified);
+    const lastUpdated = document.getElementById('last-updated');
+    if (lastUpdated && !Number.isNaN(lastModified.getTime())) {
+        lastUpdated.dateTime = lastModified.toISOString();
+        lastUpdated.textContent = new Intl.DateTimeFormat('de-DE', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+        }).format(lastModified);
+    }
 
     // Theme Toggle Logic
     const toggleBtn = document.getElementById('theme-toggle');

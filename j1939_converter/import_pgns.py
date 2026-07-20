@@ -1,133 +1,62 @@
+"""Merge imported PGNs into the canonical catalog.
+
+Run from the repository root or this directory. `npm run build` embeds the
+validated catalog into the self-contained browser tool.
+"""
+
+from __future__ import annotations
+
 import json
-import re
-import os
+from pathlib import Path
 
-# Configuration
-JSON_FILE = 'pgn_import.json'
-HTML_FILE = 'j1939_converter.html'
 
-def load_json_data(filepath):
-    """Load and parse the JSON file."""
-    try:
-        with open(filepath, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-        print(f"Loaded {len(data)} entries from {filepath}")
-        return data
-    except Exception as e:
-        print(f"Error loading JSON: {e}")
-        return None
+HERE = Path(__file__).resolve().parent
+IMPORT_FILE = HERE / "pgn_import.json"
+CATALOG_FILE = HERE.parent / "data" / "j1939-pgns.json"
 
-def format_entry(entry):
-    """Format a single JSON entry into a JS object string."""
-    try:
-        # Convert hex string to integer
-        pgn_hex_str = entry.get('pgn_hex', '0').strip()
-        pgn_int = int(pgn_hex_str, 16)
-        
-        label = entry.get('label', 'Unknown').replace('"', '\\"')
-        
-        # Create JS object string: { pgn: 65049, name: "Label", acronym: "N/A" }
-        return f'    {{ pgn: {pgn_int}, name: "{label}", acronym: "N/A" }}'
-    except ValueError:
-        print(f"Skipping invalid entry: {entry}")
-        return None
 
-def update_html(html_path, new_entries):
-    """Update the HTML file with new PGN entries."""
-    try:
-        with open(html_path, 'r', encoding='utf-8') as f:
-            content = f.read()
+def load_json(path: Path):
+    with path.open("r", encoding="utf-8") as handle:
+        return json.load(handle)
 
-        # Regex to find the end of the pgnDatabase array
-        pattern = r'(const\s+pgnDatabase\s*=\s*\[)([\s\S]*?)(\s*\];)'
-        
-        match = re.search(pattern, content)
-        if not match:
-            print("Could not find pgnDatabase array in HTML file.")
-            return
 
-        existing_block = match.group(2)
-        
-        # Find all existing PGN IDs to avoid duplicates
-        # Matches "pgn: 12345" or "pgn:12345"
-        existing_pgns = set()
-        for pgn_match in re.finditer(r'pgn:\s*(\d+)', existing_block):
-            existing_pgns.add(int(pgn_match.group(1)))
-        
-        print(f"Found {len(existing_pgns)} existing PGNs in the database.")
+def flatten_import(data):
+    if not isinstance(data, list):
+        raise ValueError("PGN import must be a JSON array")
+    flattened = []
+    for item in data:
+        flattened.extend(item if isinstance(item, list) else [item])
+    return flattened
 
-        # Prepare the new content to insert
-        formatted_entries = []
-        skipped_count = 0
-        
-        for entry in new_entries:
-            # Check for duplicate before formatting
-            try:
-                pgn_hex_str = entry.get('pgn_hex', '0').strip()
-                pgn_int = int(pgn_hex_str, 16)
-                
-                if pgn_int in existing_pgns:
-                    skipped_count += 1
-                    continue
-                    
-                formatted = format_entry(entry)
-                if formatted:
-                    formatted_entries.append(formatted)
-                    # Add to set so we don't add duplicates from the JSON itself
-                    existing_pgns.add(pgn_int)
-            except ValueError:
-                continue
-        
-        if skipped_count > 0:
-            print(f"Skipped {skipped_count} duplicate entries.")
 
-        if not formatted_entries:
-            print("No new unique entries to add.")
-            return
+def normalize(entry):
+    if not isinstance(entry, dict):
+        raise ValueError(f"Invalid PGN entry: {entry!r}")
+    raw_pgn = entry.get("pgn", entry.get("pgn_hex"))
+    if isinstance(raw_pgn, str):
+        pgn = int(raw_pgn.strip(), 16 if raw_pgn.lower().startswith("0x") or "pgn_hex" in entry else 10)
+    else:
+        pgn = int(raw_pgn)
+    if not 0 <= pgn <= 0x3FFFF:
+        raise ValueError(f"PGN outside 18-bit range: {pgn}")
+    name = str(entry.get("name", entry.get("label", "Unknown"))).strip()
+    acronym = str(entry.get("acronym", "N/A")).strip() or "N/A"
+    if not name:
+        raise ValueError(f"PGN {pgn} has an empty name")
+    return {"pgn": pgn, "name": name, "acronym": acronym}
 
-        # Create the insertion string
-        insertion = ",\n" + ",\n".join(formatted_entries)
-        
-        # Insert before the closing bracket of the array
-        # match.group(1) is the start "const ... ["
-        # match.group(2) is the content
-        # match.group(3) is the end "];"
-        
-        # specific insertion point is right before the closing bracket group starts
-        insert_pos = match.start(3)
-        
-        new_content = content[:insert_pos] + insertion + content[insert_pos:]
-        
-        with open(html_path, 'w', encoding='utf-8') as f:
-            f.write(new_content)
-            
-        print(f"Successfully added {len(formatted_entries)} new entries to {html_path}")
-
-    except Exception as e:
-        print(f"Error updating HTML: {e}")
 
 def main():
-    if not os.path.exists(JSON_FILE):
-        print(f"File not found: {JSON_FILE}")
-        return
-    
-    if not os.path.exists(HTML_FILE):
-        print(f"File not found: {HTML_FILE}")
-        return
+    catalog = load_json(CATALOG_FILE)
+    imported = [normalize(entry) for entry in flatten_import(load_json(IMPORT_FILE))]
+    existing = {entry["pgn"] for entry in catalog}
+    additions = [entry for entry in imported if entry["pgn"] not in existing]
+    catalog.extend(additions)
+    with CATALOG_FILE.open("w", encoding="utf-8") as handle:
+        json.dump(catalog, handle, ensure_ascii=False, indent=2)
+        handle.write("\n")
+    print(f"Added {len(additions)} PGNs; skipped {len(imported) - len(additions)} duplicates.")
 
-    data = load_json_data(JSON_FILE)
-    if data:
-        # Check if data is a list of lists (e.g. [[{...}, {...}]])
-        if isinstance(data, list) and len(data) > 0 and isinstance(data[0], list):
-            print("Detected nested list structure. Flattening...")
-            flat_data = []
-            for item in data:
-                if isinstance(item, list):
-                    flat_data.extend(item)
-            data = flat_data
-            print(f"Flattened data contains {len(data)} entries.")
-
-        update_html(HTML_FILE, data)
 
 if __name__ == "__main__":
     main()

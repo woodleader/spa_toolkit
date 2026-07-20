@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "tools": [
+    {"id":"regulatory-marks","path":"markings/regulatory_marks.html","title":"Regulatory Marks","tags":["compliance","verification"]},
+    {"id":"hash-check","path":"md5check/md5check.html","title":"MD5 & SHA Check","tags":["verification"]},
+    {"id":"json-compare","path":"json_compare/json_compare.html","title":"JSON Compare","tags":["verification","visualization"]},
+    {"id":"latency-timer","path":"latency_timer/timer.html","title":"Latency Timer","tags":["camera","verification"]},
+    {"id":"can-visualizer","path":"can_viz/can_viz.html","title":"CAN Visualizer","tags":["can","automotive","visualization"]},
+    {"id":"adas-sensor-fov","path":"adas_sensor_fov/adas_sensor_fov.html","title":"ADAS Sensor FOV","tags":["automotive","visualization"]},
+    {"id":"j1939-converter","path":"j1939_converter/j1939_converter.html","title":"J1939 PGN Converter","tags":["can","automotive"]},
+    {"id":"dbc-parser","path":"dbc_parser/dbc_parser.html","title":"DBC Parser Lite","tags":["can","automotive"]},
+    {"id":"fmea","path":"fmea/fmea.html","title":"FMEA Tool","tags":["automotive","compliance"]},
+    {"id":"pcb-pinout","path":"pcb_pinout/pcb_pinout.html","title":"PCB Pinout Marker","tags":["visualization","verification"]},
+    {"id":"ip-protection","path":"ip_protection/ip_protection.html","title":"IP Protection Guide","tags":["automotive","compliance"]},
+    {"id":"glass-latency","path":"glass_latency/glass_latency.html","title":"Glass-to-Glass Latency","tags":["camera","automotive","visualization"]},
+    {"id":"driver-reaction","path":"driver_reaction_time/driver_reaction_time.html","title":"Driver Reaction Time","tags":["automotive","verification"]},
+    {"id":"fpdlink-loss","path":"fpdlink_loss/fpdlink_loss.html","title":"FPD-Link III Loss","tags":["automotive","visualization"]},
+    {"id":"gmsl2-loss","path":"gmsl2_loss/gmsl2_loss.html","title":"GMSL2 Channel Loss","tags":["automotive","visualization"]},
+    {"id":"fakra-cables","path":"fakra_cables/fakra_cables.html","title":"FAKRA Cable Compare","tags":["automotive","visualization"]},
+    {"id":"pixel-estimator","path":"pixel_estimator/pixel_estimator.html","title":"Pixel Estimator","tags":["camera","visualization"]},
+    {"id":"plot-3d","path":"plot_3d/plot_3d.html","title":"3D Plot Viewer","tags":["visualization"]},
+    {"id":"desiccant-calculator","path":"desiccant_calc/desiccant_calc.html","title":"Desiccant Calculator","tags":["automotive","compliance"]},
+    {"id":"screensim","path":"screensim/screensim.html","title":"ScreenSim Studio","tags":["visualization"]}
+  ]
+}
