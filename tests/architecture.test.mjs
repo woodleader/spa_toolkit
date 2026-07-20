@@ -90,6 +90,12 @@ test('generated README inventory is valid Markdown without patch artifacts', asy
   assert.doesNotMatch(readme, /^\+(?:##|\||Generated)/m);
 });
 
+test('GitHub Actions use Node 24 action runtimes', async () => {
+  const workflow = await readFile(new URL('../.github/workflows/verify.yml', import.meta.url), 'utf8');
+  assert.match(workflow, /actions\/checkout@v6/);
+  assert.match(workflow, /actions\/setup-node@v6/);
+});
+
 test('deployed pages call the shared calculation and persistence interfaces', async () => {
   const files = await Promise.all([
     'fpdlink_loss/fpdlink_loss.html', 'gmsl2_loss/gmsl2_loss.html',
