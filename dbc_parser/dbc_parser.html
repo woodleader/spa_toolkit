@@ -436,6 +436,32 @@
             }
         }
     </style>
+<!-- TOOLKIT:RUNTIME:safe-document:START -->
+<script data-toolkit-runtime="safe-document">
+(function () {
+const HTML_ENTITIES = Object.freeze({
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#39;'
+});
+
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, character => HTML_ENTITIES[character]);
+}
+
+function escapeAttribute(value) {
+  return escapeHtml(value).replace(/`/g, '&#96;');
+}
+
+window.ToolboxSafeDocument = Object.freeze({ escapeHtml, escapeAttribute });
+}());
+</script>
+<!-- TOOLKIT:RUNTIME:safe-document:END -->
+<!-- TOOLKIT:POLICY:offline-first:START -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' blob:; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; media-src data: blob:; worker-src blob:; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<!-- TOOLKIT:POLICY:offline-first:END -->
 </head>
 
 <body>
@@ -648,6 +674,7 @@
 
         // Render messages
         function renderMessages(filter = '') {
+            const safe = ToolboxSafeDocument.escapeHtml;
             const filterLower = filter.toLowerCase();
             messageList.innerHTML = '';
 
@@ -674,10 +701,10 @@
                     <div class="message-header" onclick="toggleMessage(this)">
                         <div class="message-id" onclick="event.stopPropagation()">0x${msg.id.toString(16).toUpperCase()}${msg.isExtended ? ' <span style="font-size:0.65rem;opacity:0.7">EXT</span>' : ''}</div>
                         <div class="message-info">
-                            <div class="message-name">${msg.name}</div>
+                            <div class="message-name">${safe(msg.name)}</div>
                             <div class="message-meta">
                                 <span>DLC: ${msg.dlc}</span>
-                                <span>TX: ${msg.transmitter}</span>
+                                <span>TX: ${safe(msg.transmitter)}</span>
                             </div>
                         </div>
                         <div class="signal-count">${msg.signals.length} signal${msg.signals.length !== 1 ? 's' : ''}</div>
@@ -695,6 +722,7 @@
 
         // Render signal
         function renderSignal(msgId, signal) {
+            const safe = ToolboxSafeDocument.escapeHtml;
             const commentKey = `${msgId}.${signal.name}`;
             const comment = dbcData.comments[commentKey];
             const valueTable = dbcData.valueTables[commentKey];
@@ -702,7 +730,7 @@
             let valueTableHtml = '';
             if (valueTable) {
                 const items = Object.entries(valueTable).map(([k, v]) =>
-                    `<div class="value-item"><span class="value-key">${k}</span><span class="value-desc">= ${v}</span></div>`
+                    `<div class="value-item"><span class="value-key">${safe(k)}</span><span class="value-desc">= ${safe(v)}</span></div>`
                 ).join('');
                 valueTableHtml = `
                     <div class="value-table">
@@ -720,8 +748,8 @@
             return `
                 <div class="signal-item">
                     <div class="signal-header">
-                        <span class="signal-name">${signal.name}</span>
-                        ${signal.unit ? `<span class="signal-unit">[${signal.unit}]</span>` : ''}
+                        <span class="signal-name">${safe(signal.name)}</span>
+                        ${signal.unit ? `<span class="signal-unit">[${safe(signal.unit)}]</span>` : ''}
                     </div>
                     <div class="signal-details">
                         <div class="detail-item">

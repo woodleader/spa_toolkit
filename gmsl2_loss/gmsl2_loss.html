@@ -1367,6 +1367,129 @@
             font-weight: 600;
         }
     </style>
+<!-- TOOLKIT:RUNTIME:workspace:START -->
+<script data-toolkit-runtime="workspace">
+(function () {
+function clone(value) {
+  return value === undefined ? undefined : JSON.parse(JSON.stringify(value));
+}
+
+function createWorkspace({ key, version, adapter = globalThis.localStorage, fallback, validate = () => true, migrations = {} }) {
+  if (!key || !Number.isInteger(version) || version < 1) throw new TypeError('Workspace requires a key and positive integer version.');
+
+  function load() {
+    try {
+      const raw = adapter?.getItem(key);
+      if (!raw) return clone(fallback);
+      const envelope = JSON.parse(raw);
+      const isVersioned = Number.isInteger(envelope?.version) && Object.hasOwn(envelope, 'data');
+      let data = isVersioned ? envelope.data : envelope;
+      let storedVersion = isVersioned ? Number(envelope.version) : 0;
+      if (!Number.isInteger(storedVersion) || storedVersion < 0 || storedVersion > version) return clone(fallback);
+      while (storedVersion < version) {
+        const migrate = migrations[storedVersion];
+        if (typeof migrate !== 'function') return clone(fallback);
+        data = migrate(data);
+        storedVersion += 1;
+      }
+      if (!validate(data)) return clone(fallback);
+      if (storedVersion !== envelope.version) save(data);
+      return clone(data);
+    } catch {
+      return clone(fallback);
+    }
+  }
+
+  function save(data) {
+    if (!validate(data)) throw new TypeError(`Invalid workspace data for ${key}.`);
+    try {
+      adapter?.setItem(key, JSON.stringify({ version, data }));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  return Object.freeze({ load, save, key, version });
+}
+
+window.ToolboxWorkspace = Object.freeze({ createWorkspace });
+}());
+</script>
+<!-- TOOLKIT:RUNTIME:workspace:END -->
+<!-- TOOLKIT:RUNTIME:channel-budget:START -->
+<script data-toolkit-runtime="channel-budget">
+(function () {
+function solveCoefficients(frequency1MHz, loss1DbPerM, frequency2MHz, loss2DbPerM) {
+  const f1 = Number(frequency1MHz) / 1000;
+  const f2 = Number(frequency2MHz) / 1000;
+  const l1 = Number(loss1DbPerM);
+  const l2 = Number(loss2DbPerM);
+  if (![f1, f2, l1, l2].every(Number.isFinite) || f1 <= 0 || f2 <= 0 || l1 < 0 || l2 < 0) {
+    return { a: null, b: null, warning: 'Frequencies and losses must be finite positive values.', valid: false };
+  }
+  const sqrtF1 = Math.sqrt(f1);
+  const sqrtF2 = Math.sqrt(f2);
+  const denominator = f2 * sqrtF1 - f1 * sqrtF2;
+  if (Math.abs(denominator) < 0.0001) {
+    return { a: null, b: null, warning: 'Frequencies are too similar to solve. Choose more separated frequencies.', valid: false };
+  }
+  let b = (l2 * sqrtF1 - l1 * sqrtF2) / denominator;
+  let warning = null;
+  let a;
+  if (b < 0) {
+    b = 0;
+    a = l1 / sqrtF1;
+    warning = 'Dielectric coefficient calculated as negative (inconsistent data). Defaulted b=0, using skin-only model.';
+  } else {
+    a = (l1 - b * f1) / sqrtF1;
+  }
+  if (a < 0) return { a: null, b: null, warning: 'Calculated coefficients are physically impossible. Please check your datasheet values.', valid: false };
+  const lossAt2GHz = a * Math.sqrt(2) + b * 2;
+  if (lossAt2GHz < 0.05 || lossAt2GHz > 5) warning = `${warning ? `${warning} ` : ''}Warning: Calculated loss at 2 GHz is ${lossAt2GHz.toFixed(2)} dB/m, which is unusual.`;
+  return { a, b, warning, valid: true };
+}
+
+function solveSinglePoint(frequencyMHz, lossDbPerM) {
+  const frequencyGHz = Number(frequencyMHz) / 1000;
+  const loss = Number(lossDbPerM);
+  if (!Number.isFinite(frequencyGHz) || frequencyGHz <= 0 || !Number.isFinite(loss) || loss < 0) {
+    return { a: null, b: null, warning: 'Frequency and loss must be finite positive values.', valid: false, singlePoint: true };
+  }
+  return {
+    a: (loss * 0.9) / Math.sqrt(frequencyGHz),
+    b: (loss * 0.1) / frequencyGHz,
+    warning: 'Coefficients estimated using 90/10 skin/dielectric split (single data point).',
+    valid: true,
+    singlePoint: true
+  };
+}
+
+function calculateChannelBudget(scenario) {
+  const frequencyGHz = Math.max(0.000001, Number(scenario.frequencyGHz));
+  const temperatureFactor = 1 + (Number(scenario.temperatureC) - Number(scenario.temperatureReferenceC)) * Number(scenario.temperatureCoefficient);
+  const baseCableLossDb = scenario.segments.reduce((total, segment) => {
+    const rate = segment.manualRateDbPerM ?? (Number(segment.a) * Math.sqrt(frequencyGHz) + Number(segment.b) * frequencyGHz);
+    return total + Number(segment.lengthM) * rate;
+  }, 0);
+  const cableLossDb = baseCableLossDb * temperatureFactor;
+  const connectors = scenario.connectors ?? {};
+  const connectorLossDb = Number(connectors.count ?? 0) * Number(connectors.baseLossDb ?? 0) * Math.sqrt(frequencyGHz / Number(connectors.referenceFrequencyGHz ?? frequencyGHz));
+  const pcb = scenario.pcb ?? {};
+  const pcbLossDb = Number(pcb.lengthCm ?? 0) * Number(pcb.lossDbPerCm ?? 0) * Math.sqrt(frequencyGHz / Number(pcb.referenceFrequencyGHz ?? frequencyGHz));
+  const safetyMarginDb = Number(scenario.safetyMarginDb ?? 0);
+  const totalLossDb = cableLossDb + connectorLossDb + pcbLossDb + safetyMarginDb;
+  const remainingMarginDb = Math.abs(Number(scenario.equalizerLimitDb)) - totalLossDb;
+  return Object.freeze({ temperatureFactor, baseCableLossDb, cableLossDb, connectorLossDb, pcbLossDb, safetyMarginDb, totalLossDb, remainingMarginDb, passes: remainingMarginDb >= 0 });
+}
+
+window.ToolboxChannelBudget = Object.freeze({ solveCoefficients, solveSinglePoint, calculateChannelBudget });
+}());
+</script>
+<!-- TOOLKIT:RUNTIME:channel-budget:END -->
+<!-- TOOLKIT:POLICY:offline-first:START -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' blob:; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; media-src data: blob:; worker-src blob:; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<!-- TOOLKIT:POLICY:offline-first:END -->
 </head>
 
 <body>
@@ -1979,6 +2102,13 @@
 
         // localStorage key for custom cables
         const CUSTOM_CABLES_KEY = 'gmsl2_custom_cables';
+        const customCableWorkspace = ToolboxWorkspace.createWorkspace({
+            key: CUSTOM_CABLES_KEY, version: 1, fallback: {}, migrations: { 0: data => data },
+            validate: data => data && typeof data === 'object' && !Array.isArray(data) &&
+                Object.entries(data).every(([key, cable]) => /^custom_\d+$/.test(key) &&
+                    cable && typeof cable.name === 'string' && Number.isFinite(cable.a) &&
+                    Number.isFinite(cable.b) && cable.isCustom === true)
+        });
 
         // ============================================
         // Custom Cable Management (localStorage)
@@ -1987,10 +2117,7 @@
         let customCableIdCounter = 1;
 
         function loadCustomCables() {
-            try {
-                const stored = localStorage.getItem(CUSTOM_CABLES_KEY);
-                if (stored) {
-                    customCables = JSON.parse(stored);
+            customCables = customCableWorkspace.load();
                     // Find highest ID to set counter
                     Object.keys(customCables).forEach(key => {
                         const match = key.match(/^custom_(\d+)$/);
@@ -2001,19 +2128,10 @@
                             }
                         }
                     });
-                }
-            } catch (e) {
-                console.error('Failed to load custom cables:', e);
-                customCables = {};
-            }
         }
 
         function saveCustomCables() {
-            try {
-                localStorage.setItem(CUSTOM_CABLES_KEY, JSON.stringify(customCables));
-            } catch (e) {
-                console.error('Failed to save custom cables:', e);
-            }
+            customCableWorkspace.save(customCables);
         }
 
         function getCombinedCableTypes() {
@@ -2108,6 +2226,10 @@
                 singlePoint: true
             };
         }
+
+        // Product-neutral coefficient fitting lives in the shared, tested kernel.
+        solveCoefficients = ToolboxChannelBudget.solveCoefficients;
+        solveSinglePoint = ToolboxChannelBudget.solveSinglePoint;
 
         // ============================================
         // State
@@ -2327,33 +2449,32 @@
         }
 
         function recalculate() {
-            // Get temperature de-rating factor
-            const tempFactor = getTemperatureDerating();
-
-            // Calculate cable losses with temperature de-rating
-            let baseCableLoss = 0;
-            segments.forEach(seg => {
-                const rate = getCableLossRate(seg.cableType, seg.customRate);
-                baseCableLoss += seg.length * rate;
-            });
-            const cableLoss = baseCableLoss * tempFactor;
-
-            // Calculate connector loss (frequency-scaled)
             const connCount = parseInt(connectorCount.value) || 0;
-            const connectorLoss = getConnectorLoss(connectorType.value, connCount);
-
-            // Calculate PCB loss (material and frequency dependent)
             const pcbLen = parseFloat(pcbLength.value) || 0;
-            const pcbLoss = getPcbLoss(pcbLen);
-
-            // Safety margin
             const safetyMargin = parseFloat(safetySlider.value) || 0;
-
-            // Total loss
-            const totalLoss = cableLoss + connectorLoss + pcbLoss + safetyMargin;
-
-            // Remaining margin (AEQ limit is negative, so margin = |aeqLimit| - totalLoss)
-            const remainingMargin = Math.abs(aeqLimit) - totalLoss;
+            const conn = CONNECTOR_TYPES[connectorType.value];
+            const material = PCB_MATERIALS[pcbMaterial];
+            const result = ToolboxChannelBudget.calculateChannelBudget({
+                frequencyGHz: operatingFreq,
+                temperatureC: ambientTemp,
+                temperatureReferenceC: TEMP_REFERENCE,
+                temperatureCoefficient: TEMP_COEFFICIENT,
+                segments: segments.map(segment => {
+                    if (segment.cableType === 'manual') return { lengthM: segment.length, manualRateDbPerM: segment.customRate || 1 };
+                    const cable = getCombinedCableTypes()[segment.cableType];
+                    return { lengthM: segment.length, a: cable?.a ?? 1, b: cable?.b ?? 0 };
+                }),
+                connectors: { count: connCount, baseLossDb: conn?.baseLoss ?? 0, referenceFrequencyGHz: conn?.refFreq ?? operatingFreq },
+                pcb: { lengthCm: pcbLen, lossDbPerCm: material?.loss ?? 0.35, referenceFrequencyGHz: material?.refFreq ?? operatingFreq },
+                safetyMarginDb: safetyMargin,
+                equalizerLimitDb: aeqLimit
+            });
+            const tempFactor = result.temperatureFactor;
+            const cableLoss = result.cableLossDb;
+            const connectorLoss = result.connectorLossDb;
+            const pcbLoss = result.pcbLossDb;
+            const totalLoss = result.totalLossDb;
+            const remainingMargin = result.remainingMarginDb;
 
             // Update temperature de-rating display
             const deratingPercent = ((tempFactor - 1) * 100).toFixed(0);
