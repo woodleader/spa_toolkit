@@ -159,6 +159,15 @@ const themeToggleMarkup = `<button id="toolkit-theme-toggle" aria-label="Toggle 
 }());
 </script>`;
 
+async function embedBackLink() {
+  const manifest = JSON.parse(await read('tool-manifest.json'));
+  const markup = '<a id="toolkit-back-link" href="../index.html">← Toolbox</a>';
+  for (const tool of manifest.tools) {
+    const html = await read(tool.path);
+    await write(tool.path, replaceGeneratedBlock(html, 'THEME:back-link', markup, '</body>'));
+  }
+}
+
 async function embedThemeToggle() {
   const manifest = JSON.parse(await read('tool-manifest.json'));
   for (const tool of manifest.tools) {
@@ -193,3 +202,4 @@ await embedThree();
 await embedJ1939Catalog();
 await embedTheme();
 await embedThemeToggle();
+await embedBackLink();

@@ -839,6 +839,48 @@ body:has(#drop-zone) .container {
     border-bottom: 2px solid var(--t-line);
 }
 
+/* standardized back-to-toolbox link: every tool gets the injected
+   #toolkit-back-link chip (bottom-left, mirroring the theme toggle
+   bottom-right); the tools' scattered legacy back links are hidden */
+a[href="../index.html"]:not(#toolkit-back-link) {
+    display: none !important;
+}
+
+#toolkit-back-link {
+    position: fixed;
+    bottom: 14px;
+    left: 14px;
+    z-index: 1000;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 16px;
+    font-family: var(--t-font-sans);
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    text-decoration: none;
+    color: var(--t-ink);
+    background: var(--t-panel);
+    border: 2px solid var(--t-line);
+    box-shadow: 3px 3px 0 var(--t-shadow-color);
+}
+
+#toolkit-back-link:hover {
+    background: var(--t-accent);
+    color: var(--t-accent-ink);
+}
+
+#toolkit-back-link:active {
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0 var(--t-shadow-color);
+}
+
+@media print {
+    #toolkit-back-link, #toolkit-theme-toggle { display: none !important; }
+}
+
 /* dark-mode toggle: covers pre-existing .theme-toggle buttons and
    the injected TOOLKIT toggle */
 .theme-toggle, #toolkit-theme-toggle {
@@ -1633,6 +1675,9 @@ body:has(#drop-zone) .container {
 }());
 </script>
 <!-- TOOLKIT:THEME:toggle:END -->
+<!-- TOOLKIT:THEME:back-link:START -->
+<a id="toolkit-back-link" href="../index.html">← Toolbox</a>
+<!-- TOOLKIT:THEME:back-link:END -->
 </body>
 
 </html>
